@@ -1,9 +1,9 @@
-name: Build LocalQBank APK
+name: Build Ben QBank APK
 
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -17,54 +17,62 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: "8.9"
 
-      - name: Extract Android project
+      - name: Prepare Android project
         run: |
           set -e
+
+          echo "Checking repository..."
+
+          # Case 1: Android project is already in repository root
+          if [ -f "settings.gradle.kts" ] && [ -d "app" ]; then
+            echo "Android project found in repository root."
+            echo "PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          # Case 2: Android project is inside a ZIP
+          echo "Android project not found at root."
+          echo "Searching for project ZIP..."
+
+          ZIP_FILE=$(find . -maxdepth 1 -type f \
+            \( -name "*.zip" -o -name "*.ZIP" \) \
+            -print -quit)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: No Android project or ZIP file found."
+            exit 1
+          fi
+
+          echo "Using ZIP: $ZIP_FILE"
 
           rm -rf android-project
           mkdir android-project
 
-          echo "Finding project ZIP..."
-          ZIP_FILE=$(find . -maxdepth 1 -type f -name "LocalQBank_PhoneBuild.zip" -print -quit)
-
-          test -n "$ZIP_FILE"
-
-          echo "Using: $ZIP_FILE"
-
           unzip -q "$ZIP_FILE" -d android-project
 
-          echo "Extracted files:"
-          find android-project -maxdepth 3 -type f | sort
+          # Locate settings.gradle.kts
+          CANDIDATE=$(find android-project \
+            -name "settings.gradle.kts" \
+            -type f \
+            -print -quit)
 
-      - name: Locate Android project
-        run: |
-          set -e
-
-          PROJECT_DIR="android-project"
-
-          if [ ! -f "$PROJECT_DIR/settings.gradle.kts" ]; then
-            CANDIDATE=$(find "$PROJECT_DIR" \
-              -name "settings.gradle.kts" \
-              -type f \
-              -print -quit)
-
-            test -n "$CANDIDATE"
-
-            PROJECT_DIR=$(dirname "$CANDIDATE")
+          if [ -z "$CANDIDATE" ]; then
+            echo "ERROR: settings.gradle.kts not found."
+            exit 1
           fi
+
+          PROJECT_DIR=$(dirname "$CANDIDATE")
 
           echo "Android project found at:"
           echo "$PROJECT_DIR"
 
-          test -f "$PROJECT_DIR/settings.gradle.kts"
-          test -f "$PROJECT_DIR/build.gradle.kts"
           test -d "$PROJECT_DIR/app"
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
@@ -73,20 +81,35 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           set -e
-          gradle --no-daemon assembleDebug
+
+          echo "Building Ben..."
+
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew --no-daemon assembleDebug
+          else
+            gradle --no-daemon assembleDebug
+          fi
 
       - name: Verify APK
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           set -e
 
-          test -f app/build/outputs/apk/debug/app-debug.apk
+          APK="app/build/outputs/apk/debug/app-debug.apk"
 
-          echo "APK successfully built:"
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          if [ ! -f "$APK" ]; then
+            echo "ERROR: APK was not generated."
+            find app/build/outputs -type f 2>/dev/null || true
+            exit 1
+          fi
 
-      - name: Upload APK
+          echo "Ben APK successfully built:"
+          ls -lh "$APK"
+
+      - name: Upload Ben APK
         uses: actions/upload-artifact@v4
         with:
-          name: LocalQBank-v7.13.0
+          name: Ben-QBank-debug
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
