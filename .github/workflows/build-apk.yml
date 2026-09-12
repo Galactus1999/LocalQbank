@@ -19,10 +19,19 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.9"
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 37
+        run: |
+          set -e
+
+          yes | sdkmanager --licenses >/dev/null || true
+
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-37" \
+            "build-tools;36.0.0"
 
       - name: Prepare Android project
         run: |
@@ -53,11 +62,10 @@ jobs:
           echo "Using ZIP: $ZIP_FILE"
 
           rm -rf android-project
-          mkdir android-project
+          mkdir -p android-project
 
           unzip -q "$ZIP_FILE" -d android-project
 
-          # Locate settings.gradle.kts
           CANDIDATE=$(find android-project \
             -name "settings.gradle.kts" \
             -type f \
@@ -77,19 +85,50 @@ jobs:
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      - name: Build APK
+      - name: Verify Android project configuration
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -e
+
+          echo "===== Gradle Wrapper ====="
+          test -f "./gradlew"
+          chmod +x ./gradlew
+          ./gradlew --version
+
+          echo "===== Required files ====="
+          test -f "settings.gradle.kts"
+          test -f "build.gradle.kts"
+          test -f "app/build.gradle.kts"
+
+          echo "===== Verify compileSdk 37 ====="
+          grep -R \
+            -E 'compileSdk(Code)?[[:space:]]*(=|)[[:space:]]*37' \
+            app/build.gradle.kts build.gradle.kts gradle 2>/dev/null || {
+              echo "ERROR: compileSdk 37 declaration not found."
+              exit 1
+            }
+
+          echo "===== Verify zstd Android AAR ====="
+          grep -R \
+            'com.github.luben:zstd-jni:1.5.7-16@aar' \
+            app/build.gradle.kts gradle 2>/dev/null || {
+              echo "ERROR: Android zstd AAR dependency not found."
+              exit 1
+            }
+
+      - name: Build Ben
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           set -e
 
           echo "Building Ben..."
 
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew --no-daemon assembleDebug
-          else
-            gradle --no-daemon assembleDebug
-          fi
+          chmod +x ./gradlew
+
+          ./gradlew \
+            --no-daemon \
+            --stacktrace \
+            assembleDebug
 
       - name: Verify APK
         working-directory: ${{ env.PROJECT_DIR }}
@@ -106,6 +145,41 @@ jobs:
 
           echo "Ben APK successfully built:"
           ls -lh "$APK"
+
+      - name: Verify APK identity
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -e
+
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+
+          echo "Checking APK package and version..."
+
+          if command -v apkanalyzer >/dev/null 2>&1; then
+            apkanalyzer manifest application-id "$APK"
+            apkanalyzer manifest version-code "$APK"
+            apkanalyzer manifest version-name "$APK"
+          else
+            echo "apkanalyzer not available; skipping metadata inspection."
+          fi
+
+      - name: Verify zstd native library
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -e
+
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+
+          echo "Checking zstd native library..."
+
+          unzip -l "$APK" | grep \
+            'lib/arm64-v8a/libzstd-jni-1.5.7-16.so' || {
+              echo "ERROR: zstd ARM64 native library is missing from APK."
+              echo "The Android AAR may have been replaced/resolved incorrectly."
+              exit 1
+            }
+
+          echo "PASS: zstd ARM64 native library is present."
 
       - name: Upload Ben APK
         uses: actions/upload-artifact@v4
