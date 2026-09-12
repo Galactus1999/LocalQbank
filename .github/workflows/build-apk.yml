@@ -19,23 +19,67 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      # Android SDK / command-line tools
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ""
 
+      # Android 17 = API 37.
+      # Some runners expose the platform package as android-37.0,
+      # so discover the exact package before installing it.
       - name: Install Android SDK 37
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
-          yes | sdkmanager --licenses >/dev/null || true
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
 
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-37" \
-            "build-tools;36.0.0"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(command -v sdkmanager)"
+          fi
+
+          echo "Using sdkmanager:"
+          "$SDKMANAGER" --version
+
+          echo "Searching available API 37 packages..."
+
+          "$SDKMANAGER" --list \
+            | grep -E 'platforms;android-37([.]0)?$|build-tools;37([.][0-9.]+)?$' \
+            || true
+
+          echo "Installing Android platform API 37..."
+
+          if "$SDKMANAGER" --list \
+              | grep -q 'platforms;android-37.0'; then
+            PLATFORM="platforms;android-37.0"
+          elif "$SDKMANAGER" --list \
+              | grep -q 'platforms;android-37'; then
+            PLATFORM="platforms;android-37"
+          else
+            echo "ERROR: Android API 37 platform was not exposed by sdkmanager."
+            echo "Full available Android platforms:"
+            "$SDKMANAGER" --list | grep 'platforms;android-' || true
+            exit 1
+          fi
+
+          echo "Selected platform: $PLATFORM"
+
+          "$SDKMANAGER" "$PLATFORM"
+
+          echo "Installing platform-tools..."
+          "$SDKMANAGER" "platform-tools"
+
+          echo "Installed SDK platforms:"
+          ls -la "$ANDROID_HOME/platforms" || true
 
       - name: Prepare Android project
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
           echo "Checking repository..."
 
@@ -85,41 +129,62 @@ jobs:
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      - name: Verify Android project configuration
+      - name: Verify project configuration
         working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
-          echo "===== Gradle Wrapper ====="
+          echo "===== Gradle wrapper ====="
+
           test -f "./gradlew"
           chmod +x ./gradlew
+
           ./gradlew --version
 
-          echo "===== Required files ====="
+          echo "===== Required project files ====="
+
           test -f "settings.gradle.kts"
           test -f "build.gradle.kts"
           test -f "app/build.gradle.kts"
 
-          echo "===== Verify compileSdk 37 ====="
+          echo "===== Package ID ====="
+
           grep -R \
-            -E 'compileSdk(Code)?[[:space:]]*(=|)[[:space:]]*37' \
-            app/build.gradle.kts build.gradle.kts gradle 2>/dev/null || {
-              echo "ERROR: compileSdk 37 declaration not found."
+            'com\.localqbank\.library' \
+            app/build.gradle.kts \
+            || {
+              echo "ERROR: Expected applicationId/package was not found."
               exit 1
             }
 
-          echo "===== Verify zstd Android AAR ====="
+          echo "===== compileSdk ====="
+
           grep -R \
-            'com.github.luben:zstd-jni:1.5.7-16@aar' \
-            app/build.gradle.kts gradle 2>/dev/null || {
-              echo "ERROR: Android zstd AAR dependency not found."
+            -E 'compileSdk(Code)?[[:space:]]*(=|)[[:space:]]*37' \
+            app/build.gradle.kts \
+            || {
+              echo "ERROR: compileSdk 37 was not found."
               exit 1
             }
+
+          echo "===== zstd Android AAR ====="
+
+          grep -R \
+            'com\.github\.luben:zstd-jni:1\.5\.7-16@aar' \
+            app/build.gradle.kts gradle 2>/dev/null \
+            || {
+              echo "ERROR: zstd Android AAR dependency missing."
+              exit 1
+            }
+
+          echo "Project configuration checks passed."
 
       - name: Build Ben
         working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
           echo "Building Ben..."
 
@@ -130,56 +195,73 @@ jobs:
             --stacktrace \
             assembleDebug
 
-      - name: Verify APK
+      - name: Verify APK exists
         working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
           APK="app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
             echo "ERROR: APK was not generated."
-            find app/build/outputs -type f 2>/dev/null || true
+
+            find app/build/outputs \
+              -type f \
+              -print 2>/dev/null || true
+
             exit 1
           fi
 
-          echo "Ben APK successfully built:"
+          echo "APK successfully built:"
           ls -lh "$APK"
 
-      - name: Verify APK identity
+      - name: Verify zstd native library
         working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
           APK="app/build/outputs/apk/debug/app-debug.apk"
 
-          echo "Checking APK package and version..."
+          echo "Checking APK for zstd ARM64 native library..."
+
+          if ! unzip -l "$APK" \
+              | grep -q 'lib/arm64-v8a/libzstd-jni-1.5.7-16.so'; then
+
+            echo "ERROR:"
+            echo "lib/arm64-v8a/libzstd-jni-1.5.7-16.so"
+            echo "is missing from the final APK."
+
+            echo
+            echo "Native libraries actually packaged:"
+            unzip -l "$APK" \
+              | grep 'lib/' \
+              || true
+
+            exit 1
+          fi
+
+          echo "PASS:"
+          echo "lib/arm64-v8a/libzstd-jni-1.5.7-16.so is present."
+
+      - name: Verify APK identity
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+
+          echo "===== APK identity ====="
 
           if command -v apkanalyzer >/dev/null 2>&1; then
             apkanalyzer manifest application-id "$APK"
             apkanalyzer manifest version-code "$APK"
             apkanalyzer manifest version-name "$APK"
           else
-            echo "apkanalyzer not available; skipping metadata inspection."
+            echo "apkanalyzer unavailable; skipping metadata display."
           fi
-
-      - name: Verify zstd native library
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: |
-          set -e
-
-          APK="app/build/outputs/apk/debug/app-debug.apk"
-
-          echo "Checking zstd native library..."
-
-          unzip -l "$APK" | grep \
-            'lib/arm64-v8a/libzstd-jni-1.5.7-16.so' || {
-              echo "ERROR: zstd ARM64 native library is missing from APK."
-              echo "The Android AAR may have been replaced/resolved incorrectly."
-              exit 1
-            }
-
-          echo "PASS: zstd ARM64 native library is present."
 
       - name: Upload Ben APK
         uses: actions/upload-artifact@v4
