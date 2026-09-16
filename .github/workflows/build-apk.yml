@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -18,254 +19,174 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
 
-      # Android SDK / command-line tools
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
           packages: ""
 
-      # Android 17 = API 37.
-      # Some runners expose the platform package as android-37.0,
-      # so discover the exact package before installing it.
       - name: Install Android SDK 37
         shell: bash
         run: |
           set -euo pipefail
-
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-
-          if [ ! -x "$SDKMANAGER" ]; then
-            SDKMANAGER="$(command -v sdkmanager)"
-          fi
-
-          echo "Using sdkmanager:"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
           "$SDKMANAGER" --version
-
-          echo "Searching available API 37 packages..."
-
-          "$SDKMANAGER" --list \
-            | grep -E 'platforms;android-37([.]0)?$|build-tools;37([.][0-9.]+)?$' \
-            || true
-
-          echo "Installing Android platform API 37..."
-
-          if "$SDKMANAGER" --list \
-              | grep -q 'platforms;android-37.0'; then
+          if "$SDKMANAGER" --list | grep -q 'platforms;android-37.0'; then
             PLATFORM="platforms;android-37.0"
-          elif "$SDKMANAGER" --list \
-              | grep -q 'platforms;android-37'; then
+          elif "$SDKMANAGER" --list | grep -q 'platforms;android-37'; then
             PLATFORM="platforms;android-37"
           else
             echo "ERROR: Android API 37 platform was not exposed by sdkmanager."
-            echo "Full available Android platforms:"
-            "$SDKMANAGER" --list | grep 'platforms;android-' || true
             exit 1
           fi
-
-          echo "Selected platform: $PLATFORM"
-
-          "$SDKMANAGER" "$PLATFORM"
-
-          echo "Installing platform-tools..."
-          "$SDKMANAGER" "platform-tools"
-
-          echo "Installed SDK platforms:"
-          ls -la "$ANDROID_HOME/platforms" || true
+          "$SDKMANAGER" "$PLATFORM" "platform-tools"
 
       - name: Prepare Android project
         shell: bash
         run: |
           set -euo pipefail
-
-          echo "Checking repository..."
-
-          # Case 1: Android project is already in repository root
           if [ -f "settings.gradle.kts" ] && [ -d "app" ]; then
-            echo "Android project found in repository root."
             echo "PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
             exit 0
           fi
-
-          # Case 2: Android project is inside a ZIP
-          echo "Android project not found at root."
-          echo "Searching for project ZIP..."
-
-          ZIP_FILE=$(find . -maxdepth 1 -type f \
-            \( -name "*.zip" -o -name "*.ZIP" \) \
-            -print -quit)
-
+          ZIP_FILE=$(find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.ZIP" \) -print -quit)
           if [ -z "$ZIP_FILE" ]; then
             echo "ERROR: No Android project or ZIP file found."
             exit 1
           fi
-
           echo "Using ZIP: $ZIP_FILE"
-
           rm -rf android-project
           mkdir -p android-project
-
           unzip -q "$ZIP_FILE" -d android-project
-
-          CANDIDATE=$(find android-project \
-            -name "settings.gradle.kts" \
-            -type f \
-            -print -quit)
-
+          CANDIDATE=$(find android-project -name "settings.gradle.kts" -type f -print -quit)
           if [ -z "$CANDIDATE" ]; then
-            echo "ERROR: settings.gradle.kts not found."
+            echo "ERROR: settings.gradle.kts not found in source ZIP."
             exit 1
           fi
-
           PROJECT_DIR=$(dirname "$CANDIDATE")
-
-          echo "Android project found at:"
-          echo "$PROJECT_DIR"
-
           test -d "$PROJECT_DIR/app"
-
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Android project: $PROJECT_DIR"
 
       - name: Verify project configuration
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
-
-          echo "===== Gradle wrapper ====="
-
-          test -f "./gradlew"
+          test -f ./gradlew
           chmod +x ./gradlew
-
           ./gradlew --version
-
-          echo "===== Required project files ====="
-
-          test -f "settings.gradle.kts"
-          test -f "build.gradle.kts"
-          test -f "app/build.gradle.kts"
-
-          echo "===== Package ID ====="
-
-          grep -R \
-            'com\.localqbank\.library' \
-            app/build.gradle.kts \
-            || {
-              echo "ERROR: Expected applicationId/package was not found."
-              exit 1
-            }
-
-          echo "===== compileSdk ====="
-
-          grep -R \
-            -E 'compileSdk(Code)?[[:space:]]*(=|)[[:space:]]*37' \
-            app/build.gradle.kts \
-            || {
-              echo "ERROR: compileSdk 37 was not found."
-              exit 1
-            }
-
-          echo "===== zstd Android AAR ====="
-
-          grep -R \
-            'com\.github\.luben:zstd-jni:1\.5\.7-16@aar' \
-            app/build.gradle.kts gradle 2>/dev/null \
-            || {
-              echo "ERROR: zstd Android AAR dependency missing."
-              exit 1
-            }
-
+          test -f settings.gradle.kts
+          test -f build.gradle.kts
+          test -f app/build.gradle.kts
+          grep -R 'com\.localqbank\.library' app/build.gradle.kts >/dev/null
+          grep -R -E 'compileSdk(Code)?[[:space:]]*(=|)[[:space:]]*37' app/build.gradle.kts >/dev/null
+          grep -R 'com\.github\.luben:zstd-jni:1\.5\.7-16@aar' app/build.gradle.kts gradle 2>/dev/null >/dev/null
           echo "Project configuration checks passed."
 
-      - name: Build Ben
+      - name: Prepare persistent release signing configuration
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          ROVEX_SIGNING_KEYSTORE_BASE64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
+          ROVEX_SIGNING_KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
+          ROVEX_SIGNING_STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
+          ROVEX_SIGNING_KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
+          ROVEX_SIGNING_KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keystore_b64="${ROVEX_SIGNING_KEYSTORE_BASE64:-}"
+          if [ -z "$keystore_b64" ]; then keystore_b64="${ROVEX_SIGNING_KEYSTORE_B64:-}"; fi
+          test -n "$keystore_b64" || { echo 'Missing ROVEX_SIGNING_KEYSTORE_BASE64/B64 secret.'; exit 1; }
+          test -n "${ROVEX_SIGNING_STORE_PASSWORD:-}" || { echo 'Missing ROVEX_SIGNING_STORE_PASSWORD secret.'; exit 1; }
+          test -n "${ROVEX_SIGNING_KEY_ALIAS:-}" || { echo 'Missing ROVEX_SIGNING_KEY_ALIAS secret.'; exit 1; }
+          test -n "${ROVEX_SIGNING_KEY_PASSWORD:-}" || { echo 'Missing ROVEX_SIGNING_KEY_PASSWORD secret.'; exit 1; }
+          keystore="$RUNNER_TEMP/rovex-release-signing.jks"
+          printf '%s' "$keystore_b64" | base64 --decode > "$keystore"
+          test -s "$keystore"
+          echo "ROVEX_SIGNING_STORE_FILE=$keystore" >> "$GITHUB_ENV"
+          echo "ROVEX_SIGNING_STORE_PASSWORD=$ROVEX_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ROVEX_SIGNING_KEY_ALIAS=$ROVEX_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ROVEX_SIGNING_KEY_PASSWORD=$ROVEX_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
+          keytool -list -keystore "$keystore" -storepass "$ROVEX_SIGNING_STORE_PASSWORD" -alias "$ROVEX_SIGNING_KEY_ALIAS" >/dev/null
+          echo 'Persistent release signing configuration: PASS'
+
+      - name: Build signed release APK
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace
 
-          echo "Building Ben..."
-
-          chmod +x ./gradlew
-
-          ./gradlew \
-            --no-daemon \
-            --stacktrace \
-            assembleDebug
-
-      - name: Verify APK exists
+      - name: Verify release APK
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
-
-          APK="app/build/outputs/apk/debug/app-debug.apk"
-
-          if [ ! -f "$APK" ]; then
-            echo "ERROR: APK was not generated."
-
-            find app/build/outputs \
-              -type f \
-              -print 2>/dev/null || true
-
-            exit 1
-          fi
-
-          echo "APK successfully built:"
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -f "$APK"
           ls -lh "$APK"
+          echo "APK SHA-256:"
+          sha256sum "$APK"
 
       - name: Verify zstd native library
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          unzip -l "$APK" | grep -F 'lib/arm64-v8a/libzstd-jni-1.5.7-16.so' >/dev/null
+          echo 'zstd ARM64 native library: PASS'
 
-          APK="app/build/outputs/apk/debug/app-debug.apk"
-
-          echo "Checking APK for zstd ARM64 native library..."
-
-          if ! unzip -l "$APK" \
-              | grep -q 'lib/arm64-v8a/libzstd-jni-1.5.7-16.so'; then
-
-            echo "ERROR:"
-            echo "lib/arm64-v8a/libzstd-jni-1.5.7-16.so"
-            echo "is missing from the final APK."
-
-            echo
-            echo "Native libraries actually packaged:"
-            unzip -l "$APK" \
-              | grep 'lib/' \
-              || true
-
-            exit 1
-          fi
-
-          echo "PASS:"
-          echo "lib/arm64-v8a/libzstd-jni-1.5.7-16.so is present."
-
-      - name: Verify APK identity
+      - name: Print release signing fingerprints
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          apksigner verify --print-certs "$APK" | grep -E 'SHA-1 digest|SHA-256 digest'
 
-          APK="app/build/outputs/apk/debug/app-debug.apk"
+      - name: Verify persistent Rovex signing certificate
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          expected='8D:EC:BE:AC:90:6A:40:54:6B:33:2F:35:62:93:13:EF:6B:A6:86:0D:10:06:AA:D0:7B:76:15:38:22:8C:01:53'
+          actual=$(apksigner verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:lower:]' '[:upper:]')
+          echo "Actual certificate: $actual"
+          test "$actual" = "$expected"
+          echo 'Persistent Rovex certificate: PASS'
 
-          echo "===== APK identity ====="
+      - name: Verify Firebase Google Sign-In SHA-1 matches release APK
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          release_sha1=$(apksigner verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]' | tr -d ':')
+          test -n "$release_sha1"
+          python3 - "$release_sha1" <<'PYTHON'
+          import json, sys
+          sha1 = sys.argv[1].lower()
+          with open('app/google-services.json', encoding='utf-8') as f:
+              data = json.load(f)
+          for client in data.get('client', []):
+              info = client.get('client_info', {}).get('android_client_info', {})
+              if info.get('package_name') != 'com.localqbank.library':
+                  continue
+              for oauth in client.get('oauth_client', []):
+                  cert = oauth.get('android_info', {}).get('certificate_hash', '').replace(':', '').lower()
+                  if oauth.get('client_type') == 1 and cert == sha1:
+                      print('FIREBASE_RELEASE_SHA1=PASS')
+                      raise SystemExit(0)
+          raise SystemExit('Firebase google-services.json does not contain the release APK SHA-1 for com.localqbank.library.')
+          PYTHON
 
-          if command -v apkanalyzer >/dev/null 2>&1; then
-            apkanalyzer manifest application-id "$APK"
-            apkanalyzer manifest version-code "$APK"
-            apkanalyzer manifest version-name "$APK"
-          else
-            echo "apkanalyzer unavailable; skipping metadata display."
-          fi
-
-      - name: Upload Ben APK
+      - name: Upload signed release APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ben-QBank-debug
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          name: Rovex-UPDATE-v8.3.233
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
