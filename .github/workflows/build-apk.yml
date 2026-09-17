@@ -54,11 +54,13 @@ jobs:
             echo "PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
             exit 0
           fi
-          ZIP_FILE=$(find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.ZIP" \) -print -quit)
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: No Android project or ZIP file found."
+          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f -name 'Rovex_v8.3.236*.zip' -print)
+          if [ "${#ZIP_FILES[@]}" -ne 1 ]; then
+            echo "ERROR: Expected exactly one Rovex v8.3.236 source ZIP; found ${#ZIP_FILES[@]}."
+            printf '%s\n' "${ZIP_FILES[@]:-<none>}"
             exit 1
           fi
+          ZIP_FILE="${ZIP_FILES[0]}"
           echo "Using ZIP: $ZIP_FILE"
           rm -rf android-project
           mkdir -p android-project
@@ -87,6 +89,8 @@ jobs:
           grep -R 'com\.localqbank\.library' app/build.gradle.kts >/dev/null
           grep -R -E 'compileSdk(Code)?[[:space:]]*(=|)[[:space:]]*37' app/build.gradle.kts >/dev/null
           grep -R 'com\.github\.luben:zstd-jni:1\.5\.7-16@aar' app/build.gradle.kts gradle 2>/dev/null >/dev/null
+          grep -R 'versionName = "8\.3\.236"' app/build.gradle.kts >/dev/null
+          grep -R 'versionCode = 330' app/build.gradle.kts >/dev/null
           echo "Project configuration checks passed."
 
       - name: Prepare persistent release signing configuration
@@ -159,7 +163,7 @@ jobs:
           APK="app/build/outputs/apk/release/app-release.apk"
           test -x "$APKSIGNER"
           expected='8D:EC:BE:AC:90:6A:40:54:6B:33:2F:35:62:93:13:EF:6B:A6:86:0D:10:06:AA:D0:7B:76:15:38:22:8C:01:53'
-          expected_normalized=$(printf '%s' "$expected" | tr -d ':')
+          expected_normalized=$(printf '%s' "$expected" | tr '[:lower:]' '[:upper:]' | tr -d ':')
           actual=$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:lower:]' '[:upper:]' | tr -d ':')
           echo "Actual certificate (normalized): $actual"
           test "$actual" = "$expected_normalized"
@@ -194,6 +198,6 @@ jobs:
       - name: Upload signed release APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rovex-UPDATE-v8.3.235
+          name: Rovex-UPDATE-v8.3.236
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
