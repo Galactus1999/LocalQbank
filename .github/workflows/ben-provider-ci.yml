@@ -1,0 +1,56 @@
+name: Ben Multi-Provider Compile Audit
+
+on:
+  push:
+    branches: ["ben-multiprovider-work"]
+    paths:
+      - "source/**"
+      - ".github/workflows/ben-provider-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  compile-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: source
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate XML
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, xml.etree.ElementTree as ET
+          for p in pathlib.Path('.').rglob('*.xml'):
+              ET.parse(p)
+          print('XML_PARSE_OK')
+          PY
+      - name: Per-layout duplicate ID audit
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, re
+          bad=[]
+          for p in pathlib.Path('app/src/main/res/layout').glob('*.xml'):
+              ids=[]
+              for m in re.finditer(r'android:id="@\+id/([A-Za-z0-9_]+)"', p.read_text(errors='ignore')):
+                  ids.append(m.group(1))
+              dup=sorted({x for x in ids if ids.count(x)>1})
+              if dup: bad.append((str(p),dup))
+          if bad:
+              raise SystemExit('DUPLICATE_IDS_WITHIN_LAYOUT: '+repr(bad))
+          print('LAYOUT_DUPLICATE_ID_OK')
+          PY
+      - name: Kotlin compile and unit tests
+        run: ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --no-daemon --stacktrace
+      - name: Provider source audit
+        run: |
+          set -euo pipefail
+          grep -q 'FREE_ONLY' app/src/main/java/com/localqbank/library/BenAiProviderManager.kt || true
+          grep -q 'BenAiProviderActivity' app/src/main/AndroidManifest.xml
+          grep -q 'OPEN BEN AI PROVIDERS' app/src/main/java/com/localqbank/library/BenModelLabActivity.kt
+          echo PROVIDER_UI_WIRING_OK
