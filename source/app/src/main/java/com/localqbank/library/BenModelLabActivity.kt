@@ -63,7 +63,8 @@ class BenModelLabActivity : AppCompatActivity() {
         state.addView(title("RUNTIME"))
         status = label("")
         state.addView(status)
-        state.addView(button("RUN ISOLATED BEN IPC TEST") { startActivity(Intent(this, RovexDiagnosticsDataCenter::class.java).apply { putExtra("OPEN_IPC", true) }) }, lp(0, 8))
+        state.addView(button("🧠 OPEN BEN AI PROVIDERS") { startActivity(Intent(this, BenAiProviderActivity::class.java)) }, lp(0, 8))
+        state.addView(button("RUN ISOLATED BEN IPC TEST") { startActivity(Intent(this, RovexDiagnosticsDataCenter::class.java).apply { putExtra("OPEN_IPC", true) }) }, lp(0, 4))
         state.addView(button("VIEW LAST IPC DIAGNOSTIC") { showLastIpcReport() }, lp(0, 4))
         state.addView(button("OPEN ISOLATED EMBEDDINGGEMMA TEST") { startActivity(Intent(this, RovexDiagnosticsDataCenter::class.java)) }, lp(0, 4))
         root.addView(state, cardLp(0, 10))
@@ -102,11 +103,8 @@ class BenModelLabActivity : AppCompatActivity() {
 
     private fun showLastIpcReport() {
         val report = BenIpcDiagnosticRecorder.latest(this)
-        if (report.isNullOrBlank()) {
-            AlertDialogCompat.show(this, "Ben IPC diagnostic", "No durable IPC report exists yet. Run the isolated IPC test from Test & Diagnostics.")
-        } else {
-            AlertDialogCompat.show(this, "Last Ben IPC diagnostic", report.take(12000))
-        }
+        if (report.isNullOrBlank()) AlertDialogCompat.show(this, "Ben IPC diagnostic", "No durable IPC report exists yet. Run the isolated IPC test from Test & Diagnostics.")
+        else AlertDialogCompat.show(this, "Last Ben IPC diagnostic", report.take(12000))
     }
 
     private fun runGemma() {
@@ -119,20 +117,15 @@ class BenModelLabActivity : AppCompatActivity() {
             val result = runCatching { BenInferenceProcessClient(this@BenModelLabActivity).use { it.generateSuspend(q, 160) } }
             withContext(Dispatchers.Main) {
                 val text = result.getOrNull()
-                if (result.isFailure || text == null) {
-                    output.text = "Gemma did not run: ${result.exceptionOrNull()?.message ?: "unknown runtime error"}. Open the diagnostics center."
-                } else {
-                    output.text = text
-                    BenNeuralTelemetry.complete(0, false, 0, 0L, true)
-                }
+                if (result.isFailure || text == null) output.text = "Gemma did not run: ${result.exceptionOrNull()?.message ?: "unknown runtime error"}. Open the diagnostics center."
+                else { output.text = text; BenNeuralTelemetry.complete(0, false, 0, 0L, true) }
                 refresh()
             }
         }
     }
 
     private fun runEmbedding() {
-        val a = first.text.toString().trim()
-        val b = second.text.toString().trim()
+        val a = first.text.toString().trim(); val b = second.text.toString().trim()
         if (a.isBlank() || b.isBlank()) { Toast.makeText(this, "Enter both texts", Toast.LENGTH_SHORT).show(); return }
         BenAiRuntimePolicy(this).resetCircuit()
         Toast.makeText(this, "EmbeddingGemma running…", Toast.LENGTH_SHORT).show()
@@ -141,21 +134,14 @@ class BenModelLabActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             val result = runCatching { BenInferenceProcessClient(this@BenModelLabActivity).use { it.compareSuspend(a, b) } }.getOrNull()
             withContext(Dispatchers.Main) {
-                if (result == null) {
-                    Toast.makeText(this@BenModelLabActivity, "EmbeddingGemma did not run. Open Test & Diagnostics.", Toast.LENGTH_LONG).show()
-                } else {
-                    BenNeuralTelemetry.complete(2, true, (result.coerceIn(0.0, 1.0) * 100).toInt(), 0L, true)
-                    AlertDialogCompat.show(this@BenModelLabActivity, "EmbeddingGemma result", "Cosine similarity: ${"%.4f".format(result)}")
-                }
+                if (result == null) Toast.makeText(this@BenModelLabActivity, "EmbeddingGemma did not run. Open Test & Diagnostics.", Toast.LENGTH_LONG).show()
+                else { BenNeuralTelemetry.complete(2, true, (result.coerceIn(0.0, 1.0) * 100).toInt(), 0L, true); AlertDialogCompat.show(this@BenModelLabActivity, "EmbeddingGemma result", "Cosine similarity: ${"%.4f".format(result)}") }
                 refresh()
             }
         }
     }
 
-    private fun pick(code: Int) {
-        pendingRequest = code
-        documentPicker.launch(arrayOf("application/octet-stream", "*/*"))
-    }
+    private fun pick(code: Int) { pendingRequest = code; documentPicker.launch(arrayOf("application/octet-stream", "*/*")) }
 
     private fun handleDocument(code: Int, uri: android.net.Uri) {
         when (code) {
@@ -174,11 +160,7 @@ class BenModelLabActivity : AppCompatActivity() {
 
     private fun refresh() {
         if (!::status.isInitialized) return
-        val m = neuralModelManager
-        val e = m.installed(BenNeuralModelRegistry.embeddingGemma300m)
-        val g = m.installed(BenNeuralModelRegistry.gemma3_270m)
-        val gov = BenAiResourceGovernor(this).snapshot(true)
-        val policy = BenAiRuntimePolicy(this)
+        val m = neuralModelManager; val e = m.installed(BenNeuralModelRegistry.embeddingGemma300m); val g = m.installed(BenNeuralModelRegistry.gemma3_270m); val gov = BenAiResourceGovernor(this).snapshot(true); val policy = BenAiRuntimePolicy(this)
         status.text = buildString {
             append("Gemma 3 270M: ${if (g != null) "INSTALLED (${g.bytes / (1024 * 1024)} MB)" else "NOT INSTALLED"}\n")
             append("EmbeddingGemma 300M: ${if (e != null) "INSTALLED (${e.bytes / (1024 * 1024)} MB)" else "NOT INSTALLED"}\n")
