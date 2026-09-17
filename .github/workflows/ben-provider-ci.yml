@@ -46,11 +46,13 @@ jobs:
           print('LAYOUT_DUPLICATE_ID_OK')
           PY
       - name: Kotlin compile and unit tests
-        run: ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --no-daemon --stacktrace
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --no-daemon --stacktrace
       - name: Provider source audit
         run: |
           set -euo pipefail
-          grep -q 'FREE_ONLY' app/src/main/java/com/localqbank/library/BenAiProviderManager.kt || true
+          grep -q 'BenAiProviderManager' app/src/main/java/com/localqbank/library/BenAiProviderManager.kt
           grep -q 'BenAiProviderActivity' app/src/main/AndroidManifest.xml
           grep -q 'OPEN BEN AI PROVIDERS' app/src/main/java/com/localqbank/library/BenModelLabActivity.kt
           echo PROVIDER_UI_WIRING_OK
