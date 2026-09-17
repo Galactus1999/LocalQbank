@@ -176,22 +176,22 @@ jobs:
           release_sha1=$("$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]' | tr -d ':')
           test -n "$release_sha1"
           python3 - "$release_sha1" <<'PYTHON'
-import json
-import sys
-sha1 = sys.argv[1].lower()
-with open('app/google-services.json', encoding='utf-8') as f:
-    data = json.load(f)
-for client in data.get('client', []):
-    android = client.get('client_info', {}).get('android_client_info', {})
-    if android.get('package_name') != 'com.localqbank.library':
-        continue
-    for oauth in client.get('oauth_client', []):
-        cert = oauth.get('android_info', {}).get('certificate_hash', '').replace(':', '').lower()
-        if oauth.get('client_type') == 1 and cert == sha1:
-            print('FIREBASE_RELEASE_SHA1=PASS')
-            raise SystemExit(0)
-raise SystemExit('Firebase google-services.json does not contain the release APK SHA-1 for com.localqbank.library.')
-PYTHON
+          import json
+          import sys
+          sha1 = sys.argv[1].lower()
+          with open('app/google-services.json', encoding='utf-8') as f:
+              data = json.load(f)
+          for client in data.get('client', []):
+              android = client.get('client_info', {}).get('android_client_info', {})
+              if android.get('package_name') != 'com.localqbank.library':
+                  continue
+              for oauth in client.get('oauth_client', []):
+                  cert = oauth.get('android_info', {}).get('certificate_hash', '').replace(':', '').lower()
+                  if oauth.get('client_type') == 1 and cert == sha1:
+                      print('FIREBASE_RELEASE_SHA1=PASS')
+                      raise SystemExit(0)
+          raise SystemExit('Firebase google-services.json does not contain the release APK SHA-1 for com.localqbank.library.')
+          PYTHON
 
       - name: Upload signed release APK
         uses: actions/upload-artifact@v4
@@ -199,4 +199,4 @@ PYTHON
           name: Rovex-UPDATE-v8.3.236
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
