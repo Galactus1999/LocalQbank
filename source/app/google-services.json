@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "504969604430",
+    "project_id": "rovex-81c4e",
+    "storage_bucket": "rovex-81c4e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:504969604430:android:d239c11e8cabc66ea3821f",
+        "android_client_info": {
+          "package_name": "com.localqbank.library"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "504969604430-tcneovb19l6rvhgvm5q5p96tln7q4os4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.localqbank.library",
+            "certificate_hash": "a2ee2c04d1f46b5bbfcaac3ffccffb9768cbedc7"
+          }
+        },
+        {
+          "client_id": "504969604430-3nqdd78hesl75o3m1jqdruhfv6ud9s68.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjZErvtOa_ufl0mYyWaaFmM8BIuEskC8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "504969604430-3nqdd78hesl75o3m1jqdruhfv6ud9s68.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

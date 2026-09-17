@@ -1,0 +1,245 @@
+# id	canonical	aliases	medical domains	related concepts
+myocardial infarction	myocardial infarction	mi|heart attack|acute mi|acute myocardial infarction|ami	cardiology|medicine|emergency	acute coronary syndrome|stemi|nstemi
+acute coronary syndrome	acute coronary syndrome	acs|acute coronary syndrome	cardiology|medicine|emergency	myocardial infarction|unstable angina
+heart failure	heart failure	chf|congestive heart failure|cardiac failure|hf	cardiology|medicine	ejection fraction|cardiomyopathy
+hypertension	hypertension	htn|high blood pressure|arterial hypertension	cardiology|medicine	hypertensive emergency|secondary hypertension
+atrial fibrillation	atrial fibrillation	afib	cardiology|medicine	arrhythmia|stroke
+ventricular tachycardia	ventricular tachycardia	vt|ventricular tachycardia	cardiology|emergency	arrhythmia|torsades de pointes
+stemi	st elevation myocardial infarction	stemi|st elevation mi|st elevation myocardial infarction	cardiology|emergency	myocardial infarction
+nstemi	non st elevation myocardial infarction	nstemi|non st elevation mi|non st elevation myocardial infarction	cardiology|emergency	myocardial infarction
+stroke	stroke	cva|cerebrovascular accident|brain attack	neurology|medicine|emergency	ischemic stroke|intracerebral hemorrhage
+seizure	seizure	fit|convulsion|epileptic seizure	neurology|medicine|pediatrics	epilepsy|status epilepticus
+status epilepticus	status epilepticus	se|convulsive status|status epilepticus	neurology|emergency|pediatrics	seizure|benzodiazepine
+multiple sclerosis	multiple sclerosis	ms|disseminated sclerosis	neurology|medicine	optic neuritis|demyelination
+parkinson disease	parkinson disease	parkinsonism|parkinsons disease|pd	neurology|medicine	bradykinesia|dopamine
+alzheimer disease	alzheimer disease	alzheimers|alzheimer dementia	neurology|psychiatry|medicine	dementia|amyloid
+meningitis	meningitis	meningitis|meningeal infection	neurology|microbiology|medicine	csf|meningococcal disease
+encephalitis	encephalitis	brain inflammation|viral encephalitis	neurology|microbiology|medicine	herpes simplex|csf
+nephrotic syndrome	nephrotic syndrome	nephrotic state|nephrosis	nephrology|medicine|pathology	proteinuria|hypoalbuminemia
+nephritic syndrome	nephritic syndrome	nephritic state	nephrology|medicine|pathology	hematuria|glomerulonephritis
+acute kidney injury	acute kidney injury	aki|acute renal failure|arf	nephrology|medicine	oliguria|creatinine
+chronic kidney disease	chronic kidney disease	ckd|chronic renal failure|crf	nephrology|medicine	uremia|egfr
+hyperkalemia	hyperkalemia	hyperkalaemia|high potassium	nephrology|medicine|emergency	arrhythmia|ecg
+hyponatremia	hyponatremia	hyponatraemia|low sodium	nephrology|medicine|endocrinology	siadH|osmolality
+siadh	syndrome of inappropriate antidiuretic hormone secretion	siadH|syndrome of inappropriate adh|inappropriate adh	endocrinology|nephrology|medicine	hyponatremia|osmolality
+copd	chronic obstructive pulmonary disease	copd|chronic obstructive airway disease	respiratory|medicine	emphysema|chronic bronchitis
+asthma	asthma	bronchial asthma|reactive airway disease	respiratory|medicine|pediatrics	wheeze|bronchodilator
+pneumonia	pneumonia	community acquired pneumonia|cap|lung infection	respiratory|medicine|microbiology|pediatrics	consolidation|pneumococcus
+pulmonary embolism	pulmonary embolism	pe|pulmonary thromboembolism|pte	respiratory|medicine|emergency	dvt|venous thromboembolism
+tuberculosis	tuberculosis	tb|pulmonary tb|koch disease	respiratory|microbiology|medicine	mycobacterium tuberculosis|mantoux
+pneumothorax	pneumothorax	collapsed lung|spontaneous pneumothorax	respiratory|surgery|emergency	pleural effusion|tension pneumothorax
+iron deficiency anemia	iron deficiency anemia	ida|iron deficiency anaemia|microcytic hypochromic anemia	hematology|medicine|pathology	ferritin|transferrin
+megaloblastic anemia	megaloblastic anemia	megaloblastic anaemia|macrocytic anemia	hematology|medicine|pathology	vitamin b12|folate
+aplastic anemia	aplastic anemia	aplastic anaemia|bone marrow failure	hematology|medicine|pathology	pancytopenia|bone marrow
+leukemia	leukemia	leukaemia|blood cancer	hematology|pathology|medicine	aml|all|cml|cll
+aml	acute myeloid leukemia	aml|acute myeloid leukaemia	hematology|pathology	m3|promyelocytic leukemia
+all	acute lymphoblastic leukemia	all|acute lymphoblastic leukaemia	hematology|pediatrics|pathology	lymphoblast|t all
+cml	chronic myeloid leukemia	cml|chronic myeloid leukaemia	hematology|pathology	bcr abl|philadelphia chromosome
+cll	chronic lymphocytic leukemia	cll|chronic lymphocytic leukaemia	hematology|medicine	lymphocytosis
+hemophilia	hemophilia	haemophilia|hemophilia a|factor viii deficiency	hematology|pediatrics|pathology	factor viii|factor ix|bleeding
+dic	disseminated intravascular coagulation	dic|consumptive coagulopathy	hematology|medicine|obstetrics|emergency	fibrin degradation products|shock
+sepsis	sepsis	septicemia|septic shock	medicine|microbiology|emergency	organ dysfunction|lactate
+cancer	malignancy	cancer|malignancy|neoplasm|tumor|tumour	oncology|pathology|medicine	metastasis|tumor marker
+neoplasm	neoplasm	neoplasm|tumor|tumour|new growth	oncology|pathology	malignancy|metastasis
+tumor marker	tumor marker	tumour marker|cancer marker|cancer biomarker|tumor biomarker|tumour biomarker|neoplasm marker	oncology|pathology|biochemistry|medicine	ca 125|ca 19 9|cea|afp|psa|beta hcg
+ca 19 9	ca 19 9	ca19 9|ca 19-9|carbohydrate antigen 19 9	oncology|biochemistry|medicine	tumor marker|pancreatic cancer|cholangiocarcinoma
+cea	carcinoembryonic antigen	cea|carcinoembryonic antigen	oncology|biochemistry	tumor marker|colorectal cancer
+ca 125	cancer antigen 125	ca125|ca 125|cancer antigen 125	oncology|gynecology|biochemistry	tumor marker|ovarian cancer
+psa	prostate specific antigen	psa|prostate specific antigen	oncology|urology|biochemistry	tumor marker|prostate cancer
+alpha fetoprotein	alpha fetoprotein	afp|alpha feto protein|alpha-fetoprotein	oncology|biochemistry|pediatrics	tumor marker|hepatocellular carcinoma|hepatoblastoma
+beta hcg	beta human chorionic gonadotropin	beta hcg|b hcg|beta-hcg|human chorionic gonadotropin	obstetrics|gynecology|oncology|biochemistry	tumor marker|gestational trophoblastic disease|germ cell tumor
+hcg	human chorionic gonadotropin	hcg|human chorionic gonadotrophin	obstetrics|gynecology|biochemistry	pregnancy|gestational trophoblastic disease
+hepatocellular carcinoma	hepatocellular carcinoma	hcc|hepatoma|hepatocellular cancer	gastroenterology|oncology|medicine	afp|cirrhosis
+pancreatic cancer	pancreatic cancer	pancreatic carcinoma|pancreatic adenocarcinoma	gastroenterology|oncology|surgery	ca 19 9|whipple
+colorectal cancer	colorectal cancer	colon cancer|colonic carcinoma|crc	gastroenterology|oncology|surgery	cea|adenocarcinoma
+thyroid cancer	thyroid cancer	thyroid carcinoma|thyroid malignancy	endocrinology|oncology|surgery	medullary thyroid carcinoma|papillary thyroid carcinoma
+medullary thyroid carcinoma	medullary thyroid carcinoma	mtc|medullary thyroid cancer	endocrinology|oncology|pathology	calcitonin|ret|men 2
+men 2a	multiple endocrine neoplasia type 2a	men 2a|men2a|sipple syndrome	endocrinology|surgery|genetics	medullary thyroid carcinoma|pheochromocytoma|hyperparathyroidism
+men 2b	multiple endocrine neoplasia type 2b	men 2b|men2b	endocrinology|genetics	medullary thyroid carcinoma|pheochromocytoma|mucosal neuroma
+pheochromocytoma	pheochromocytoma	pheo|pheochromocytoma	endocrinology|medicine|surgery	catecholamine|men 2
+diabetes mellitus	diabetes mellitus	dm|diabetes|diabetes mellitus	endocrinology|medicine|pediatrics	insulin|hba1c|ketoacidosis
+diabetic ketoacidosis	diabetic ketoacidosis	dka|diabetic ketoacidosis	endocrinology|emergency|pediatrics	ketones|metabolic acidosis|insulin
+hypothyroidism	hypothyroidism	underactive thyroid	endocrinology|medicine	 tsh|thyroxine|hashimoto
+hyperthyroidism	hyperthyroidism	thyrotoxicosis|overactive thyroid	endocrinology|medicine	graves disease|tsh|t3
+cushing syndrome	cushing syndrome	cushing|hypercortisolism	endocrinology|medicine	cortisol|acth
+addison disease	addison disease	primary adrenal insufficiency|addisons disease	endocrinology|medicine	cortisol|hyperkalemia
+acromegaly	acromegaly	growth hormone excess	endocrinology|medicine	igf 1|growth hormone
+pco	polycystic ovary syndrome	pcos|polycystic ovarian syndrome|stein leventhal syndrome	gynecology|endocrinology	androgen|infertility
+endometriosis	endometriosis	endometriosis	gynecology|surgery|medicine	infertility|dysmenorrhea
+ectopic pregnancy	ectopic pregnancy	extrauterine pregnancy|tubal pregnancy	obstetrics|emergency	beta hcg|rupture
+preeclampsia	preeclampsia	pre eclampsia|toxemia of pregnancy	obstetrics	hypertension|proteinuria|eclampsia
+eclampsia	eclampsia	convulsions in pregnancy|eclampsia	obstetrics|emergency	preeclampsia|magnesium sulfate
+placenta previa	placenta previa	placenta praevia|low lying placenta	obstetrics	painless bleeding|placenta accreta
+abruption placentae	placental abruption	abruptio placentae|placental abruption	obstetrics|emergency	painful bleeding|dic
+postpartum hemorrhage	postpartum hemorrhage	pph|post partum haemorrhage	obstetrics|emergency	uterine atony|shock
+apgar	apgar score	apgar|apgar scoring	pediatrics|obstetrics	newborn|resuscitation
+neonatal jaundice	neonatal jaundice	newborn jaundice|physiological jaundice	pediatrics|neonatology	bilirubin|kernicterus
+intussusception	intussusception	intussusception|telescoping bowel	pediatrics|surgery	currant jelly stool|target sign
+croup	croup	laryngotracheobronchitis|laryngotracheitis	pediatrics|respiratory	barking cough|stridor
+kawasaki disease	kawasaki disease	kawasaki syndrome	pediatrics|cardiology	coronary aneurysm|fever
+measles	measles	rubeola	pediatrics|microbiology|community medicine	koplik spots|mmr
+rubella	rubella	german measles	pediatrics|microbiology|community medicine	congenital rubella
+meningococcal disease	meningococcal disease	meningococcemia|meningococcal meningitis	microbiology|pediatrics|medicine	neisseria meningitidis|purpura fulminans
+malaria	malaria	plasmodium infection|paludism	microbiology|medicine|community medicine	plasmodium falciparum|plasmodium vivax
+falciparum malaria	plasmodium falciparum malaria	falciparum|p falciparum|malignant tertian malaria	microbiology|medicine	cerebral malaria|artemisinin
+vivax malaria	plasmodium vivax malaria	vivax|p vivax|benign tertian malaria	microbiology|medicine	hypnozoite|primaquine
+dengue	dengue fever	dengue|breakbone fever	microbiology|medicine|community medicine	thrombocytopenia|dengue hemorrhagic fever
+rabies	rabies	hydrophobia|lyssa	microbiology|medicine|community medicine	post exposure prophylaxis|negri bodies
+hiv	human immunodeficiency virus infection	hiv|aids virus|human immunodeficiency virus	microbiology|medicine|community medicine	cd4|aids
+syphilis	syphilis	lues	microbiology|dermatology|medicine	treponema pallidum|chancre
+scabies	scabies	itch mite|sarcoptes scabiei	dermatology|microbiology	burrow|permethrin
+psoriasis	psoriasis	psoriasis	dermatology	koebner|auspitz
+pemphigus vulgaris	pemphigus vulgaris	pemphigus|pemphigus vulgaris	dermatology|pathology	acantholysis|desmoglein
+bullous pemphigoid	bullous pemphigoid	bullous pemphigoid	dermatology|pathology	subepidermal blister|hemidesmosome
+rheumatoid arthritis	rheumatoid arthritis	rheumatoid polyarthritis	medicine|rheumatology	anti ccp|rheumatoid factor
+sle	systemic lupus erythematosus	sle|lupus|systemic lupus	medicine|rheumatology|dermatology	ana|anti ds dna|complement
+ankylosing spondylitis	ankylosing spondylitis	ankylosing spondylitis	orthopedics|rheumatology	hla b27|sacroiliitis
+osteoporosis	osteoporosis	osteoporosis	orthopedics|medicine	bone mineral density|fracture
+osteoarthritis	osteoarthritis	degenerative joint disease	orthopedics|medicine	cartilage|heberden nodes
+fracture	fracture	bone fracture|break	orthopedics|emergency	immobilization|x ray
+compartment syndrome	compartment syndrome	acute compartment syndrome	orthopedics|surgery|emergency	fasciotomy|pain
+appendicitis	appendicitis	acute appendicitis	gastroenterology|surgery|emergency	mcburney|appendectomy
+cholecystitis	acute cholecystitis	cholecystitis|gallbladder inflammation	surgery|gastroenterology	gallstones|murphy sign
+pancreatitis	acute pancreatitis	pancreatitis|acute pancreatic inflammation	surgery|gastroenterology	lipase|gallstones
+peptic ulcer disease	peptic ulcer disease	pud|peptic ulcer|duodenal ulcer|gastric ulcer	gastroenterology|surgery	h pylori|perforation
+ulcerative colitis	ulcerative colitis	uc|ulcerative colitis	gastroenterology|medicine	bloody diarrhea|toxic megacolon
+crohn disease	crohn disease	crohn|crohns disease	gastroenterology|medicine	transmural|skip lesions
+achlorhydria	achlorhydria	achlorhydria|absence of gastric acid	physiology|gastroenterology|medicine	pernicious anemia|gastrin
+pernicious anemia	pernicious anemia	pernicious anaemia	hematology|medicine|gastroenterology	vitamin b12|intrinsic factor
+shock	shock	circulatory shock	medicine|emergency|anesthesia	hypovolemic shock|septic shock
+anaphylaxis	anaphylaxis	anaphylactic shock|anaphylactic reaction	medicine|emergency|anesthesia	adrenaline|epinephrine
+local anesthesia	local anesthesia	local anaesthesia|regional anesthesia	anesthesia|pharmacology	lidocaine|nerve block
+lidocaine	lidocaine	lignocaine|xylocaine	pharmacology|anesthesia	local anesthesia|antiarrhythmic
+propofol	propofol	propofol	pharmacology|anesthesia	induction|sedation
+opioid	opioid	opioids|narcotic analgesic	pharmacology|anesthesia|medicine	morphine|naloxone
+paracetamol	paracetamol	acetaminophen|crocin|pcm	pharmacology|medicine	analgesic|hepatotoxicity
+nsaid	nonsteroidal anti inflammatory drug	nsaid|nsaids|non steroidal anti inflammatory drug	pharmacology|medicine	ibuprofen|diclofenac|gastric ulcer
+beta blocker	beta blocker	beta blockers|beta adrenergic blocker	pharmacology|cardiology	propranolol|metoprolol
+ace inhibitor	ace inhibitor	ace inhibitors|angiotensin converting enzyme inhibitor	pharmacology|cardiology|nephrology	enalapril|cough|hyperkalemia
+arb	angiotensin receptor blocker	arb|angiotensin receptor blockers	pharmacology|cardiology|nephrology	losartan|hyperkalemia
+aminoglycoside	aminoglycoside	aminoglycosides	pharmacology|microbiology	gentamicin|nephrotoxicity|ototoxicity
+macrolide	macrolide	macrolides	pharmacology|microbiology	azithromycin|erythromycin
+penicillin	penicillin	penicillins|penicillin antibiotic	pharmacology|microbiology	beta lactam|allergy
+cephalosporin	cephalosporin	cephalosporins	pharmacology|microbiology	beta lactam|ceftriaxone
+vancomycin	vancomycin	vancomycin	pharmacology|microbiology	mrsa|red man syndrome
+insulin	insulin	insulin hormone|insulin therapy	pharmacology|endocrinology	diabetes|hypoglycemia
+metformin	metformin	metformin	pharmacology|endocrinology	type 2 diabetes|lactic acidosis
+statin	statin	statins|hmg coa reductase inhibitor	pharmacology|cardiology	atorvastatin|ldl
+warfarin	warfarin	warfarin	pharmacology|hematology	inr|vitamin k
+heparin	heparin	unfractionated heparin|ufh	pharmacology|hematology	antithrombin|hit
+parkinsonism	parkinsonism	parkinsonian syndrome|parkinsonian features	neurology|pharmacology	bradykinesia|rigidity|tremor
+schizophrenia	schizophrenia	psychosis|schizophrenic disorder	psychiatry	dopamine|negative symptoms
+bipolar disorder	bipolar disorder	bipolar affective disorder|manic depression	psychiatry	mania|lithium
+depression	major depressive disorder	depression|major depression|mdd	psychiatry	ssri|suicide risk
+ocd	obsessive compulsive disorder	ocd|obsessive compulsive disorder	psychiatry	obsession|compulsion
+anxiety disorder	anxiety disorder	anxiety|generalized anxiety disorder|gad	psychiatry	benzodiazepine|ssri
+retinopathy	retinopathy	retinal disease	ophthalmology|medicine	diabetic retinopathy|hypertensive retinopathy
+cataract	cataract	lens opacity	ophthalmology	nuclear sclerosis|glaucoma
+open angle glaucoma	primary open angle glaucoma	poag|open angle glaucoma	ophthalmology	intraocular pressure|optic nerve
+angle closure glaucoma	acute angle closure glaucoma	acute angle closure|closed angle glaucoma	ophthalmology|emergency	mid dilated pupil|acetazolamide
+uveitis	uveitis	intraocular inflammation	ophthalmology	hla b27|sarcoidosis
+otitis media	otitis media	middle ear infection	ent|pediatrics	acute otitis media|effusion
+sinusitis	sinusitis	rhinosinusitis	ent|medicine	maxillary sinus|rhinitis
+epistaxis	epistaxis	nosebleed|nasal bleeding	ent|emergency	little area|packing
+cholesteatoma	cholesteatoma	cholesteatoma	ent	squamous epithelium|conductive hearing loss
+hearing loss	hearing loss	deafness|hearing impairment	ent|neurology	conductive|sensorineural
+thyroid nodule	thyroid nodule	thyroid swelling|thyroid lump	endocrinology|surgery|radiology	fnac|thyroid cancer
+breast cancer	breast cancer	carcinoma breast|breast carcinoma	oncology|surgery|gynecology	mammography|er|pr|her2
+prostate cancer	prostate cancer	carcinoma prostate|prostate carcinoma	urology|oncology	psa|gleason score
+benign prostatic hyperplasia	benign prostatic hyperplasia	bph|benign prostate enlargement	urology	lower urinary tract symptoms|alpha blocker
+renal stone	renal calculus	kidney stone|renal stone|urolithiasis	urology|nephrology	calcium oxalate|colic
+utd	urinary tract infection	uti|urinary tract infection|urinary infection	microbiology|urology|pediatrics	e coli|pyelonephritis
+histology	histology	histopathology|microscopy|tissue pathology	pathology|anatomy	biopsy|staining
+immunohistochemistry	immunohistochemistry	ihc|immunostaining	pathology|oncology	antibody|tumor marker
+pcr	polymerase chain reaction	pcr|polymerase chain reaction	microbiology|biochemistry|pathology	amplification|molecular diagnosis
+elisa	enzyme linked immunosorbent assay	elisa|enzyme immunoassay	microbiology|biochemistry	antibody|antigen
+western blot	western blot	western blotting	biochemistry|microbiology	protein|antibody
+gram stain	gram stain	gram staining|gram positive|gram negative	microbiology	bacteria|culture
+culture	microbial culture	culture|culture and sensitivity|c and s	microbiology	antibiotic susceptibility|organism
+acid fast bacilli	acid fast bacilli	afb|acid fast bacillus|acid fast bacilli	microbiology|pathology	tuberculosis|ziehl neelsen
+vitamin b12	vitamin b12	cobalamin|vitamin b12	biochemistry|medicine|hematology	methylmalonic acid|megaloblastic anemia
+folate	folate	folic acid|vitamin b9	biochemistry|medicine|obstetrics	neural tube defect|megaloblastic anemia
+vitamin d	vitamin d	cholecalciferol|vitamin d3	biochemistry|endocrinology|orthopedics	calcium|rickets
+urea cycle	urea cycle	ornithine cycle	biochemistry	hyperammonemia|citrulline
+rate limiting enzyme	rate limiting enzyme	rate limiting step|rate limiting enzyme	biochemistry|physiology|pharmacology	metabolism|enzyme
+action potential	action potential	nerve action potential|membrane action potential	physiology|anatomy	refractory period|sodium channel
+starling forces	starling forces	starling equation|starling law	physiology|medicine	capillary filtration|edema
+renin angiotensin aldosterone system	renin angiotensin aldosterone system	raas|renin angiotensin system	physiology|pharmacology|nephrology	ace inhibitor|aldosterone
+cranial nerve	cranial nerve	cranial nerves|cn	anatomy|neurology	brainstem|nerve lesions
+brachial plexus	brachial plexus	brachial plexus	anatomy|orthopedics	roots trunks divisions cords|nerve injury
+portal hypertension	portal hypertension	portal hypertension	anatomy|medicine|surgery	varices|splenomegaly
+inguinal hernia	inguinal hernia	groin hernia|inguinal hernia	surgery|anatomy	direct hernia|indirect hernia
+appendectomy	appendectomy	appendicectomy|appendectomy	surgery	appendicitis|mcburney
+burns	burn injury	burn|burns|thermal injury	surgery|emergency	parkland formula|rule of nines
+trauma	trauma	traumatic injury|polytrauma	surgery|emergency|orthopedics	atls|shock
+atls	advanced trauma life support	atls|advanced trauma life support	surgery|emergency	primary survey|secondary survey
+radiograph	radiograph	x ray|x-ray|radiography|plain film|plain x ray	radiology|orthopedics|medicine	imaging|fracture
+ct	computed tomography	ct scan|computed tomography|cat scan	radiology|medicine	contrast|trauma
+mri	magnetic resonance imaging	mri|magnetic resonance imaging	 radiology|neurology|orthopedics	contrast|soft tissue
+ultrasound	ultrasound	usg|ultrasonography|sonography	radiology|obstetrics|medicine	doppler|imaging
+doppler	doppler ultrasound	doppler|color doppler|duplex ultrasound	radiology|cardiology|obstetrics	blood flow|ultrasound
+xray	x ray	xray|x ray|x-ray|roentgenogram	radiology|orthopedics	chest x ray|fracture
+radiation dose	radiation dose	absorbed dose|radiation exposure	radiology|nuclear medicine	gray|sievert
+pet scan	positron emission tomography	pet|pet ct|positron emission tomography	nuclear medicine|oncology	fdg|metabolic imaging
+bone scan	bone scintigraphy	bone scan|skeletal scintigraphy	nuclear medicine|orthopedics	technetium|metastasis
+
+# Intent vocabulary (represented as concepts so the same normalization path handles them)
+first line	first line	first-line|first line treatment|initial treatment|drug of choice|doc	medicine|pharmacology|surgery	management
+next best step	next best step	next best step|next step|what next|initial management	medicine|surgery|emergency	management|diagnosis_investigation
+gold standard	gold standard	gold standard|reference standard	medicine|pathology|radiology	investigation
+gold standard test	gold standard test	gold standard test|best diagnostic test	medicine|pathology|radiology	gold standard|diagnosis
+most common	most common	most common|commonest|most frequent	medicine|pathology|community medicine	epidemiology
+mechanism	mechanism	mechanism|mode of action|how does it work|pathophysiology	physiology|pharmacology|pathology	pathogenesis
+complication	complication	complication|complications	medicine|surgery|pathology	adverse effect
+association	association	association|associated with|risk factor|predisposition	medicine|pathology|community medicine	epidemiology
+drug of choice	drug of choice	drug of choice|preferred drug|first choice	pharmacology|medicine|microbiology	first line
+contraindication	contraindication	contraindication|contraindicated	pharmacology|medicine|anesthesia	adverse effect
+side effect	side effect	side effect|adverse effect|adverse reaction|toxicity	pharmacology|medicine	complication
+image finding	image finding	image finding|radiological finding|imaging finding|x ray finding	radiology|medicine	imaging
+histopathology	histopathology	histopathology|histology finding|microscopic finding	pathology|oncology	biopsy|immunohistochemistry
+mutation	mutation	mutation|gene mutation|genetic mutation	genetics|pathology|medicine	inheritance|chromosome
+inheritance	inheritance	inheritance pattern|mode of inheritance|autosomal dominant|autosomal recessive|x linked	genetics|pediatrics	mutation|gene
+# Subject/domain concepts
+anatomy	anatomy	anatomy|gross anatomy|regional anatomy	anatomy	cranial nerve|brachial plexus
+physiology	physiology	physiology|human physiology	physiology	action potential|starling forces
+biochemistry	biochemistry	biochemistry|clinical biochemistry	biochemistry	urea cycle|vitamin b12
+pathology	pathology	pathology|general pathology|systemic pathology	pathology	histology|immunohistochemistry
+pharmacology	pharmacology	pharmacology|medical pharmacology|drug pharmacology	pharmacology	mechanism|adverse effect
+microbiology	microbiology	microbiology|medical microbiology	microbiology	gram stain|pcr|culture
+community medicine	community medicine	community medicine|psm|preventive and social medicine|social and preventive medicine	community medicine	epidemiology|screening
+forensic medicine	forensic medicine	forensic medicine|forensic medicine and toxicology|fmt	forensic medicine	toxicology|medicolegal
+ent	otorhinolaryngology	ent|otorhinolaryngology|ear nose throat|ear nose and throat	ent	otitis media|cholesteatoma
+ophthalmology	ophthalmology	ophthalmology|eye	ophthalmology	cataract|glaucoma
+medicine	internal medicine	medicine|internal medicine|general medicine	medicine	cardiology|nephrology|endocrinology
+surgery	general surgery	surgery|general surgery|surgical	surgery	appendicitis|hernia|trauma
+obstetrics	obstetrics	obstetrics|obgyn obstetrics|pregnancy	obstetrics	preeclampsia|postpartum hemorrhage
+obstetrics gynecology	obstetrics and gynecology	obgyn|ob gyn|obstetrics and gynecology|obstetrics gynecology	obstetrics|gynecology	pregnancy|preeclampsia
+pediatrics	pediatrics	pediatrics|paediatrics|pediatric medicine|paediatric medicine	pediatrics	neonatal jaundice|kawasaki disease
+orthopedics	orthopedics	orthopedics|orthopaedics|orthopedic surgery|orthopaedic surgery	orthopedics	fracture|compartment syndrome
+anesthesia	anesthesiology	anesthesia|anaesthesia|anesthesiology|anaesthesiology	anesthesia	local anesthesia|propofol
+radiology	radiology	radiology|diagnostic radiology|radiodiagnosis	radiology	x ray|ct|mri|ultrasound
+psychiatry	psychiatry	psychiatry|mental health|psychiatric medicine	psychiatry	schizophrenia|bipolar disorder
+radiotherapy	radiation oncology	radiotherapy|radiation oncology|radiation therapy	oncology|radiology	radiation dose|cancer
+nuclear medicine	nuclear medicine	nuclear medicine|nuclear imaging	nuclear medicine	pet scan|bone scan
+oncology	oncology	oncology|cancer medicine|medical oncology	oncology	cancer|tumor marker
+neurosurgery	neurosurgery	neurosurgery|neuro surgery	neurosurgery|surgery	brain tumor|trauma
+urology	urology	urology|urological surgery|urinary tract surgery	urology	renal stone|benign prostatic hyperplasia
+nephrology	nephrology	nephrology|renal medicine	nephrology	nephrotic syndrome|acute kidney injury
+cardiology	cardiology	cardiology|cardiac medicine|heart medicine	cardiology	myocardial infarction|heart failure
+neurology	neurology	neurology|neurological medicine	neurology	stroke|seizure
+endocrinology	endocrinology	endocrinology|endocrine medicine	endocrinology	diabetes mellitus|hypothyroidism
+gastroenterology	gastroenterology	gastroenterology|gi medicine|gastrointestinal medicine	gastroenterology	peptic ulcer disease|crohn disease
+rheumatology	rheumatology	rheumatology|rheumatic disease medicine	rheumatology	rheumatoid arthritis|sle
+dermatology	dermatology	dermatology|skin	dermatology	psoriasis|pemphigus vulgaris
+hematology	hematology	hematology|haematology|blood medicine	hematology	leukemia|dic
+mitral stenosis	mitral stenosis	ms|mitral stenosis	cardiology	mitral valve|rheumatic heart disease
+mitral regurgitation	mitral regurgitation	mr|mitral regurgitation	cardiology	mitral valve|heart failure
+aortic stenosis	aortic stenosis	as|aortic stenosis	cardiology	valve disease|syncope
+atopic dermatitis	atopic dermatitis	ad|atopic eczema|eczema	dermatology	allergy|eczema
+mitral insufficiency	mitral insufficiency	mi|mitral insufficiency	cardiology	mitral regurgitation
+right atrium	right atrium	ra|right atrium	anatomy|cardiology	heart anatomy
+obstructive sleep apnea	obstructive sleep apnea	osa|sleep apnea|obstructive sleep apnoea	respiratory|medicine	apnea|cpap
+obstructive airway disease	obstructive airway disease	oad|obstructive airway disease	respiratory	copd|asthma
+purified protein derivative	purified protein derivative	ppd|tuberculin skin test|mantoux test	microbiology|community medicine	 tuberculosis|tb
+blood pressure	blood pressure	bp|arterial pressure|blood pressure	physiology|medicine	 hypertension|hypotension
+pott disease	pott disease	pott disease|spinal tuberculosis	orthopedics|microbiology|medicine	tuberculosis|spine

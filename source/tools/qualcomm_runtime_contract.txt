@@ -1,0 +1,7 @@
+# Rovex Qualcomm LiteRT runtime cache contract
+LITERT_VERSION=2.2.0
+TARGET_SOC=SM8650
+TARGET_HEXAGON=V75
+ARCH=arm64-v8a
+REQUIRED_LIBS=libLiteRtDispatch_Qualcomm.so,libLiteRtCompilerPlugin_Qualcomm.so,libQnnHtp.so,libQnnSystem.so,libQnnHtpPrepare.so,libQnnIr.so,libQnnSaver.so
+REQUIRED_PATTERN=libQnnHtpV75*.so

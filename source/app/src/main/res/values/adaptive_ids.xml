@@ -1,0 +1,5 @@
+<resources>
+    <item name="adaptiveSafeTop" type="id" />
+    <item name="adaptiveSafeBottom" type="id" />
+    <item type="id" name="adaptiveWindowClass" />
+</resources>

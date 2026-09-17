@@ -1,0 +1,170 @@
+name: Rovex CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rovex-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-and-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      # The official LiteRT Qualcomm JIT archive is ~2.35 GB. GitHub-hosted
+      # runners are ephemeral, so persist only the prepared SM8650/v75 arm64
+      # Cache the prepared SM8650/v75 runtime plus the exact vendor archive needed to
+      # regenerate it without another network download. Do NOT cache unrelated Qualcomm
+      # variants. The key includes the preparation
+      # script and app runtime contract so a runtime change invalidates the cache.
+      - name: Restore prepared Qualcomm v75 runtime
+        id: qairt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/src/main/jniLibs/arm64-v8a
+            app/build/litert_npu_runtime/litert_npu_runtime_libraries_jit.zip
+          key: ${{ runner.os }}-${{ runner.arch }}-qualcomm-litert-v2.2.0-sm8650-v75-${{ hashFiles('tools/prepare_litert_qualcomm_v75_jit.sh', 'tools/qualcomm_runtime_contract.txt') }}
+      - name: Static architecture audit
+        run: ./tools/ruthless_audit.sh
+      - name: Compile app (no vendor-runtime preparation)
+        run: ./gradlew :app:compileDebugKotlin --no-daemon --stacktrace -x :app:prepareQualcommRuntime
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace -x :app:prepareQualcommRuntime
+      - name: Compile benchmark instrumentation
+        run: ./gradlew :benchmark:compileDebugAndroidTestKotlin --no-daemon --stacktrace -x :app:prepareQualcommRuntime
+      - name: Prepare Qualcomm runtime (package cache warm)
+        run: ./gradlew :app:prepareQualcommRuntime --no-daemon --stacktrace
+      - name: Save prepared Qualcomm runtime cache
+        if: ${{ steps.qairt-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            app/src/main/jniLibs/arm64-v8a
+            app/build/litert_npu_runtime/litert_npu_runtime_libraries_jit.zip
+          key: ${{ runner.os }}-${{ runner.arch }}-qualcomm-litert-v2.2.0-sm8650-v75-${{ hashFiles('tools/prepare_litert_qualcomm_v75_jit.sh', 'tools/qualcomm_runtime_contract.txt') }}
+
+  release-integrity:
+    needs: static-and-unit
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      # static-and-unit prewarms/saves the same immutable runtime cache before
+      # this job starts, preventing a second 2.35 GB Qualcomm download on main.
+      - name: Restore prepared Qualcomm v75 runtime
+        id: qairt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/src/main/jniLibs/arm64-v8a
+            app/build/litert_npu_runtime/litert_npu_runtime_libraries_jit.zip
+          key: ${{ runner.os }}-${{ runner.arch }}-qualcomm-litert-v2.2.0-sm8650-v75-${{ hashFiles('tools/prepare_litert_qualcomm_v75_jit.sh', 'tools/qualcomm_runtime_contract.txt') }}
+      - name: Prepare persistent release signing configuration
+        env:
+          ROVEX_SIGNING_KEYSTORE_BASE64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
+          ROVEX_SIGNING_KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
+          ROVEX_SIGNING_STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
+          ROVEX_SIGNING_KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
+          ROVEX_SIGNING_KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # The keystore remains a GitHub secret; only the ephemeral runner copy is
+          # exposed to Gradle. Support the historical BASE64/B64 secret spelling so
+          # the source does not require rotating an existing signing secret.
+          keystore_b64="${ROVEX_SIGNING_KEYSTORE_BASE64:-}"
+          if [ -z "$keystore_b64" ]; then
+            keystore_b64="${ROVEX_SIGNING_KEYSTORE_B64:-}"
+          fi
+          test -n "$keystore_b64" || { echo 'Missing release signing keystore secret (ROVEX_SIGNING_KEYSTORE_BASE64 or ROVEX_SIGNING_KEYSTORE_B64).'; exit 1; }
+          test -n "${ROVEX_SIGNING_STORE_PASSWORD:-}" || { echo 'Missing ROVEX_SIGNING_STORE_PASSWORD secret.'; exit 1; }
+          test -n "${ROVEX_SIGNING_KEY_ALIAS:-}" || { echo 'Missing ROVEX_SIGNING_KEY_ALIAS secret.'; exit 1; }
+          test -n "${ROVEX_SIGNING_KEY_PASSWORD:-}" || { echo 'Missing ROVEX_SIGNING_KEY_PASSWORD secret.'; exit 1; }
+          keystore="$RUNNER_TEMP/rovex-release-signing.jks"
+          printf '%s' "$keystore_b64" | base64 --decode > "$keystore"
+          test -s "$keystore"
+          echo "ROVEX_SIGNING_STORE_FILE=$keystore" >> "$GITHUB_ENV"
+          echo "ROVEX_SIGNING_STORE_PASSWORD=$ROVEX_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ROVEX_SIGNING_KEY_ALIAS=$ROVEX_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ROVEX_SIGNING_KEY_PASSWORD=$ROVEX_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
+          keytool -list -keystore "$keystore" -storepass "$ROVEX_SIGNING_STORE_PASSWORD" -alias "$ROVEX_SIGNING_KEY_ALIAS" >/dev/null
+          echo 'Persistent release signing configuration: PASS'
+      - name: Release build
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+      - name: Verify zstd Android AAR payload
+        run: |
+          set -euo pipefail
+          apk=$(find app/build/outputs/apk -name '*release*.apk' | head -1)
+          test -n "$apk"
+          unzip -l "$apk" | grep -F 'lib/arm64-v8a/libzstd-jni-1.5.7-16.so'
+      - name: Print Google Sign-In signing fingerprints
+        run: |
+          set -euo pipefail
+          apk=$(find app/build/outputs/apk -name '*release*.apk' | head -1)
+          test -n "$apk"
+          echo "Google Sign-In release certificate fingerprints (register SHA-1 in Firebase; SHA-256 is used by App Check):"
+          apksigner verify --print-certs "$apk" | grep -E 'SHA-1 digest|SHA-256 digest'
+      - name: Verify Firebase Google Sign-In SHA-1 matches release APK
+        run: |
+          set -euo pipefail
+          apk=$(find app/build/outputs/apk -name '*release*.apk' | head -1)
+          test -n "$apk"
+          release_sha1=$(apksigner verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')
+          test -n "$release_sha1"
+          echo "Release SHA-1: $release_sha1"
+          python3 - "$release_sha1" <<'PYTHON'
+          import json, sys
+          sha1 = sys.argv[1].replace(':', '').lower()
+          with open("app/google-services.json", encoding="utf-8") as f:
+              data = json.load(f)
+          found = False
+          for client in data.get("client", []):
+              pkg = client.get("client_info", {}).get("android_client_info", {}).get("package_name")
+              if pkg != "com.localqbank.library":
+                  continue
+              for oauth in client.get("oauth_client", []):
+                  cert = oauth.get("android_info", {}).get("certificate_hash", "").replace(":", "").lower()
+                  if oauth.get("client_type") == 1 and cert == sha1:
+                      found = True
+                      break
+              if found:
+                  break
+          if not found:
+              raise SystemExit("Firebase google-services.json does not contain the release APK SHA-1 for com.localqbank.library. Add the release SHA-1 in Firebase/Google Cloud, download the updated google-services.json, and rebuild.")
+          print("FIREBASE_RELEASE_SHA1=PASS")
+          PYTHON
+      - name: Verify persistent Rovex signing certificate
+        run: |
+          set -euo pipefail
+          apk=$(find app/build/outputs/apk -name '*release*.apk' | head -1)
+          test -n "$apk"
+          expected='8D:EC:BE:AC:90:6A:40:54:6B:33:2F:35:62:93:13:EF:6B:A6:86:0D:10:06:AA:D0:7B:76:15:38:22:8C:01:53'
+          actual=$(apksigner verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:lower:]' '[:upper:]')
+          echo "Actual certificate: $actual"
+          test "$actual" = "$expected"
+      - name: Upload signed release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-UPDATE-v8.3.235
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+      - name: APK metadata
+        run: sha256sum $(find app/build/outputs/apk -name '*release*.apk' | head -1)

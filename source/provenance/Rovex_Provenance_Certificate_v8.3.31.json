@@ -1,0 +1,17 @@
+{
+  "record": {
+    "applicationId": "com.localqbank.library",
+    "contact": "rohitkokane9872@gmail.com",
+    "project": "Rovex",
+    "provenance_claim": "Project originator and development effort: Rohit Kokane",
+    "purpose": "Technical provenance marker for authorship/origin evidence; not a license or legal adjudication.",
+    "schema": "Rovex-Provenance-1",
+    "versionCode": 129,
+    "versionName": "8.3.31"
+  },
+  "canonical_sha256": "8a9889bedbc006ca167c5cb9216c6fefd25a993fbe11b3b294bbcfed42311a57",
+  "public_key_ed25519_b64": "KaQN/lGA9I1JlRplYtaEUyqSys7XDNiaG2PcsFjvKEw=",
+  "signature_b64": "odJXOjjFY8azCToM3L0YrLb+xeK+A8rLj5jn4RgcoBCWma6kR4wW5QoBiD11ycG8r2xaFhcWJ7FhyIMnmTrvCQ==",
+  "ciphertext_b64": "DayuoJWNkGY2hGbK+HmhmWncfytuzEgtJIu7Jp6P6Nozl0qy3drA/FVUWWEQOYIHZdiL8Dw3RpdLwihrJr36rT6kvVlkkLHQAYo8BP0aNkTlhbn2Bv0G96Clun7MJaBUwZQKof4KzOYbQstsM5WzME/fZyooh83DvmVKRCCrUK6fqUUHNBK+3R4fBU75bWeAQNbQaZbiaUK6UkaqJGUYTgaPInQvaZg+iOnXfUPuo47LmahMGK/91NjcvTeXXVphk75z3JdS5FruLYrZYtLOvXO6abC4qrqj3MeFLlezowUUS1cG6UfdJhL+WbhBhE6DrjCqnu+P7/4rLbdfx/X7k1SQMvJjZv+spQUHEnoaRUFV8/I9jRfrb7ufaxetv605U3R78IJWeTodgjsNQw+9wkLc2ZxYp3/Hd+Y69pToV/ugM7vROQrZOnvFJAm5TeXW+doEkPxaAMmLZCyTAyEaBv4WxHAEqe17sTBfovtZRRyCyCk=",
+  "nonce_b64": "K8CeycYxz3l5ibeb"
+}

@@ -1,0 +1,63 @@
+package com.localqbank.library
+
+/** Explicit contracts keep autonomous coordination bounded and auditable. */
+data class ManagerContract(
+    val name: String,
+    val inputs: List<String>,
+    val outputs: List<String>,
+    val allowedMutations: List<String>,
+    val failureMode: String,
+    val threadPolicy: String
+)
+
+object ManagerContractRegistry {
+    val all: List<ManagerContract> = listOf(
+        ManagerContract("BenIsolatedEmbeddingDiagnosticCoordinator", listOf("diagnostic start/stop"), listOf("durable EmbeddingGemma diagnostic report"), listOf("diagnostic state only; no study data"), "durable failure report / deterministic fallback", "application-lifetime background scope; UI is presentation only"),
+        ManagerContract("PerformanceManager", listOf("latency", "memory"), listOf("runtime policy"),
+            listOf("prefetch depth", "cache TTL", "safe mode"), "safe defaults", "background only for I/O"),
+        ManagerContract("AnalyticsManager", listOf("progress", "question refs"), listOf("AnalyticsSnapshot"),
+            emptyList(), "last valid snapshot", "derived work off UI"),
+        ManagerContract("DashboardManager", listOf("analytics", "progress", "sources"), listOf("DashboardModel"),
+            emptyList(), "last valid model when available", "background build"),
+        ManagerContract("BackupManager", listOf("persistent state"), listOf("validated backup"),
+            listOf("backup/restore data only"), "abort and preserve current state", "durable background work"),
+        ManagerContract("AdaptiveEngine", listOf("typed events", "runtime metrics"), listOf("bounded action proposal"),
+            listOf("approved PerformanceManager policies only"), "safe mode / no-op", "single serial worker"),
+        ManagerContract("RenCognitiveEngine", listOf("user command", "optional current question"), listOf("local insight", "action suggestions"),
+            emptyList(), "safe fallback response", "bounded; called by supporting worker"),
+        ManagerContract("FrankensteinSupportEngine", listOf("user command", "local cognitive result"), listOf("cached insight", "matching question IDs"),
+            emptyList(), "safe fallback / stale result dropped", "background worker; UI callback only"),
+        ManagerContract("ExperiencePerformanceManager", listOf("screen workload", "generation"), listOf("background task execution"),
+            emptyList(), "drop stale work", "background worker; never owns business logic"),
+        ManagerContract("EngineMeshCoordinator", listOf("typed app events"), listOf("coordination state"),
+            emptyList(), "ignore event", "event callback only; heavy work delegated"),
+        ManagerContract("RenIntelligenceOrchestrator", listOf("user intent", "capability registry"), listOf("validated capability plan"),
+            listOf("registered derived-data operations and session selection"), "guardian rejection / no-op", "thin routing; complex work delegated; simple actions bypass"),
+        ManagerContract("IntelligenceGuardian", listOf("capability", "health", "safe mode"), listOf("allow/deny"),
+            emptyList(), "deny by default on uncertainty", "synchronous and bounded"),
+        ManagerContract("FlashcardIntelligence", listOf("question ids"), listOf("generated cards"),
+            listOf("derived flashcard data only"), "skip failed card", "background worker"),
+        ManagerContract("KnowledgeEngine", listOf("question/explanation"), listOf("notes", "tables", "images"),
+            listOf("derived knowledge data only"), "preserve source and return safe failure", "background for I/O; view capture on UI thread"),
+        ManagerContract("StudyStateRepository", listOf("attempts", "bookmarks", "SRS state"), listOf("canonical study state"),
+            listOf("study progress through existing stores"), "return last safe state", "synchronous reads; async writes where possible"),
+        ManagerContract("StudyEventSpine", listOf("committed state changes"), listOf("typed study events"),
+            emptyList(), "drop failed observer", "publish cheap; heavy work off-thread"),
+        ManagerContract("StudyStrategyEngine", listOf("progress", "due", "wrong", "unseen"), listOf("ranked recommendations"),
+            emptyList(), "empty recommendation set", "background for large scans"),
+        ManagerContract("LearningGraph", listOf("question metadata"), listOf("concept neighbourhood"),
+            emptyList(), "question-local graph only", "pure deterministic calculation"),
+        ManagerContract("TransitionCoordinator", listOf("destination changes"), listOf("consistent transitions"),
+            emptyList(), "system defaults", "UI thread only for animation setup"),
+        ManagerContract("StudySessionStore", listOf("current study cursor"), listOf("resumable session"),
+            listOf("session cursor only"), "discard malformed cursor", "tiny synchronous preference writes"),
+        ManagerContract("ImportPipelineCoordinator", listOf("selected file metadata"), listOf("serialized import jobs"),
+            listOf("import queue state"), "reject unsafe/duplicate jobs", "single background worker"),
+        ManagerContract("RenMemoryStore", listOf("bounded study context"), listOf("working/study memory"),
+            listOf("bounded local memory"), "truncate and continue", "tiny preference writes"),
+                ManagerContract("BenKnowledgeBuildCoordinator", listOf("local QBank knowledge sources"), listOf("bounded knowledge index update"), listOf("derived local index only"), "skip failed source and preserve existing index", "background worker"),
+        ManagerContract("StartupCoordinator", listOf("application startup state"), listOf("ordered subsystem startup"), emptyList(), "continue with safe subsystem defaults", "main-thread bounded startup; heavy work deferred"),
+ManagerContract("ImportSecurityPolicy", listOf("file size", "URI scheme"), listOf("allow/deny"),
+            emptyList(), "deny", "synchronous validation"),
+    )
+}

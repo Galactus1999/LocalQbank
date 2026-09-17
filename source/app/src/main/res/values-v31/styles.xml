@@ -1,0 +1,11 @@
+<resources>
+    <!-- Keep Android 12+ system launch window visually aligned with the custom Rovex splash. -->
+    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:navigationBarColor">#000000</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowSplashScreenBackground">#000000</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/rovex_splash_transparent</item>
+    </style>
+</resources>

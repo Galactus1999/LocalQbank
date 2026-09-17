@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<application android:name=".LocalQBankApplication" android:usesCleartextTraffic="true" android:enableOnBackInvokedCallback="true" android:fullBackupContent="@xml/backup_rules" android:dataExtractionRules="@xml/data_extraction_rules" android:theme="@style/AppTheme" android:label="Rovex" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
+    android:allowBackup="true" android:supportsRtl="true" android:largeHeap="true">
+<activity android:name=".RenActivity" android:screenOrientation="unspecified"/>
+<activity android:name=".BenModelLabActivity" android:screenOrientation="unspecified" android:exported="false"/>
+<activity android:name=".RovexDiagnosticsDataCenter" android:screenOrientation="unspecified" android:exported="false"/>
+<activity android:name=".RovexSplashActivity" android:exported="true" android:screenOrientation="unspecified">
+<intent-filter>
+<action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/>
+</intent-filter>
+</activity>
+<activity android:name=".MainActivity" android:exported="true" android:screenOrientation="unspecified"/>
+<activity android:name=".HtmlImportActivity" android:exported="true" android:screenOrientation="unspecified">
+<intent-filter>
+<action android:name="android.intent.action.VIEW"/>
+<category android:name="android.intent.category.DEFAULT"/>
+<data android:mimeType="text/html"/>
+<data android:mimeType="application/xhtml+xml"/>
+</intent-filter>
+</activity>
+<activity android:name=".CollectionActivity" android:screenOrientation="unspecified"/>
+<activity android:name=".TestListActivity" android:screenOrientation="unspecified"/>
+<activity android:name=".QuizActivity" android:screenOrientation="unspecified"/>
+<activity android:name=".SearchActivity" android:screenOrientation="unspecified"/>
+<activity android:name=".BackupActivity" android:screenOrientation="unspecified"/>
+<activity android:name=".StudyToolsActivity" android:screenOrientation="unspecified"/>
+<activity android:name=".SettingsActivity" android:screenOrientation="unspecified"/>
+<activity android:name=".NotesActivity" android:exported="false" android:screenOrientation="unspecified"/>
+<activity android:name=".FlashcardActivity" android:exported="true" android:screenOrientation="unspecified">
+<intent-filter>
+<action android:name="android.intent.action.VIEW"/>
+<category android:name="android.intent.category.DEFAULT"/>
+<data android:mimeType="application/octet-stream"/>
+<data android:mimeType="application/zip"/>
+<data android:mimeType="application/x-zip-compressed"/>
+</intent-filter>
+</activity>
+<activity android:name=".KnowledgeVaultActivity" android:screenOrientation="unspecified"/>
+<service android:name=".BenInferenceForegroundService" android:exported="false" android:stopWithTask="true" android:foregroundServiceType="specialUse">
+<property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="main_process_foreground_governor_for_user_initiated_on_device_ml_inference"/>
+</service>
+<service android:name=".BenInferenceProcessService" android:process=":inference_process" android:exported="false" android:stopWithTask="true"/>
+<activity android:name=".FlashcardStudyActivity" android:screenOrientation="unspecified"/>
+</application>
+</manifest>
