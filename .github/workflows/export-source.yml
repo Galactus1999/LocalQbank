@@ -3,6 +3,11 @@ name: Export Rovex Source For Engineering
 on:
   push:
     branches: ["ben-multiprovider-work"]
+    paths-ignore:
+      - "source/**"
+
+permissions:
+  contents: write
 
 jobs:
   export:
@@ -17,18 +22,21 @@ jobs:
           set -euo pipefail
           ZIP=$(find . -maxdepth 1 -type f -name 'Rovex_v8.3.235*.zip' -print -quit)
           test -n "$ZIP"
-          rm -rf exported-source
-          mkdir exported-source
+          rm -rf exported-source source
+          mkdir exported-source source
           unzip -q "$ZIP" -d exported-source
           PROJECT=$(find exported-source -name settings.gradle.kts -type f -print -quit)
           test -n "$PROJECT"
           ROOT=$(dirname "$PROJECT")
           echo "Project root: $ROOT"
-          cd "$ROOT"
-          zip -qr "$GITHUB_WORKSPACE/Rovex_source_export.zip" .
-      - name: Upload source export
-        uses: actions/upload-artifact@v4
-        with:
-          name: Rovex-source-export
-          path: Rovex_source_export.zip
-          retention-days: 1
+          cp -a "$ROOT/." source/
+          rm -rf source/.git source/.gradle source/build source/app/build
+      - name: Commit extracted source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add source
+          git commit -m "Materialize Rovex source for Ben engineering" || exit 0
+          git push origin HEAD:ben-multiprovider-work
