@@ -1,0 +1,23 @@
+name: Rovex Answer Rendering Audit
+on: {workflow_dispatch:}
+permissions: {contents: read}
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: bash
+        run: |
+          set -euo pipefail
+          z="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
+          mkdir work; unzip -q "$z" -d work
+          p="$(dirname "$(find work -name settings.gradle.kts -type f -print -quit)")"
+          f="$p/app/src/main/java/com/localqbank/library/RenActivity.kt"
+          echo '=== RENDER FUNCTION ==='
+          grep -nE 'rovexMarkdownToSpanned|style|fromHtml|Html\.|WebView|cloudAi|generate\(' "$f" | tail -n 120
+          echo '=== FREE AI PROVIDER ==='
+          grep -RIn --include='*.kt' -E 'fun showFreeAiMenu|showFreeAiMenu|cloudAi|OpenRouter|openrouter|provider|deepseek|model' "$p/app/src/main/java/com/localqbank/library" | head -n 250
+          echo '=== PDF ACTIVITY ==='
+          f2="$(find "$p/app/src/main" -name 'BenPdfImportActivity.kt' -print -quit)"; [ -n "$f2" ] && cat "$f2" || true
+          echo '=== PDF STORE ==='
+          f3="$(find "$p/app/src/main" -name 'BenPdfResearchStore.kt' -print -quit)"; [ -n "$f3" ] && cat "$f3" || true
