@@ -1,0 +1,27 @@
+# Release Audit v8.3.116
+
+- Source baseline: v8.3.115
+- Version: 8.3.116
+- VersionCode: 214
+- Package identity preserved: com.localqbank.library
+- QuizViewModel lifecycle boundary: corrected
+- MainActivity persistence boundary: corrected
+- MainActivity StateFlow lifecycle collection: added
+- Main study queue logic: extracted to MainStudyUseCase
+- SourceAdapter persistence dependency: removed
+- XML parse: PASS (27)
+- Duplicate IDs per individual layout: PASS
+- MainActivity typed findViewById: PASS (63/63)
+- MainActivity direct QBankDb: 0
+- MainActivity direct ProgressStore: 0
+- MainActivity direct SharedPreferences: 0
+- QuizActivity direct QBankDb: 0
+- QuizActivity direct ProgressStore: 0
+- QuizActivity direct SharedPreferences: 0
+- runBlocking: 0
+- GlobalScope: 0
+- Thread.sleep: 0
+- active catch(Throwable): 0
+- unsafe PRAGMA: 0
+- local Gradle compilation: NOT REACHED; services.gradle.org DNS unavailable
+- CI compilation: pending

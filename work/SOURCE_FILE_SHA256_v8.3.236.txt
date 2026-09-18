@@ -1,0 +1,6 @@
+ab293bdf84564c80c41b704c0be98d700c6fe633b8172f04153693a61a218c2f  app/src/main/java/com/localqbank/library/BenCloudAiGateway.kt
+10fda61d3902aaf4aee98afe64d9dec4273bb81f8c17e04f42b6cdadb67a1d80  app/src/main/java/com/localqbank/library/BenGeminiCoordinator.kt
+018339d59e9e6ddf5cf4d645a0fc0a8f578d5d2e9213d2dee3c3f4c983f5e444  app/src/main/java/com/localqbank/library/RenActivity.kt
+64b17b06fa64524fa07226a204a75adea09cf8679a2ea3f82479d92441c940df  app/src/main/java/com/localqbank/library/SettingsScreen.kt
+a97006eda3d2a0331d0fd6e28a751c769804a16c49fbbaba554f3e0b5f50135b  app/build.gradle.kts
+0c4cf975304ccd45c37339d022773da65fdb93531fd793d587130a6397be115d  .github/workflows/rovex-ci.yml

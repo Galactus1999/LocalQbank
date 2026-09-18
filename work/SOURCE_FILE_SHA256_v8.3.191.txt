@@ -1,0 +1,6 @@
+90ca87ded4b990ee6e8852c3a16da926dd912a0c180fb3381be39dd5809f48ff  /tmp/rovex190/app/src/main/java/com/localqbank/library/BenIsolatedEmbeddingDiagnosticCoordinator.kt
+b359b84ae1c7cf2f85a4ebb8c0b84b4d5ad3b463afeef4da6fbdd441744bf569  /tmp/rovex190/app/src/main/java/com/localqbank/library/BenIpcDiagnosticRecorder.kt
+2d30084e2ba89e9a7812d57536e61c3b2e286aeed4a3cca717e6764d51550be9  /tmp/rovex190/app/src/main/java/com/localqbank/library/RovexDiagnosticsDataCenter.kt
+9f35c7940a3049dd8afb5097bb5ab41b44e7db0b098e599affcd1445b6088fea  /tmp/rovex190/app/src/main/java/com/localqbank/library/ResilienceManager.kt
+c370e6320f0a9795de469ada6f0f8c25056887b31aa36e92f8c12f0bed890384  /tmp/rovex190/app/src/main/java/com/localqbank/library/ManagerContracts.kt
+3b9995db5d4fe9f3a568ff0d25622470bd29191c4a0e6c9b1939e7eafe363819  /tmp/rovex190/app/build.gradle.kts

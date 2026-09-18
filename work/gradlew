@@ -1,0 +1,34 @@
+#!/bin/sh
+# LocalQBank Gradle launcher pinned to the Android-compatible Gradle toolchain.
+# This project intentionally does not depend on the CI runner's preinstalled Gradle version.
+set -eu
+GRADLE_VERSION=9.3.1
+GRADLE_HOME="${GRADLE_USER_HOME:-$HOME/.gradle}/wrapper/dists/gradle-$GRADLE_VERSION-bin/localqbank"
+GRADLE_ZIP="$GRADLE_HOME/gradle-$GRADLE_VERSION-bin.zip"
+GRADLE_DIR="$GRADLE_HOME/gradle-$GRADLE_VERSION"
+if [ ! -x "$GRADLE_DIR/bin/gradle" ]; then
+  mkdir -p "$GRADLE_HOME"
+  if [ ! -f "$GRADLE_ZIP" ]; then
+    URL="https://downloads.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip"
+    echo "Downloading Gradle $GRADLE_VERSION..."
+    if command -v curl >/dev/null 2>&1; then
+      curl -fL --retry 3 --retry-delay 2 "$URL" -o "$GRADLE_ZIP"
+    elif command -v wget >/dev/null 2>&1; then
+      wget -O "$GRADLE_ZIP" "$URL"
+    else
+      echo "ERROR: curl or wget is required to bootstrap Gradle $GRADLE_VERSION" >&2
+      exit 1
+    fi
+  fi
+  rm -rf "$GRADLE_DIR" "$GRADLE_HOME/.extracting"
+  mkdir -p "$GRADLE_HOME/.extracting"
+  if command -v unzip >/dev/null 2>&1; then
+    unzip -q "$GRADLE_ZIP" -d "$GRADLE_HOME/.extracting"
+  else
+    echo "ERROR: unzip is required to bootstrap Gradle $GRADLE_VERSION" >&2
+    exit 1
+  fi
+  mv "$GRADLE_HOME/.extracting/gradle-$GRADLE_VERSION" "$GRADLE_DIR"
+  rm -rf "$GRADLE_HOME/.extracting"
+fi
+exec "$GRADLE_DIR/bin/gradle" "$@"
