@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 "${GITHUB_WORKSPACE}/tools/repair_268_stability.py" "."
+          python3 "${GITHUB_WORKSPACE}/tools/repair_268_stability.py" "${GITHUB_WORKSPACE}"
           grep -F 'import android.app.AlertDialog' app/src/main/java/com/localqbank/library/RenActivity.kt >/dev/null
 
       - name: Verify project configuration and source audits
