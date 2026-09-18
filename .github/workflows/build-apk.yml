@@ -41,6 +41,8 @@ jobs:
               corrected="Rovex_v8_3_265_Minimal_UI_User_Performance_FastAI_PDF_Library_Source.zip"
               (cd repair-work && zip -qr "../$corrected" .)
               test -s "$corrected"
+              rm -f repair-baseline.zip repair-patch.py
+              rm -rf repair-work
               echo "Corrected source ZIP created: $corrected"
               ;;
             *)
