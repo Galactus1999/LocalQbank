@@ -6,7 +6,7 @@ on:
     branches: ["main"]
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 jobs:
@@ -16,6 +16,36 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Repair Rovex 8.3.265 source from proven 8.3.264 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t zips < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
+          test ${#zips[@]} -eq 1
+          current_zip="${zips[0]}"
+          case "$(basename "$current_zip")" in
+            Rovex_v8_3_265_*)
+              echo "Detected 8.3.265 source. Rebuilding it from the proven 8.3.264 baseline before Android compilation."
+              rm -rf repair-work
+              mkdir -p repair-work
+              git show 4a4231c4fe41ebac94d93e8ae0349d594f381c36:Rovex_v8_3_264_Frankenstein_Minimal_UI_Launcher_Source.zip > repair-baseline.zip
+              git show 4a4231c4fe41ebac94d93e8ae0349d594f381c36:rovex_patch_8265.py > repair-patch.py
+              unzip -q repair-baseline.zip -d repair-work
+              project_dir="$(find repair-work -name settings.gradle.kts -type f -print -quit | xargs -r dirname)"
+              test -n "$project_dir" && test -d "$project_dir/app"
+              python3 repair-patch.py "$project_dir"
+              test -f "$project_dir/app/build.gradle.kts"
+              rm -f "$current_zip"
+              corrected="Rovex_v8_3_265_Minimal_UI_User_Performance_FastAI_PDF_Library_Source.zip"
+              (cd repair-work && zip -qr "../$corrected" .)
+              test -s "$corrected"
+              echo "Corrected source ZIP created: $corrected"
+              ;;
+            *)
+              echo "No 8.3.265 repair required."
+              ;;
+          esac
 
       - name: Clean only obsolete Rovex APK artifacts
         shell: bash
@@ -230,3 +260,20 @@ jobs:
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 7
+
+      - name: Persist verified corrected source ZIP
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t zips < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
+          test ${#zips[@]} -eq 1
+          git config user.name "Rovex Build Agent"
+          git config user.email "rohitkokane9872@gmail.com"
+          git add -A -- ${zips[0]}
+          if git diff --cached --quiet; then
+            echo "Corrected source ZIP already persisted."
+          else
+            git commit -m "fix: persist verified Rovex 8.3.265 source [skip ci]"
+            git push origin HEAD:main
+          fi
