@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin 4a4231c4fe41ebac94d93e8ae0349d594f381c36 --depth=1
+          git fetch origin f3aff416a30ae7a50aca62fc05adfa7918de6f7a --depth=1
           python3 tools/repair_265_onepass.py
 
       - name: Clean only obsolete Rovex APK artifacts
