@@ -17,13 +17,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Repair Rovex 8.3.265 source from proven 8.3.264 baseline
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin f3aff416a30ae7a50aca62fc05adfa7918de6f7a --depth=1
-          python3 tools/repair_265_onepass.py
-
       - name: Clean only obsolete Rovex APK artifacts
         shell: bash
         env:
@@ -237,20 +230,3 @@ jobs:
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 7
-
-      - name: Persist verified corrected source ZIP
-        if: success()
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -t zips < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
-          test ${#zips[@]} -eq 1
-          git config user.name "Rovex Build Agent"
-          git config user.email "rohitkokane9872@gmail.com"
-          git add -A -- ${zips[0]}
-          if git diff --cached --quiet; then
-            echo "Corrected source ZIP already persisted."
-          else
-            git commit -m "fix: persist verified Rovex 8.3.265 source [skip ci]"
-            git push origin HEAD:main
-          fi
