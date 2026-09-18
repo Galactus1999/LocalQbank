@@ -26,6 +26,14 @@ if "suspend fun generateStreaming(" not in s:
  s=s.replace(n,b+n)
 p.write_text(s)
 
+# Compile-only compatibility: RenActivity uses AlertDialog and must retain the explicit import.
+p=one("RenActivity.kt"); s=p.read_text()
+if "import android.app.AlertDialog" not in s:
+    lines=s.splitlines(True)
+    pkg=next(i for i,x in enumerate(lines) if x.startswith("package "))
+    lines.insert(pkg+1,"import android.app.AlertDialog\n")
+    p.write_text("".join(lines))
+
 # Home dashboard: bigger cards, user performance, Continue, visible settings, HTML-style lower nav.
 p=one("MainActivity.kt");s=p.read_text()
 s=s.replace("styleHomeNavigation()\n        findViewById<ImageButton>(R.id.themeButton)","styleHomeNavigation()\n        setupRovexBottomNav()\n        findViewById<ImageButton>(R.id.themeButton)",1)
