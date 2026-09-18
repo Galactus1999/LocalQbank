@@ -1,0 +1,25 @@
+name: Rovex Cleanup Temporary Patch Artifacts
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove temporary patch artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf work
+          git rm -f --ignore-unmatch rovex_patch_8265.py
+          find .github/workflows -maxdepth 1 -type f \( -name '*audit*.yml' -o -name '*extract*.yml' -o -name 'apply-8.3.265.yml' -o -name 'patch-runner-test.yml' -o -name 'widget-focus-audit.yml' -o -name 'answer-render-audit.yml' \) -print -delete || true
+          git add -A
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "Rovex Build Agent"
+          git config user.email "rohitkokane9872@gmail.com"
+          git commit -m "chore: remove temporary patch artifacts"
+          git push
