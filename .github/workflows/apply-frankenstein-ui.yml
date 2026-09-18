@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   apply:
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'chore: inspect Frankenstein UI source') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
