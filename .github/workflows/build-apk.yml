@@ -97,7 +97,11 @@ jobs:
           set -euo pipefail
           test -f ./gradlew
           chmod +x ./gradlew
-          ./gradlew --version
+          # Do not gate CI on the informational --version command. The project wrapper is a
+          # pinned bootstrap launcher; Gradle itself can report version metadata while still
+          # returning a non-zero status on this runner. Use a real Gradle configuration task
+          # as the build-system health check so failures surface with actionable diagnostics.
+          ./gradlew :app:tasks --all --no-daemon --stacktrace
           test -f settings.gradle.kts
           test -f build.gradle.kts
           test -f app/build.gradle.kts
