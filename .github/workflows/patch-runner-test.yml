@@ -1,0 +1,13 @@
+name: Rovex Patch Runner Test
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "PATCH RUNNER OK"
