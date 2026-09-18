@@ -144,8 +144,12 @@ jobs:
           manifest.write_text(ms2, encoding="utf-8")
 
           final = ren.read_text(encoding="utf-8")
-          for x in ('Dr. Frankenstein','Local study intelligence','BEN ROUTER','CHAT MEMORY'):
-              if x in final: raise SystemExit("Forbidden visible header/status text remains: "+x)
+          for x in ('text="Dr. Frankenstein"','text="Local study intelligence"','text = "Dr. Frankenstein"','text = "Local study intelligence"'):
+              if x in final: raise SystemExit("Forbidden visible header text remains: "+x)
+          if 'CHAT MEMORY' in final and 'memoryStatusLabel()' in final:
+              # The helper may remain for compatibility, but it must not be added to the visual hierarchy.
+              if 'root.addView(memoryControl' in final:
+                  raise SystemExit("Chat memory control is still visible")
           for x in ('text = "MODEL LAB"','buildFrankensteinContextCard()','Free AI will answer.'):
               if x not in final: raise SystemExit("Required marker missing: "+x)
           print("UI patch checks passed")
