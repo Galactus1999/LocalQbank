@@ -25,8 +25,7 @@ root.addView(header)'''+s[he:]
 
 s=re.sub(r'\s*contextCard = buildFrankensteinContextCard\(\)\n\s*root\.addView\(contextCard,[^\n]+\)', '', s, count=1)
 s=re.sub(r'\s*root\.addView\(liveStatus, LinearLayout\.LayoutParams\(-1,dp\(28\)\)\)', '\n        liveStatus.visibility=View.GONE', s, count=1)
-fs=s.index("val core = TextView(this)")
-fe=s.index("        root.addView(row)",fs)+len("        root.addView(row)")
+lines=s.splitlines(True); fs=next(i for i,l in enumerate(lines) if "BEN + FREE AI" in l); fe=next(i for i in range(fs,len(lines)) if "root.addView(row)" in lines[i]); s="".join(lines[:fs]) + footer + "\n" + "".join(lines[fe+1:])
 footer='''        fun action(label:String, click:()->Unit)=TextView(this).apply{
     text=label; textSize=11.5f; gravity=Gravity.CENTER
     setTextColor(ThemeManager.text(this@RenActivity))
