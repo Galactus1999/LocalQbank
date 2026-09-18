@@ -90,12 +90,12 @@ jobs:
           test -d "$PROJECT_DIR/app"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      - name: Apply deterministic 8.3.266 compile repair
+      - name: Apply deterministic 8.3.267 response-render repair
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
-          python3 "${GITHUB_WORKSPACE}/tools/repair_266_compile.py" "."
+          python3 "${GITHUB_WORKSPACE}/tools/repair_267_css.py" "."
           grep -F 'import android.app.AlertDialog' app/src/main/java/com/localqbank/library/RenActivity.kt >/dev/null
 
       - name: Verify project configuration and source audits
@@ -237,7 +237,7 @@ jobs:
         run: |
           set -euo pipefail
           ROOT="${GITHUB_WORKSPACE}"
-          OUT="${ROOT}/Rovex_v8_3_266_Final_Stability_Verified_Source.zip"
+          OUT="${ROOT}/Rovex_v${ROVEX_VERSION_NAME}_Final_Stability_Verified_Source.zip"
           rm -f "${ROOT}"/*.zip
           zip -q -r "${OUT}" . \
             -x './.gradle/*' './app/build/*' './build/*' './**/.DS_Store'
@@ -249,7 +249,7 @@ jobs:
       - name: Upload verified stable source ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.266-Final-Stability-Verified-Source
+          name: Rovex-v${{ env.ROVEX_VERSION_NAME }}-Final-Stability-Verified-Source
           path: ${{ env.VERIFIED_SOURCE_ZIP }}
           if-no-files-found: error
           retention-days: 14
