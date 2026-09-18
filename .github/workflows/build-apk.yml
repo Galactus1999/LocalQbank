@@ -35,6 +35,19 @@ jobs:
               unzip -q repair-baseline.zip -d repair-work
               project_dir="$(find repair-work -name settings.gradle.kts -type f -print -quit | xargs -r dirname)"
               test -n "$project_dir" && test -d "$project_dir/app"
+              python3 - <<'PY'
+from pathlib import Path
+p=Path("repair-patch.py")
+s=p.read_text()
+bad='lines=s.splitlines(True); fs=next(i for i,l in enumerate(lines) if "BEN + FREE AI" in l); fe=next(i for i in range(fs,len(lines)) if "root.addView(row)" in lines[i]); s="".join(lines[:fs]) + footer + "\\n" + "".join(lines[fe+1:])'
+good='fs=s.index("        val core = TextView(this)"); fe=s.index("root.addView(row)",fs)+len("root.addView(row)")'
+if bad not in s:
+    raise SystemExit("historical footer-index defect marker not found")
+s=s.replace(bad,good,1)
+titanic='p/"app/src/main/java/com/localqbank/library/RovexHeaderTitanicView.kt").unlink(missing_ok=True)'
+s=s.replace(titanic,'p/"app/src/main/java/com/localqbank/library/RovexHeaderTitanicView.kt").exists()',1)
+p.write_text(s)
+PY
               python3 repair-patch.py "$project_dir"
               test -f "$project_dir/app/build.gradle.kts"
               rm -f "$current_zip"
