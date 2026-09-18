@@ -21,6 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git fetch origin 4a4231c4fe41ebac94d93e8ae0349d594f381c36 --depth=1
           mapfile -t zips < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
           test ${#zips[@]} -eq 1
           current_zip="${zips[0]}"
