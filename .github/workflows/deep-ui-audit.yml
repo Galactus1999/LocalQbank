@@ -1,0 +1,41 @@
+name: Rovex Deep UI Source Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract and print UI sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t zips < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
+          test "${#zips[@]}" -eq 1
+          rm -rf work
+          mkdir work
+          unzip -q "${zips[0]}" -d work
+          p="$(dirname "$(find work -name settings.gradle.kts -type f -print -quit)")"
+          echo "=== VERSION ==="
+          grep -nE 'versionName|versionCode' "$p/app/build.gradle.kts" | head -20
+          echo "=== RENACTIVITY SYMBOLS ==="
+          grep -nE 'setContentView|root.addView|buildFrankenstein|showFrankenstein|Free AI|BEN \+ FREE|MODEL LAB|memory|WebView|html|answer|explanation' "$p/app/src/main/java/com/localqbank/library/RenActivity.kt" | head -n 300
+          echo "=== MAIN ACTIVITY ==="
+          grep -nE 'openSearch|SearchActivity|flashcard|Performance|RovexPerformanceLabView|header|spaceship|Titanic|planet|earth' "$p/app/src/main/java/com/localqbank/library/MainActivity.kt" | head -n 300
+          echo "=== PERFORMANCE FILES ==="
+          find "$p/app/src/main" -type f \( -iname '*Performance*' -o -iname '*Flashcard*' \) -print | sort
+          grep -RIn --include='*.kt' --include='*.xml' -E 'RovexPerformanceLabView|RovexFlashcardSummaryView|Study Tools|Today Solved|spaceship|Titanic' "$p/app/src/main" | head -n 300 || true
+          echo "=== SEARCH SOURCES ==="
+          find "$p/app/src/main" -type f -iname '*Search*' -print | sort
+          grep -RIn --include='*.kt' --include='*.xml' -E 'class SearchActivity|QBANK|sub-QBank|qbank|subQBank|question' "$p/app/src/main/java/com/localqbank/library/SearchActivity.kt" 2>/dev/null | head -n 300 || true
+          echo "=== OCR/PDF SOURCES ==="
+          grep -RIn --include='*.kt' --include='*.xml' -E 'OCR|PDF|Pdf|pdf|import|document' "$p/app/src/main/java/com/localqbank/library" | head -n 300 || true
