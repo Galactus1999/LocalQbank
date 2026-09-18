@@ -25,6 +25,17 @@ root.addView(header)'''+s[he:]
 
 s=re.sub(r'\s*contextCard = buildFrankensteinContextCard\(\)\n\s*root\.addView\(contextCard,[^\n]+\)', '', s, count=1)
 s=re.sub(r'\s*root\.addView\(liveStatus, LinearLayout\.LayoutParams\(-1,dp\(28\)\)\)', '\n        liveStatus.visibility=View.GONE', s, count=1)
+footer='''        fun action(label:String, click:()->Unit)=TextView(this).apply{
+    text=label; textSize=11.5f; gravity=Gravity.CENTER
+    setTextColor(ThemeManager.text(this@RenActivity))
+    background=UiDrawableUtils.roundedDrawable(this@RenActivity,ThemeManager.elevated(this@RenActivity),11f)
+    setOnClickListener{click()}
+}
+val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+row.addView(action("Dr.F"){respond(input,answer,modelPill)},LinearLayout.LayoutParams(0,dp(38),1f).apply{setMargins(0,0,dp(5),0)})
+row.addView(action("Dr.F + AI"){runCombinedCore(input,answer,modelPill)},LinearLayout.LayoutParams(0,dp(38),1f).apply{setMargins(0,0,dp(5),0)})
+row.addView(action("G.search"){startActivity(Intent(this@RenActivity,GoogleSearchActivity::class.java))},LinearLayout.LayoutParams(0,dp(38),1f))
+root.addView(row)'''
 lines=s.splitlines(True); fs=next(i for i,l in enumerate(lines) if "BEN + FREE AI" in l); fe=next(i for i in range(fs,len(lines)) if "root.addView(row)" in lines[i]); s="".join(lines[:fs]) + footer + "\n" + "".join(lines[fe+1:])
 footer='''        fun action(label:String, click:()->Unit)=TextView(this).apply{
     text=label; textSize=11.5f; gravity=Gravity.CENTER
