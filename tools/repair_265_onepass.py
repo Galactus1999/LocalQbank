@@ -6,8 +6,8 @@ import tempfile
 import zipfile
 
 ROOT = Path(".")
-SOURCE = next(ROOT.glob("Rovex_v8_3_265_*.zip"))
-BASE_COMMIT = "4a4231c4fe41ebac94d93e8ae0349d594f381c36"
+SOURCE = next(ROOT.glob("Rovex_v8_3_265_*.zip"), None)
+BASE_COMMIT = "f3aff416a30ae7a50aca62fc05adfa7918de6f7a"
 BASE_ZIP = "Rovex_v8_3_264_Frankenstein_Minimal_UI_Launcher_Source.zip"
 PATCH = "rovex_patch_8265.py"
 
