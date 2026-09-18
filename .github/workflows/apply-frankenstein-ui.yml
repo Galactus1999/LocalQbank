@@ -29,9 +29,10 @@ jobs:
           unzip -q "$old" -d work
           project="$(dirname "$(find work -name settings.gradle.kts -type f -print -quit)")"
           test -f "$project/app/src/main/java/com/localqbank/library/RenActivity.kt"
+
           python3 - "$project" <<'PY'
           from pathlib import Path
-          import re, sys, shutil
+          import re, sys
 
           project = Path(sys.argv[1])
           ren = project / "app/src/main/java/com/localqbank/library/RenActivity.kt"
@@ -39,14 +40,33 @@ jobs:
 
           header_start = s.index("        val header = LinearLayout(this)")
           header_end = s.index("        root.addView(header)", header_start) + len("        root.addView(header)")
+          new_header = '''        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+          header.addView(TextView(this).apply {
+              text = "‹"; textSize = 30f; gravity = Gravity.CENTER
+              setTextColor(ThemeManager.text(this@RenActivity)); setOnClickListener { finish() }
+          }, LinearLayout.LayoutParams(dp(42), dp(44)))
+          header.addView(Space(this), LinearLayout.LayoutParams(0, 1, 1f))
+          val lab = TextView(this).apply {
+              text = "MODEL LAB"; textSize=10f; typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER
+              setTextColor(ThemeManager.text(this@RenActivity)); background=UiDrawableUtils.roundedDrawable(this@RenActivity, ThemeManager.elevated(this@RenActivity),11f)
+              setPadding(dp(10),0,dp(10),0); setOnClickListener { startActivity(Intent(this@RenActivity, BenModelLabActivity::class.java)) }
+          }
+          header.addView(lab, LinearLayout.LayoutParams(dp(104),dp(44)))
+          root.addView(header)'''
           s = s[:header_start] + new_header + s[header_end:]
 
-          status_start = s.index("        val modelPill = TextView(this)")
-          context_add = s.index("        contextCard = buildFrankensteinContextCard()", status_start)
-          status_end = s.index("        root.addView(contextCard", context_add) + len(s[s.rfind("        root.addView(contextCard", context_add):s.index("\n", s.rfind("        root.addView(contextCard", context_add)) if "\n" in s[s.rfind("        root.addView(contextCard", context_add):] else len(s)])
-          # Replace the whole model/diagnostic/context block up to the end of the context-card add line.
-          line_end = s.index("\n", s.index("        root.addView(contextCard", context_add)) + 1
-          s = s[:status_start] + new_status + s[line_end:]
+          mp = s.index("        val modelPill = TextView(this)")
+          cc = s.index("        contextCard = buildFrankensteinContextCard()", mp)
+          ca = s.index("\n", s.index("        root.addView(contextCard", cc))
+          new_block = '''        val modelPill = TextView(this).apply {
+              text = modelStatus(); textSize=9f
+              setTextColor(ThemeManager.muted(this@RenActivity))
+              visibility = View.GONE
+          }
+
+          contextCard = buildFrankensteinContextCard()
+          root.addView(contextCard, LinearLayout.LayoutParams(-1, dp(36)).apply { setMargins(dp(4), dp(2), dp(4), dp(3)) })'''
+          s = s[:mp] + new_block + s[ca:]
 
           start = s.index("    private fun buildFrankensteinContextCard(): LinearLayout {")
           end = s.index("    private fun currentPromptForContext(): String", start)
@@ -56,9 +76,7 @@ jobs:
                   gravity = Gravity.CENTER_VERTICAL
               }
               fun chip(label: String, action: () -> Unit): TextView = TextView(this).apply {
-                  text = label
-                  textSize = 9f
-                  gravity = Gravity.CENTER
+                  text = label; textSize = 9f; gravity = Gravity.CENTER
                   setTextColor(ThemeManager.text(this@RenActivity))
                   background = UiDrawableUtils.roundedDrawable(this@RenActivity, ThemeManager.elevated(this@RenActivity), 9f)
                   setPadding(dp(4), 0, dp(4), 0)
@@ -90,26 +108,22 @@ jobs:
                         'root.addView(core,LinearLayout.LayoutParams(-1,dp(42)).apply{setMargins(0,dp(2),0,dp(5))})', 1)
           s = s.replace('LinearLayout.LayoutParams(dp(78),dp(46))','LinearLayout.LayoutParams(dp(76),dp(36))',1)
           s = s.replace('LinearLayout.LayoutParams(0,dp(46),1f)','LinearLayout.LayoutParams(0,dp(36),1f)',1)
-          s = s.replace('LinearLayout.LayoutParams(dp(78),dp(46))','LinearLayout.LayoutParams(dp(76),dp(36))',1)
           s = s.replace('LinearLayout.LayoutParams(dp(72),dp(46))','LinearLayout.LayoutParams(dp(72),dp(36))',1)
           ren.write_text(s, encoding="utf-8")
 
           gradle = project / "app/build.gradle.kts"
           g = gradle.read_text(encoding="utf-8")
-          m = re.search(r'versionName\\s*=\\s*"([0-9]+\\.[0-9]+\\.[0-9]+)"', g)
-          c = re.search(r'versionCode\\s*=\\s*([0-9]+)', g)
+          m = re.search(r'versionName\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)"', g)
+          c = re.search(r'versionCode\s*=\s*([0-9]+)', g)
           if not (m and c): raise SystemExit("Could not find versionName/versionCode")
-          oldv, oldc = m.group(1), int(c.group(1))
-          if oldv != "8.3.263" or oldc != 357:
-              raise SystemExit(f"Unexpected baseline version {oldv} ({oldc}); refusing to patch")
+          if m.group(1) != "8.3.263" or int(c.group(1)) != 357:
+              raise SystemExit(f"Unexpected baseline {m.group(1)} ({c.group(1)})")
           g = g[:m.start(1)] + "8.3.264" + g[m.end(1):]
-          # re-find code after version replacement
-          c2 = re.search(r'versionCode\\s*=\\s*([0-9]+)', g)
+          c2 = re.search(r'versionCode\s*=\s*([0-9]+)', g)
           g = g[:c2.start(1)] + "358" + g[c2.end(1):]
           gradle.write_text(g, encoding="utf-8")
 
-          # Use the uploaded logo's visual design as a launcher-safe vector: black field with the
-          # same concentric/interlocking emblem motif and ROVEX wordmark silhouette.
+          # Launcher artwork: a vector rendition based on the uploaded black/white Rovex emblem.
           res = project / "app/src/main/res/drawable"
           res.mkdir(parents=True, exist_ok=True)
           (res / "rovex_launcher.xml").write_text('''<?xml version="1.0" encoding="utf-8"?>
@@ -122,24 +136,19 @@ jobs:
               <path android:fillColor="#F2F2F2" android:pathData="M60,16c8,4 14,12 14,22c0,7 -3,13 -8,17l-6,-6c3,-3 5,-7 5,-11c0,-6 -3,-11 -8,-14z"/>
           </vector>''', encoding="utf-8")
 
-          for mf in project.glob("app/src/main/AndroidManifest.xml"):
-              ms = mf.read_text(encoding="utf-8")
-              ms2 = re.sub(r'android:icon="[^"]+"', 'android:icon="@drawable/rovex_launcher"', ms, count=1)
-              ms2 = re.sub(r'android:roundIcon="[^"]+"', 'android:roundIcon="@drawable/rovex_launcher"', ms2, count=1)
-              if ms2 == ms:
-                  raise SystemExit("Launcher icon attributes not found in AndroidManifest.xml")
-              mf.write_text(ms2, encoding="utf-8")
+          manifest = project / "app/src/main/AndroidManifest.xml"
+          ms = manifest.read_text(encoding="utf-8")
+          ms2 = re.sub(r'android:icon="[^"]+"', 'android:icon="@drawable/rovex_launcher"', ms, count=1)
+          ms2 = re.sub(r'android:roundIcon="[^"]+"', 'android:roundIcon="@drawable/rovex_launcher"', ms2, count=1)
+          if ms2 == ms: raise SystemExit("Launcher icon attributes not found")
+          manifest.write_text(ms2, encoding="utf-8")
 
-          # Hard checks against the requested minimal UI.
           final = ren.read_text(encoding="utf-8")
-          for forbidden in ("text=\"Dr. Frankenstein\"", "text=\"Local study intelligence\"", "BEN ROUTER", "CHAT MEMORY"):
-              if forbidden in final:
-                  raise SystemExit("Minimal UI check failed: " + forbidden)
-          for required in ("text = \"MODEL LAB\"", "buildFrankensteinContextCard()", "Free AI will answer."):
-              if required not in final:
-                  raise SystemExit("Required UI/flow marker missing: " + required)
-          print(f"Patched RenActivity and launcher: 8.3.263/{357} -> 8.3.264/{358}")
-
+          for x in ('Dr. Frankenstein','Local study intelligence','BEN ROUTER','CHAT MEMORY'):
+              if x in final: raise SystemExit("Forbidden visible header/status text remains: "+x)
+          for x in ('text = "MODEL LAB"','buildFrankensteinContextCard()','Free AI will answer.'):
+              if x not in final: raise SystemExit("Required marker missing: "+x)
+          print("UI patch checks passed")
           PY
 
           new="Rovex_v8_3_264_Frankenstein_Minimal_UI_Launcher_Source.zip"
@@ -147,7 +156,6 @@ jobs:
           (cd work && zip -qr "../$new" .)
           unzip -tq "$new"
           sha256sum "$new"
-          rm -f "$old"
           git rm -f --ignore-unmatch "$(basename "$old")"
           git add "$new"
           git rm -f --ignore-unmatch .github/workflows/inspect-frankenstein.yml .github/workflows/apply-frankenstein-ui.yml
