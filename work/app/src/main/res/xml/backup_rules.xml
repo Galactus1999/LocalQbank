@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<full-backup-content>
-    <include domain="file" path="progress_backups/" />
-    <include domain="sharedpref" path="progress.xml" />
-    <include domain="sharedpref" path="ui.xml" />
-</full-backup-content>
