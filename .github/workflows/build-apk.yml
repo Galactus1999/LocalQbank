@@ -97,6 +97,10 @@ jobs:
           set -euo pipefail
           test -f ./gradlew
           chmod +x ./gradlew
+          # Source ZIP uploads do not reliably preserve POSIX executable bits. Normalize
+          # required repository scripts before asserting them executable.
+          test -f tools/ruthless_audit.sh
+          chmod +x tools/ruthless_audit.sh
           # Do not gate CI on the informational --version command. The project wrapper is a
           # pinned bootstrap launcher; Gradle itself can report version metadata while still
           # returning a non-zero status on this runner. Use a real Gradle configuration task
