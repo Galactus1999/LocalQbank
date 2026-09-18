@@ -26,47 +26,6 @@ if "suspend fun generateStreaming(" not in s:
  s=s.replace(n,b+n)
 p.write_text(s)
 
-# Ben+AI: avoid duplicate enhanced retrieval and stream the answer.
-p=one("BenQuestionAiContextDialog.kt");s=p.read_text().replace("AppManagers.frankensteinContext.buildEnhanced(q)","AppManagers.frankensteinContext.build(q)").replace("import com.localqbank.library.ai.context.ContextPackBuilder\n","")
-a=s.find("            val builder = ContextPackBuilder(activity)")
-b=s.find("            val result = runCatching {",a)
-if a>=0 and b>0:
- s=s[:a]+'''            val packet = buildString {
-                append("EXAM: ").append(currentBenExamProfile(activity).label).append('\\n')
-                append("MODE: ").append(mode.label).append(" — ").append(mode.prompt).append('\\n')
-                append("CURRENT QUESTION ID: ").append(q.id).append('\\n')
-                selectedOption?.takeIf { it.isNotBlank() }?.let { append("SELECTED OPTION: ").append(it.take(300)).append('\\n') }
-                append(compactContextPrompt(context))
-            }.take(6500)
-'''+s[b:]
-a=s.find("            val result = runCatching {",a)
-b=s.find("            activity.runOnUiThread",a)
-if a>=0 and b>0:
- block='''            val streamed=StringBuilder();var lastPaint=0L
-            val result=runCatching{AppManagers.cloudAi.generateStreaming(packet,system,700,7_000L){chunk->streamed.append(chunk);val now=android.os.SystemClock.elapsedRealtime();if(now-lastPaint>=120L){lastPaint=now;val snap=streamed.toString();activity.runOnUiThread{if(!activity.isFinishing&&!activity.isDestroyed)web.loadDataWithBaseURL(null,styledHtml(rovexMarkdownToHtmlBody(snap),activity),"text/html","UTF-8",null)}}}}.getOrNull()
-'''
- s=s[:a]+block+s[b:]
-p.write_text(s)
-
-# Frankenstein combined cloud: deterministic context and streaming; raw CSS is normalized by response policy.
-p=one("RenActivity.kt");s=p.read_text().replace("AppManagers.frankensteinContext.buildEnhanced(","AppManagers.frankensteinContext.build(")
-if "import android.app.AlertDialog" not in s:
- lines=s.splitlines(True);i=next(i for i,x in enumerate(lines) if x.startswith("package "));lines.insert(i+1,"import android.app.AlertDialog\n");s="".join(lines)
-a=s.find("    private fun cleanAiAnswer");b=s.find("\n    private fun currentPromptForContext()",a)
-if a>=0 and b>=0:s=s[:a]+"    private fun cleanAiAnswer(raw: String): String = BenResponsePolicy.normalize(raw).orEmpty().trim()"+s[b:]
-a=s.find("            val result=runCatching{AppManagers.cloudAi.generate(")
-b=s.find("            runOnUiThread{",a)
-if a>=0 and b>0:
- block='''            val streamed=StringBuilder();var lastPaint=0L
-            val result=runCatching{AppManagers.cloudAi.generateStreaming(prompt=prompt,system="You are the primary Free AI answerer inside Rovex. Ben is only a context collector in this mode. Answer the user's study request directly and concisely. Use local QBank/PDF context when supplied, but do not claim web search or invent provenance. Use readable Markdown and tables when useful.",maxTokens=700,timeoutMs=7_000L){chunk->streamed.append(chunk);val now=android.os.SystemClock.elapsedRealtime();if(now-lastPaint>=120L){lastPaint=now;val snap=cleanAiAnswer(streamed.toString());runOnUiThread{if(!isFinishing&&!isDestroyed&&!snap.isBlank())answer.text=rovexMarkdownToSpanned(snap)}}}}.getOrNull()
-'''
- s=s[:a]+block+s[b:]
- # Replace the old result-handling block by locating its end before the next method.
- e=s.find("\n    }",b)
- if e>0:
-  s=s[:b]+'''            runOnUiThread{if(isFinishing||isDestroyed)return@runOnUiThread;if(result!=null){answer.text=rovexMarkdownToSpanned(cleanAiAnswer(result.text));modelPill.text=result.provider.label+" • "+result.model+if(result.fallbackUsed) " • fallback" else "";liveStatus?.text="FREE AI • BEN CONTEXT SUPPLIED • STREAMING"}else{answer.text=if(streamed.isNotBlank())rovexMarkdownToSpanned(cleanAiAnswer(streamed.toString())) else "No Free AI provider responded. Tap FREE AI to connect a provider.";modelPill.text="FREE AI unavailable";liveStatus?.text="BEN • CONTEXT READY • NO FREE AI"}}'''+s[e:]
-p.write_text(s)
-
 # Home dashboard: bigger cards, user performance, Continue, visible settings, HTML-style lower nav.
 p=one("MainActivity.kt");s=p.read_text()
 s=s.replace("styleHomeNavigation()\n        findViewById<ImageButton>(R.id.themeButton)","styleHomeNavigation()\n        setupRovexBottomNav()\n        findViewById<ImageButton>(R.id.themeButton)",1)
