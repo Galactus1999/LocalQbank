@@ -267,7 +267,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Verified stable source ZIP already persisted."
           else
-            git commit -m "chore: persist verified Rovex 8.3.266 source [skip ci]"
+            git commit -m "chore: persist verified Rovex ${ROVEX_VERSION_NAME} source [skip ci]"
             git push origin HEAD:main
           fi
 
