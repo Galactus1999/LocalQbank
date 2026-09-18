@@ -90,12 +90,12 @@ jobs:
           test -d "$PROJECT_DIR/app"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      - name: Apply deterministic 8.3.267 response-render repair
+      - name: Apply deterministic 8.3.268 stability/UI repair
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
-          python3 "${GITHUB_WORKSPACE}/tools/repair_267_css.py" "."
+          python3 "${GITHUB_WORKSPACE}/tools/repair_268_stability.py" "."
           grep -F 'import android.app.AlertDialog' app/src/main/java/com/localqbank/library/RenActivity.kt >/dev/null
 
       - name: Verify project configuration and source audits
