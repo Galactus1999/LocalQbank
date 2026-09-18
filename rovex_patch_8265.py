@@ -5,7 +5,7 @@ ren=p/"app/src/main/java/com/localqbank/library/RenActivity.kt"
 s=ren.read_text()
 
 hs=s.index("        val header = LinearLayout(this)")
-he=s.index("        root.addView(header)",hs)+len("        root.addView(header)")
+he=s.index("root.addView(header)",hs)+len("root.addView(header)")
 s=s[:hs]+'''        val header = LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
 header.addView(TextView(this).apply { text="‹"; textSize=30f; gravity=Gravity.CENTER; setTextColor(ThemeManager.text(this@RenActivity)); setOnClickListener{finish()} }, LinearLayout.LayoutParams(dp(40),dp(42)))
 header.addView(Space(this), LinearLayout.LayoutParams(0,1,1f))
