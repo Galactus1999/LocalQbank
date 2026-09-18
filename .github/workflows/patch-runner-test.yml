@@ -12,15 +12,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run deterministic patch
+        shell: bash
         run: |
           set -euo pipefail
-          python3 rovex_patch_8265.py
-          rm -rf work
           zips=( *.zip )
           test "${#zips[@]}" -eq 1
           old="${zips[0]}"
+          rm -rf work && mkdir work
+          unzip -q "$old" -d work
+          p="$(dirname "$(find work -name settings.gradle.kts -type f -print -quit)")"
+          test -n "$p"
+          python3 rovex_patch_8265.py "$p"
           new=Rovex_v8_3_265_Minimal_UI_User_Performance_FastAI_PDF_Library_Source.zip
-          test -f "$new" || (cd work && zip -qr "../$new" .)
+          rm -f "$new"
+          (cd work && zip -qr "../$new" .)
           unzip -tq "$new"
           sha256sum "$new"
           git rm -f --ignore-unmatch "$old"
