@@ -37,82 +37,16 @@ jobs:
           ren = project / "app/src/main/java/com/localqbank/library/RenActivity.kt"
           s = ren.read_text(encoding="utf-8")
 
-          old_header = '''        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-          header.addView(TextView(this).apply {
-              text = "‹"; textSize = 32f; gravity = Gravity.CENTER
-              setTextColor(ThemeManager.text(this@RenActivity)); setOnClickListener { finish() }
-          }, LinearLayout.LayoutParams(dp(42), dp(48)))
-          val titleBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(6),0,dp(6),0) }
-          titleBox.addView(TextView(this).apply { text="Dr. Frankenstein"; textSize=22f; typeface=Typeface.DEFAULT_BOLD; setTextColor(ThemeManager.text(this@RenActivity)) })
-          titleBox.addView(TextView(this).apply { text="Local study intelligence"; textSize=11f; setTextColor(ThemeManager.muted(this@RenActivity)) })
-          header.addView(titleBox, LinearLayout.LayoutParams(0,-2,1f))
-          val lab = TextView(this).apply {
-              text = "MODEL LAB"; textSize=10.5f; typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER
-              setTextColor(ThemeManager.text(this@RenActivity)); background=UiDrawableUtils.roundedDrawable(this@RenActivity, ThemeManager.elevated(this@RenActivity),12f)
-              setPadding(dp(10),0,dp(10),0); setOnClickListener { startActivity(Intent(this@RenActivity, BenModelLabActivity::class.java)) }
-          }
-          header.addView(lab, LinearLayout.LayoutParams(dp(96),dp(48)))
-          root.addView(header)'''
-          new_header = '''        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-          header.addView(TextView(this).apply {
-              text = "‹"; textSize = 30f; gravity = Gravity.CENTER
-              setTextColor(ThemeManager.text(this@RenActivity)); setOnClickListener { finish() }
-          }, LinearLayout.LayoutParams(dp(42), dp(44)))
-          header.addView(Space(this), LinearLayout.LayoutParams(0, 1, 1f))
-          val lab = TextView(this).apply {
-              text = "MODEL LAB"; textSize=10f; typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER
-              setTextColor(ThemeManager.text(this@RenActivity)); background=UiDrawableUtils.roundedDrawable(this@RenActivity, ThemeManager.elevated(this@RenActivity),11f)
-              setPadding(dp(10),0,dp(10),0); setOnClickListener { startActivity(Intent(this@RenActivity, BenModelLabActivity::class.java)) }
-          }
-          header.addView(lab, LinearLayout.LayoutParams(dp(104),dp(44)))
-          root.addView(header)'''
-          if old_header not in s: raise SystemExit("RenActivity header pattern not found")
-          s = s.replace(old_header, new_header, 1)
+          header_start = s.index("        val header = LinearLayout(this)")
+          header_end = s.index("        root.addView(header)", header_start) + len("        root.addView(header)")
+          s = s[:header_start] + new_header + s[header_end:]
 
-          old_status = '''        val modelPill = TextView(this).apply {
-              text = modelStatus(); textSize=11f; gravity=Gravity.CENTER_VERTICAL
-              setTextColor(ThemeManager.muted(this@RenActivity)); setPadding(dp(10),0,dp(10),0)
-              background=UiDrawableUtils.roundedDrawable(this@RenActivity, ThemeManager.elevated(this@RenActivity),11f)
-          }
-          root.addView(modelPill, LinearLayout.LayoutParams(-1,dp(30)).apply{setMargins(dp(4),dp(3),dp(4),dp(4))})
-
-          val brainMode = TextView(this).apply {
-              text = BenModelRouter(applicationContext).uiSummary()
-              textSize = 10.5f
-              gravity = Gravity.CENTER_VERTICAL
-              setTextColor(ThemeManager.muted(this@RenActivity))
-              setPadding(dp(10),0,dp(10),0)
-              background = UiDrawableUtils.roundedDrawable(this@RenActivity, ThemeManager.bg(this@RenActivity),11f)
-              contentDescription = "Ben model router status"
-          }
-          root.addView(brainMode, LinearLayout.LayoutParams(-1,dp(27)).apply{setMargins(dp(4),0,dp(4),dp(4))})
-          val memoryControl = TextView(this).apply {
-              text = memoryStatusLabel()
-              textSize = 9.5f; gravity = Gravity.CENTER_VERTICAL; setTextColor(ThemeManager.muted(this@RenActivity)); setPadding(dp(8),0,dp(8),0)
-              setOnClickListener {
-                  AlertDialog.Builder(this@RenActivity).setTitle("Clear Frankenstein context?")
-                      .setMessage("This removes the bounded Frankenstein chat continuity. QBank data, answers and study history are not deleted.")
-                      .setNegativeButton("CANCEL",null).setPositiveButton("CLEAR") { _, _ ->
-                          AppManagers.renMemory.clearChatContext()
-                      text = memoryStatusLabel()
-                      Toast.makeText(this@RenActivity,"Frankenstein chat cleared",Toast.LENGTH_SHORT).show()
-                      }.show()
-              }
-          }
-          root.addView(memoryControl, LinearLayout.LayoutParams(-1,dp(25)).apply{setMargins(dp(4),0,dp(4),dp(3))})
-
-          contextCard = buildFrankensteinContextCard()
-          root.addView(contextCard, LinearLayout.LayoutParams(-1, dp(92)).apply { setMargins(dp(4), 0, dp(4), dp(5)) })'''
-          new_status = '''        val modelPill = TextView(this).apply {
-              text = modelStatus(); textSize=9f
-              setTextColor(ThemeManager.muted(this@RenActivity))
-              visibility = View.GONE
-          }
-
-          contextCard = buildFrankensteinContextCard()
-          root.addView(contextCard, LinearLayout.LayoutParams(-1, dp(36)).apply { setMargins(dp(4), dp(2), dp(4), dp(3)) })'''
-          if old_status not in s: raise SystemExit("RenActivity status/context pattern not found")
-          s = s.replace(old_status, new_status, 1)
+          status_start = s.index("        val modelPill = TextView(this)")
+          context_add = s.index("        contextCard = buildFrankensteinContextCard()", status_start)
+          status_end = s.index("        root.addView(contextCard", context_add) + len(s[s.rfind("        root.addView(contextCard", context_add):s.index("\n", s.rfind("        root.addView(contextCard", context_add)) if "\n" in s[s.rfind("        root.addView(contextCard", context_add):] else len(s)])
+          # Replace the whole model/diagnostic/context block up to the end of the context-card add line.
+          line_end = s.index("\n", s.index("        root.addView(contextCard", context_add)) + 1
+          s = s[:status_start] + new_status + s[line_end:]
 
           start = s.index("    private fun buildFrankensteinContextCard(): LinearLayout {")
           end = s.index("    private fun currentPromptForContext(): String", start)
