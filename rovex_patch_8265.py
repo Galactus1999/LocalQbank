@@ -158,11 +158,11 @@ class RovexHeaderCosmicView @JvmOverloads constructor(context:Context,attrs:Attr
 # Imported PDF library.
 settings=p/"app/src/main/java/com/localqbank/library/SettingsScreen.kt";st=settings.read_text()
 if 'BenPdfLibraryActivity' not in st:
-    needle='startActivity(Intent(activity, BenPdfImportActivity::class.java))'
-    pos=st.find(needle);assert pos>=0
-    e=st.find('\n',pos)
-    st=st[:e]+'''\n                menu.add("Imported PDFs", "Open and manage PDFs already imported for Ben") { activity.startActivity(Intent(activity, BenPdfLibraryActivity::class.java)) }'''+st[e:]
-    settings.write_text(st)
+    matches=list(re.finditer(r'.*BenPdfImportActivity::class\\.java.*',st))
+    if matches:
+        pos=matches[0].start(); e=st.find("\\n",pos)
+        st=st[:e]+'\\n                menu.add("Imported PDFs", "Open and manage PDFs already imported for Ben") { activity.startActivity(Intent(activity, BenPdfLibraryActivity::class.java)) }'+st[e:]
+        settings.write_text(st)
 pdf=p/"app/src/main/java/com/localqbank/library/BenPdfLibraryActivity.kt"
 pdf.write_text('''package com.localqbank.library
 import android.app.Activity
