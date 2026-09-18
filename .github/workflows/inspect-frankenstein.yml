@@ -1,0 +1,52 @@
+name: Rovex Frankenstein Source Inspect
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract source ZIP and collect Frankenstein UI sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t zips < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
+          test "${#zips[@]}" -eq 1
+          rm -rf inspect-src inspect-out
+          mkdir -p inspect-src inspect-out
+          unzip -q "${zips[0]}" -d inspect-src
+          root="$(find inspect-src -name settings.gradle.kts -type f -print -quit)"
+          test -n "$root"
+          project="$(dirname "$root")"
+          echo "PROJECT=$project"
+          find "$project/app/src" -type f \( -name '*.kt' -o -name '*.xml' -o -name '*.gradle.kts' \) | sort > inspect-out/all-source-files.txt
+          grep -RIl --include='*.kt' --include='*.xml' -E 'Frankenstein|BEN ROUTER|FREE AI|MODEL LAB|WEAKNESS|INSPECT|LOCAL|CHAT MEMORY' "$project/app/src" | sort > inspect-out/frankenstein-candidates.txt || true
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            rel="${f#$project/}"
+            mkdir -p "inspect-out/$(dirname "$rel")"
+            cp "$f" "inspect-out/$rel"
+          done < inspect-out/frankenstein-candidates.txt
+          echo "=== CANDIDATES ==="
+          cat inspect-out/frankenstein-candidates.txt
+          echo "=== MATCHES ==="
+          grep -RIn --include='*.kt' --include='*.xml' -E 'Frankenstein|BEN ROUTER|FREE AI|MODEL LAB|WEAKNESS|INSPECT|LOCAL|CHAT MEMORY' "$project/app/src" | head -n 500 || true
+
+      - name: Upload inspection bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-Frankenstein-Source-Inspect
+          path: inspect-out
+          if-no-files-found: error
+          retention-days: 1
