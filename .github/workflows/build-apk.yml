@@ -21,47 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin 4a4231c4fe41ebac94d93e8ae0349d594f381c36 --depth=1
-          mapfile -t zips < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
-          test ${#zips[@]} -eq 1
-          current_zip="${zips[0]}"
-          case "$(basename "$current_zip")" in
-            Rovex_v8_3_265_*)
-              echo "Detected 8.3.265 source. Rebuilding it from the proven 8.3.264 baseline before Android compilation."
-              rm -rf repair-work
-              mkdir -p repair-work
-              git show 4a4231c4fe41ebac94d93e8ae0349d594f381c36:Rovex_v8_3_264_Frankenstein_Minimal_UI_Launcher_Source.zip > repair-baseline.zip
-              git show 4a4231c4fe41ebac94d93e8ae0349d594f381c36:rovex_patch_8265.py > repair-patch.py
-              unzip -q repair-baseline.zip -d repair-work
-              project_dir="$(find repair-work -name settings.gradle.kts -type f -print -quit | xargs -r dirname)"
-              test -n "$project_dir" && test -d "$project_dir/app"
-              python3 - <<'PY'
-              from pathlib import Path
-              p=Path("repair-patch.py")
-              s=p.read_text()
-              bad='lines=s.splitlines(True); fs=next(i for i,l in enumerate(lines) if "BEN + FREE AI" in l); fe=next(i for i in range(fs,len(lines)) if "root.addView(row)" in lines[i]); s="".join(lines[:fs]) + footer + "\\n" + "".join(lines[fe+1:])'
-              good='fs=s.index("        val core = TextView(this)"); fe=s.index("root.addView(row)",fs)+len("root.addView(row)")'
-              if bad not in s:
-                  raise SystemExit("historical footer-index defect marker not found")
-              s=s.replace(bad,good,1)
-              titanic='p/"app/src/main/java/com/localqbank/library/RovexHeaderTitanicView.kt").unlink(missing_ok=True)'
-              s=s.replace(titanic,'p/"app/src/main/java/com/localqbank/library/RovexHeaderTitanicView.kt").exists()',1)
-              p.write_text(s)
-PY
-              python3 repair-patch.py "$project_dir"
-              test -f "$project_dir/app/build.gradle.kts"
-              rm -f "$current_zip"
-              corrected="Rovex_v8_3_265_Minimal_UI_User_Performance_FastAI_PDF_Library_Source.zip"
-              (cd repair-work && zip -qr "../$corrected" .)
-              test -s "$corrected"
-              rm -f repair-baseline.zip repair-patch.py
-              rm -rf repair-work
-              echo "Corrected source ZIP created: $corrected"
-              ;;
-            *)
-              echo "No 8.3.265 repair required."
-              ;;
-          esac
+          python3 tools/repair_265_onepass.py
 
       - name: Clean only obsolete Rovex APK artifacts
         shell: bash
