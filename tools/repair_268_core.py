@@ -91,8 +91,14 @@ nav='''    </ScrollView>
         <TextView android:id="@+id/navMastery" android:text="✦\nMastery" android:textSize="10sp" android:gravity="center" android:textColor="#FFFFFF" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"/>
     </LinearLayout>
 </LinearLayout>'''
-if needle not in x:raise SystemExit("ERROR: XML closing marker missing")
-x=x.replace(needle,nav);p.write_text(x)
+if 'android:id="@+id/navHome"' not in x:
+    if needle not in x:
+        root_close=x.rfind("</LinearLayout>")
+        if root_close<0: raise SystemExit("ERROR: root LinearLayout closing marker missing")
+        x=x[:root_close]+nav.replace("    </ScrollView>","")+x[root_close:]
+    else:
+        x=x.replace(needle,nav)
+p.write_text(x)
 
 # HTML-inspired native dashboard: dark navy/cyan/green/orange palette, floating pill navigation, rounded analytical panels and subject/deck progress.
 p=R/"app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt"
