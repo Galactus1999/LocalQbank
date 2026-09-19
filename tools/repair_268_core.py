@@ -61,7 +61,8 @@ needle='''    private fun scrollHomeTop(){
         findViewById<ScrollView>(R.id.dashboardScroll)?.smoothScrollTo(0,0)
     }'''
 insert='''    private fun setupRovexBottomNav(){
-        fun paint(active:Int){listOf(R.id.navHome,R.id.navQBank,R.id.navCards,R.id.navStats,R.id.navMastery).forEach{id->(findViewById<View>(id) as? TextView)?.apply{setTextColor(if(id==active)ThemeManager.accent(this@MainActivity) else Color.WHITE);background=if(id==active)UiDrawableUtils.roundedDrawable(this@MainActivity,ThemeManager.elevated(this@MainActivity),12f) else null}}}
+        findViewById<View>(R.id.rovexBottomNav)?.background=UiDrawableUtils.roundedDrawable(this@MainActivity,ThemeManager.elevated(this@MainActivity),28f)
+        fun paint(active:Int){listOf(R.id.navHome,R.id.navQBank,R.id.navCards,R.id.navStats,R.id.navMastery).forEach{id->(findViewById<View>(id) as? TextView)?.apply{setTextColor(if(id==active)ThemeManager.accent(this@MainActivity) else ThemeManager.muted(this@MainActivity));background=if(id==active)UiDrawableUtils.roundedDrawable(this@MainActivity,ThemeManager.bg(this@MainActivity),20f) else null}}}
         findViewById<View>(R.id.navHome)?.setOnClickListener{startActivity(Intent(this,RovexSectionDashboardActivity::class.java).putExtra("section","home"))}
         findViewById<View>(R.id.navQBank)?.setOnClickListener{startActivity(Intent(this,RovexSectionDashboardActivity::class.java).putExtra("section","qbank"))}
         findViewById<View>(R.id.navCards)?.setOnClickListener{startActivity(Intent(this,RovexSectionDashboardActivity::class.java).putExtra("section","cards"))}
@@ -84,7 +85,7 @@ x=x.replace('android:text="Health • resilience • RAM"','android:text="Accura
 x=x.replace('<TextView android:id="@+id/performanceLabHint" android:text="Tap for diagnostics" android:textSize="10sp" android:textColor="#7A858E" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>','<Button android:id="@+id/continueStudyButton" android:text="Continue" android:textAllCaps="false" android:textSize="11sp" android:minWidth="0dp" android:minHeight="0dp" android:layout_width="120dp" android:layout_height="38dp" android:layout_marginTop="8dp"/>')
 needle='    </ScrollView>\n</LinearLayout>'
 nav='''    </ScrollView>
-    <LinearLayout android:id="@+id/rovexBottomNav" android:orientation="horizontal" android:weightSum="5" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingTop="5dp" android:paddingBottom="5dp" android:background="#0F1C2E" android:layout_width="match_parent" android:layout_height="58dp">
+    <LinearLayout android:id="@+id/rovexBottomNav" android:orientation="horizontal" android:weightSum="5" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingTop="5dp" android:paddingBottom="5dp" android:background="@android:color/transparent" android:layout_width="match_parent" android:layout_height="58dp">
         <TextView android:id="@+id/navHome" android:text="⌂\nHome" android:textSize="10sp" android:gravity="center" android:textColor="#5EE9FF" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"/>
         <TextView android:id="@+id/navQBank" android:text="▦\nQBank" android:textSize="10sp" android:gravity="center" android:textColor="#FFFFFF" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"/>
         <TextView android:id="@+id/navCards" android:text="▤\nCards" android:textSize="10sp" android:gravity="center" android:textColor="#FFFFFF" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"/>
@@ -106,31 +107,115 @@ p=R/"app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt"
 p.write_text("""package com.localqbank.library
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.*
 class RovexSectionDashboardActivity:Activity(){
-private val navy=Color.rgb(15,28,46);private val cyan=Color.rgb(94,233,255);private val green=Color.rgb(74,222,128);private val orange=Color.rgb(255,138,75);private lateinit var c:LinearLayout;private var active="home"
-override fun onCreate(b:Bundle?){super.onCreate(b);active=intent.getStringExtra("section")?:"home";val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(Color.rgb(7,14,25));c=LinearLayout(this@RovexSectionDashboardActivity).apply{orientation=LinearLayout.VERTICAL;setPadding(d(16),d(12),d(16),d(84))};addView(ScrollView(this@RovexSectionDashboardActivity).apply{addView(c)},LinearLayout.LayoutParams(-1,0,1f));addView(nav(),LinearLayout.LayoutParams(-1,d(68)))};setContentView(root);render()}
-private fun render(){c.removeAllViews();when(active){"qbank"->qbank();"cards"->cards();"stats"->stats();"mastery"->mastery();else->home()}}
-private fun title(a:String,b:String){c.addView(TextView(this).apply{text=a;textSize=25f;setTypeface(null,Typeface.BOLD);setTextColor(Color.WHITE)});c.addView(TextView(this).apply{text=b;textSize=12f;setTextColor(Color.argb(160,255,255,255));setPadding(0,0,0,d(14))})}
-private fun section(x:String){c.addView(TextView(this).apply{text=x.uppercase();textSize=10f;letterSpacing=.12f;setTypeface(null,Typeface.BOLD);setTextColor(Color.argb(145,255,255,255));setPadding(2,d(12),0,d(7))})}
-private fun card(t:String,s:String,a:Int,act:String,go:()->Unit){val b=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(15),d(14),d(15),d(14));background=bg(Color.rgb(18,29,45),18)};b.addView(TextView(this).apply{text=t;textSize=16f;setTypeface(null,Typeface.BOLD);setTextColor(Color.WHITE)});b.addView(TextView(this).apply{text=s;textSize=11f;setTextColor(Color.argb(155,255,255,255));setPadding(0,d(4),0,d(8))});b.addView(Button(this).apply{text=act;textSize=10f;setTextColor(a);background=null;gravity=Gravity.START;setOnClickListener{go()}});c.addView(b,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=d(7)})}
-private fun progress(n:String,p:Int){val b=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(14),d(11),d(14),d(11));background=bg(Color.rgb(18,29,45),18)};val l=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};l.addView(TextView(this@RovexSectionDashboardActivity).apply{text=n;textSize=14f;setTypeface(null,Typeface.BOLD);setTextColor(Color.WHITE)},LinearLayout.LayoutParams(0,-2,1f));l.addView(TextView(this@RovexSectionDashboardActivity).apply{text="$p%";textSize=12f;setTextColor(if(p>=80)green else if(p<60)orange else cyan)});b.addView(l);b.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply{progress=p;progressTintList=android.content.res.ColorStateList.valueOf(if(p>=80)green else if(p<60)orange else cyan)});c.addView(b,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=d(6)})}
-private fun hero(t:String,s:String,a:Int,go:()->Unit)=card(t,s,a,"OPEN",go)
-private fun home(){title("Rovex","Your study cockpit");hero("Continue your session","Resume without losing your study position.",cyan){finish()};section("TODAY");card("24 Questions • 84% Accuracy • 42 Cards","Live study snapshot.",cyan,"View stats"){active="stats";render()};section("FOCUS");card("Weak areas","Subject-level attention map.",orange,"Review"){active="qbank";render()};card("Flashcard review","Spaced repetition and manual cards.",cyan,"Open cards"){active="cards";render()}}
-private fun qbank(){title("QBank","Subjects • sections • progress");hero("Main QBank","12 topics • 76% average.",cyan){openSearch()};section("SUBJECT PANELS");listOf("Anatomy" to 92,"Physiology" to 64,"Biochemistry" to 71,"Pathology" to 55,"Pharmacology" to 88,"Microbiology" to 71).forEach{progress(it.first,it.second)};section("TOOLS");card("Question / QBank search","Search questions, QBanks and sub-QBank sections.",cyan,"Open search"){openSearch()}}
-private fun cards(){title("Cards","Flashcards • retention • review");hero("Flashcard review","42 due • manual flashcards retained.",orange){startActivity(Intent(this,FlashcardActivity::class.java))};section("DECK PANELS");listOf("Anatomy Deck" to 82,"Pharm Deck" to 64,"Rapid Review" to 76,"Microbiology" to 58,"Pathology Core" to 71).forEach{progress(it.first,it.second)}}
-private fun stats(){title("Stats","Your performance, not device diagnostics");hero("Performance Lab","Accuracy • solved • wrong.",green){startActivity(Intent(this,MainActivity::class.java))};section("LAST 7 DAYS");card("84% Accuracy","Trend +2% • 24 solved.",green,"Open lab"){startActivity(Intent(this,StudyToolsActivity::class.java))};card("Continue","Resume the existing performance workflow.",cyan,"Continue"){startActivity(Intent(this,StudyToolsActivity::class.java))}}
-private fun mastery(){title("Mastery","Retention • weak areas • progress");hero("Overall mastery","76% across active subjects.",cyan){active="qbank";render()};section("SUBJECT MASTERY");listOf("Anatomy" to 92,"Physiology" to 64,"Biochemistry" to 71,"Pathology" to 55).forEach{progress(it.first,it.second)};card("Study tools","Targeted review remains available without replacing this dashboard.",green,"Open tools"){startActivity(Intent(this,StudyToolsActivity::class.java))}}
-private fun nav():View{val l=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER;setPadding(d(7),d(7),d(7),d(7));background=bg(navy,30)};listOf("home" to "Home","qbank" to "QBank","cards" to "Cards","stats" to "Stats","mastery" to "Mastery").forEach{(id,label)->l.addView(TextView(this).apply{text=label;gravity=Gravity.CENTER;textSize=10f;setTypeface(null,Typeface.BOLD);setTextColor(if(active==id)cyan else Color.argb(145,255,255,255));setOnClickListener{active=id;render()}},LinearLayout.LayoutParams(0,-1,1f))};return l}
+private lateinit var content:LinearLayout
+private var active="home"
+private data class Row(val name:String,val total:Int,val solved:Int,val correct:Int){
+    val accuracy:Int get()=if(solved==0)0 else correct*100/solved
+    val mastery:Int get()=if(total==0)0 else solved*100/total
+}
+override fun onCreate(b:Bundle?){super.onCreate(b);active=intent.getStringExtra("section")?:"home";buildShell();loadLiveData()}
+private fun buildShell(){
+    val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(ThemeManager.bg(this@RovexSectionDashboardActivity))}
+    val scroll=ScrollView(this).apply{isFillViewport=true}
+    content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(16),d(14),d(16),d(18))}
+    scroll.addView(content);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
+    root.addView(nav(),LinearLayout.LayoutParams(-1,d(68)));setContentView(root)
+}
+private fun loadLiveData(){
+    PerformanceManager.submit{
+        val refs=runCatching{PerformanceManager.lightRefs(applicationContext)}.getOrDefault(emptyList())
+        val p=runCatching{PerformanceManager.progress(applicationContext)}.getOrNull()
+        val rows=refs.groupBy{it.category.ifBlank{"General"}}.map{(name,items)->
+            var solved=0;var correct=0
+            items.forEach{r->when(p?.record(r.stableKey)?.status){"correct"->{solved++;correct++};"wrong"->solved++}}
+            Row(name,items.size,solved,correct)
+        }.sortedByDescending{it.total}
+        val cards=runCatching{SqliteFlashcardReviewRepository(applicationContext).use{Triple(it.modeCount("all"),it.reviewCount(),it.dueStatsAll().due)}}.getOrDefault(Triple(0,0,0))
+        val overall=Row("Overall",rows.sumOf{it.total},rows.sumOf{it.solved},rows.sumOf{it.correct})
+        runOnUiThread{if(!isFinishing&&!isDestroyed)render(rows,overall,cards)}
+    }
+}
+private fun render(rows:List<Row>,overall:Row,cards:Triple<Int,Int,Int>){
+    content.removeAllViews()
+    when(active){"qbank"->qbank(rows);"cards"->cards(cards);"stats"->stats(overall);"mastery"->mastery(rows,overall);else->home(overall,cards)}
+}
+private fun title(a:String,b:String){
+    content.addView(TextView(this).apply{text=a;textSize=25f;setTypeface(null,Typeface.BOLD);setTextColor(ThemeManager.text(this@RovexSectionDashboardActivity))})
+    content.addView(TextView(this).apply{text=b;textSize=12f;setTextColor(ThemeManager.muted(this@RovexSectionDashboardActivity));setPadding(0,0,0,d(14))})
+}
+private fun section(x:String){content.addView(TextView(this).apply{text=x.uppercase();textSize=10f;letterSpacing=.12f;setTypeface(null,Typeface.BOLD);setTextColor(ThemeManager.muted(this@RovexSectionDashboardActivity));setPadding(2,d(12),0,d(7))})}
+private fun panel():android.graphics.drawable.Drawable=android.graphics.drawable.GradientDrawable().apply{setColor(ThemeManager.panel(this@RovexSectionDashboardActivity));cornerRadius=d(22).toFloat()}
+private fun card(t:String,s:String,a:Int,act:String,go:()->Unit){
+    val b=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(16),d(15),d(16),d(13));background=panel()}
+    b.addView(TextView(this).apply{text=t;textSize=16f;setTypeface(null,Typeface.BOLD);setTextColor(ThemeManager.text(this@RovexSectionDashboardActivity))})
+    b.addView(TextView(this).apply{text=s;textSize=11.5f;setTextColor(ThemeManager.muted(this@RovexSectionDashboardActivity));setPadding(0,d(4),0,d(5))})
+    b.addView(TextView(this).apply{text=act.uppercase();textSize=10f;setTypeface(null,Typeface.BOLD);setTextColor(a);gravity=Gravity.CENTER_VERTICAL;setPadding(0,d(4),0,0);setOnClickListener{go()}})
+    content.addView(b,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=d(8)})
+}
+private fun progress(r:Row,index:Int){
+    val fill=ThemeManager.pastelAccentFill(this,index);val fg=ThemeManager.pastelAccentText(this,index)
+    val b=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(14),d(12),d(14),d(11));background=android.graphics.drawable.GradientDrawable().apply{setColor(fill);cornerRadius=d(17).toFloat()}}
+    val line=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL}
+    line.addView(TextView(this@RovexSectionDashboardActivity).apply{text=r.name;textSize=14f;setTypeface(null,Typeface.BOLD);setTextColor(fg)},LinearLayout.LayoutParams(0,-2,1f))
+    line.addView(TextView(this@RovexSectionDashboardActivity).apply{text=r.mastery.toString()+"%";textSize=12f;setTypeface(null,Typeface.BOLD);setTextColor(fg)})
+    b.addView(line)
+    b.addView(TextView(this).apply{text=r.solved.toString()+"/"+r.total+" solved  •  "+r.accuracy+"% accuracy";textSize=10.5f;setTextColor(ThemeManager.muted(this@RovexSectionDashboardActivity));setPadding(0,d(3),0,d(5))})
+    b.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply{progress=r.mastery;progressTintList=android.content.res.ColorStateList.valueOf(fg)})
+    content.addView(b,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=d(6)})
+}
+private fun home(o:Row,c:Triple<Int,Int,Int>){
+    title("Rovex","Study cockpit")
+    card("Continue studying","Resume the active QBank session from the existing Rovex workflow.",ThemeManager.accent(this),"CONTINUE"){finish()}
+    section("LIVE DATA")
+    card("QBank performance",o.solved.toString()+" solved  •  "+o.accuracy+"% accuracy  •  "+o.total+" questions available.",ThemeManager.accent(this),"VIEW STATS"){active="stats";render(emptyList(),o,c)}
+    card("Flashcards",c.first.toString()+" cards  •  "+c.third+" due now  •  "+c.second+" reviews.",ThemeManager.pastelAccentText(this,1),"OPEN CARDS"){active="cards";render(emptyList(),o,c)}
+    section("FOCUS")
+    card("All QBank subjects","Browse the complete imported subject/section hierarchy. Nothing is hard-coded.",ThemeManager.accent(this),"OPEN QBANK"){active="qbank";render(emptyList(),o,c)}
+}
+private fun qbank(rows:List<Row>){
+    title("QBank","All imported subjects and sub-QBank sections")
+    card("Search QBank","Search questions, QBanks and sub-QBank sections using the existing hierarchy-aware search.",ThemeManager.accent(this),"SEARCH"){openSearch()}
+    section("ALL SUBJECTS / SECTIONS")
+    if(rows.isEmpty())card("No imported QBank yet","Import a QBank/HTML source first; live data will appear here.",ThemeManager.accent(this),"IMPORT"){startActivity(Intent(this,HtmlImportActivity::class.java))}
+    rows.forEachIndexed{index,r->progress(r,index)}
+}
+private fun cards(c:Triple<Int,Int,Int>){
+    title("Cards","Flashcards • retention • review")
+    card("Flashcard library",c.first.toString()+" cards • "+c.third+" due now • "+c.second+" reviews recorded.",ThemeManager.accent(this),"OPEN FLASHCARDS"){startActivity(Intent(this,FlashcardActivity::class.java))}
+    section("REVIEW")
+    card("Due now","Open the existing flashcard scheduler without inventing dashboard numbers.",ThemeManager.pastelAccentText(this,1),"REVIEW"){startActivity(Intent(this,FlashcardActivity::class.java))}
+    card("Flashcard tools","Create, import and review using the existing FlashcardActivity.",ThemeManager.accent(this),"OPEN TOOLS"){startActivity(Intent(this,FlashcardActivity::class.java))}
+}
+private fun stats(o:Row){
+    title("Stats","Your performance • derived from real solved-question progress")
+    card("Overall accuracy",o.accuracy.toString()+"% across "+o.solved+" solved questions ("+o.correct+" correct).",ThemeManager.accent(this),"OPEN PERFORMANCE LAB"){startActivity(Intent(this,MainActivity::class.java))}
+    section("PERFORMANCE")
+    card("Solved",o.solved.toString()+" questions have recorded correct/wrong status.",ThemeManager.pastelAccentText(this,0),"STUDY TOOLS"){startActivity(Intent(this,StudyToolsActivity::class.java))}
+    card("Wrong",(o.solved-o.correct).toString()+" questions are currently recorded wrong.",ThemeManager.pastelAccentText(this,1),"REVIEW WRONG"){startActivity(Intent(this,StudyToolsActivity::class.java))}
+}
+private fun mastery(rows:List<Row>,o:Row){
+    title("Mastery","Retention • coverage • subject progress")
+    card("Overall mastery",o.mastery.toString()+"% of imported questions have been attempted at least once.",ThemeManager.accent(this),"OPEN QBANK"){active="qbank";loadLiveData()}
+    section("SUBJECT MASTERY")
+    if(rows.isEmpty())card("No imported subjects","Import content to build the mastery map.",ThemeManager.accent(this),"IMPORT"){startActivity(Intent(this,HtmlImportActivity::class.java))}
+    rows.forEachIndexed{index,r->progress(r,index)}
+}
+private fun nav():View{
+    val l=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER;setPadding(d(7),d(7),d(7),d(7));background=android.graphics.drawable.GradientDrawable().apply{setColor(ThemeManager.elevated(this@RovexSectionDashboardActivity));cornerRadius=d(30).toFloat()}}
+    listOf("home" to "Home","qbank" to "QBank","cards" to "Cards","stats" to "Stats","mastery" to "Mastery").forEach{(id,label)->
+        l.addView(TextView(this).apply{text=label;gravity=Gravity.CENTER;textSize=10f;setTypeface(null,Typeface.BOLD);setTextColor(if(active==id)ThemeManager.accent(this@RovexSectionDashboardActivity) else ThemeManager.muted(this@RovexSectionDashboardActivity));background=if(active==id)android.graphics.drawable.GradientDrawable().apply{setColor(ThemeManager.bg(this@RovexSectionDashboardActivity));cornerRadius=d(20).toFloat()} else null;setOnClickListener{active=id;loadLiveData()}},LinearLayout.LayoutParams(0,-1,1f).apply{setMargins(d(2),0,d(2),0)})}
+    return l
+}
 private fun openSearch(){startActivity(Intent(this,SearchActivity::class.java).apply{putExtra("focusSearch",true)})}
-private fun bg(c:Int,r:Int)=android.graphics.drawable.GradientDrawable().apply{setColor(c);cornerRadius=d(r).toFloat()}
 private fun d(x:Int)=(x*resources.displayMetrics.density).toInt()
 }""")
+
 p=R/"app/src/main/AndroidManifest.xml"
 m=p.read_text()
 if "RovexSectionDashboardActivity" not in m:
