@@ -176,7 +176,7 @@ private fun home(o:Row,c:Triple<Int,Int,Int>){
     card("QBank performance",o.solved.toString()+" solved  •  "+o.accuracy+"% accuracy  •  "+o.total+" questions available.",ThemeManager.accent(this),"VIEW STATS"){active="stats";render(emptyList(),o,c)}
     card("Flashcards",c.first.toString()+" cards  •  "+c.third+" due now  •  "+c.second+" reviews.",ThemeManager.pastelAccentText(this,1),"OPEN CARDS"){active="cards";render(emptyList(),o,c)}
     section("FOCUS")
-    card("All QBank subjects","Browse the complete imported subject/section hierarchy. Nothing is hard-coded.",ThemeManager.accent(this),"OPEN QBANK"){active="qbank";render(emptyList(),o,c)}
+    card("All QBank subjects","Browse the complete imported subject/section hierarchy. Nothing is hard-coded.",ThemeManager.accent(this),"OPEN QBANK"){active="qbank";loadLiveData()}
 }
 private fun qbank(rows:List<Row>){
     title("QBank","All imported subjects and sub-QBank sections")
