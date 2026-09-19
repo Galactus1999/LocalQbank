@@ -36,6 +36,9 @@ if "import android.app.AlertDialog" not in s:
 
 # Home dashboard: bigger cards, user performance, Continue, visible settings, HTML-style lower nav.
 p=one("MainActivity.kt");s=p.read_text()
+# Idempotently remove any previous generated setupRovexBottomNav function/calls before installing exactly one.
+s=re.sub(r'\n\s*private fun setupRovexBottomNav\(\)\{.*?\n\s*\}\n\n(?=\s*private fun scrollHomeTop)', '\n', s, count=1, flags=re.S)
+s=s.replace("        setupRovexBottomNav()\n","")
 s=s.replace("styleHomeNavigation()\n        findViewById<ImageButton>(R.id.themeButton)","styleHomeNavigation()\n        setupRovexBottomNav()\n        findViewById<ImageButton>(R.id.themeButton)",1)
 s=s.replace('''        findViewById<ImageButton>(R.id.themeButton)?.apply{
             background = null''','''        findViewById<ImageButton>(R.id.themeButton)?.apply{
