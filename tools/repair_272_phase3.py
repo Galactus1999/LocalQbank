@@ -1,17 +1,16 @@
 from pathlib import Path
 import re
-
 root = Path(".")
 app = root / "app"
+print("PHASE3: start", flush=True)
 
-# v8.3.272 phase-3 batch: original Ren regression + manifest hardening +
-# HTML-reference-aligned dashboard navigation/structure + optional QNN packaging cleanup.
 ren = app / "src/main/java/com/localqbank/library/RenActivity.kt"
 s = ren.read_text(encoding="utf-8")
-needle = """        root.addView(row)
-
-        val baseLeft=root.paddingLeft; val baseTop=root.paddingTop"""
-repl = """        root.addView(row)
+if "openMatchButton = TextView(this)" not in s:
+    needle = "        root.addView(row)\n\n        val baseLeft=root.paddingLeft; val baseTop=root.paddingTop"
+    if needle not in s:
+        raise SystemExit("PHASE3 FAIL: Ren insertion point missing")
+    repl = """        root.addView(row)
 
         openMatchButton = TextView(this).apply {
             text = "OPEN MATCHING QUESTIONS"
@@ -28,27 +27,26 @@ repl = """        root.addView(row)
         })
 
         val baseLeft=root.paddingLeft; val baseTop=root.paddingTop"""
-if "openMatchButton = TextView(this)" not in s:
-    if needle not in s:
-        raise SystemExit("RenActivity insertion point missing")
     s = s.replace(needle, repl, 1)
-ren.write_text(s, encoding="utf-8")
+    ren.write_text(s, encoding="utf-8")
+print("PHASE3: Ren OK", flush=True)
 
 manifest = app / "src/main/AndroidManifest.xml"
-m = manifest.read_text(encoding="utf-8")
-m = m.replace('<activity android:name=".MainActivity" android:exported="true"',
-              '<activity android:name=".MainActivity" android:exported="false"')
+m = manifest.read_text(encoding="utf-8").replace(
+    '<activity android:name=".MainActivity" android:exported="true"',
+    '<activity android:name=".MainActivity" android:exported="false"')
 manifest.write_text(m, encoding="utf-8")
+print("PHASE3: manifest OK", flush=True)
 
 dash = app / "src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt"
 d = dash.read_text(encoding="utf-8")
 d = d.replace('when(active){"qbank"->qbank(rows);"cards"->cards(cards);"stats"->stats(rows,overall);"mastery"->mastery(rows,overall);else->home(overall,cards)}',
               'when(active){"qbank"->qbank(rows);"flashcards"->cards(cards);"analytics"->stats(rows,overall);"mastery"->mastery(rows,overall);else->home(overall,cards)}')
-d = d.replace('switchSection("stats")', 'switchSection("analytics")')
-d = d.replace('switchSection("cards")', 'switchSection("flashcards")')
+d = d.replace('switchSection("stats")','switchSection("analytics")').replace('switchSection("cards")','switchSection("flashcards")')
 d = d.replace('listOf("home" to "Home","qbank" to "QBank","cards" to "Cards","stats" to "Stats","mastery" to "Mastery")',
               'listOf("home" to "Home","qbank" to "QBank","flashcards" to "Cards","analytics" to "Stats","mastery" to "Mastery")')
 
+# HTML-reference-aligned flashcard overview, using only live scheduler values.
 start = d.index('private fun cards(c:Triple<Int,Int,Int>){')
 end = d.index('\nprivate fun stats(', start)
 cards = r'''private fun cards(c:Triple<Int,Int,Int>){
@@ -72,6 +70,7 @@ cards = r'''private fun cards(c:Triple<Int,Int,Int>){
 '''
 d = d[:start] + cards + d[end:]
 
+# HTML-reference-aligned Mastery toggle: QBank subjects remain the authoritative QBank view.
 start = d.index('private fun mastery(rows:List<Row>,o:Row){')
 end = d.index('\nprivate fun nav()', start)
 mastery = r'''private fun mastery(rows:List<Row>,o:Row){
@@ -88,34 +87,25 @@ mastery = r'''private fun mastery(rows:List<Row>,o:Row){
 '''
 d = d[:start] + mastery + d[end:]
 dash.write_text(d, encoding="utf-8")
+print("PHASE3: dashboard OK", flush=True)
 
 gradle = app / "build.gradle.kts"
-g = gradle.read_text(encoding="utf-8")
-g = re.sub(r'versionCode\s*=\s*365', 'versionCode = 366', g)
-g = re.sub(r'versionName\s*=\s*"8\.3\.271"', 'versionName = "8.3.272"', g)
+g = gradle.read_text(encoding="utf-8").replace('versionCode = 365','versionCode = 366').replace('versionName = "8.3.271"','versionName = "8.3.272"')
 gradle.write_text(g, encoding="utf-8")
+print("PHASE3: version OK", flush=True)
 
-# Remove optional Qualcomm/QNN native payloads; deterministic/local fallback remains authoritative.
-for name in [
-    "libQnnHtpPrepare.so","libQnnHtpV75Skel.so","libQnnSystem.so","libQnnHtp.so",
-    "libQnnIr.so","libQnnSaver.so","libQnnHtpV75Stub.so",
-    "libLiteRtCompilerPlugin_Qualcomm.so","libLiteRtDispatch_Qualcomm.so"
-]:
+for name in ["libQnnHtpPrepare.so","libQnnHtpV75Skel.so","libQnnSystem.so","libQnnHtp.so","libQnnIr.so","libQnnSaver.so","libQnnHtpV75Stub.so","libLiteRtCompilerPlugin_Qualcomm.so","libLiteRtDispatch_Qualcomm.so"]:
     (app / "src/main/jniLibs/arm64-v8a" / name).unlink(missing_ok=True)
+print("PHASE3: QNN cleanup OK", flush=True)
 
-# Fail closed if any of the intended edits did not land.
-checks = {
-    "Ren open-match instantiation": "openMatchButton = TextView(this)" in ren.read_text(encoding="utf-8"),
-    "Ren open-match listener": "openMatchButton?.setOnClickListener" in ren.read_text(encoding="utf-8"),
-    "MainActivity not exported": 'MainActivity" android:exported="false"' in manifest.read_text(encoding="utf-8"),
-    "HTML flashcards section id": '"flashcards"' in dash.read_text(encoding="utf-8"),
-    "HTML analytics section id": '"analytics"' in dash.read_text(encoding="utf-8"),
-    "Subject aggregation": "private fun subjectRows(rows:List<Row>)" in dash.read_text(encoding="utf-8"),
-    "Async generation guard": "token==sectionGeneration" in dash.read_text(encoding="utf-8"),
-    "Version 8.3.272": 'versionName = "8.3.272"' in gradle.read_text(encoding="utf-8"),
-    "VersionCode 366": "versionCode = 366" in gradle.read_text(encoding="utf-8"),
-}
-for k,v in checks.items():
-    if not v:
-        raise SystemExit("FAILED PATCH ASSERTION: " + k)
-print("v8.3.272 phase-3 batch applied successfully")
+# Hard assertions.
+assert "openMatchButton = TextView(this)" in ren.read_text(encoding="utf-8")
+assert "openMatchButton?.setOnClickListener" in ren.read_text(encoding="utf-8")
+assert 'MainActivity" android:exported="false"' in manifest.read_text(encoding="utf-8")
+assert '"flashcards"' in dash.read_text(encoding="utf-8")
+assert '"analytics"' in dash.read_text(encoding="utf-8")
+assert "private fun subjectRows(rows:List<Row>)" in dash.read_text(encoding="utf-8")
+assert "token==sectionGeneration" in dash.read_text(encoding="utf-8")
+assert 'versionName = "8.3.272"' in gradle.read_text(encoding="utf-8")
+assert "versionCode = 366" in gradle.read_text(encoding="utf-8")
+print("PHASE3: ALL ASSERTIONS PASS", flush=True)
