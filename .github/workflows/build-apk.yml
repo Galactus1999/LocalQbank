@@ -128,9 +128,23 @@ jobs:
           set -euo pipefail
           test -f "${GITHUB_WORKSPACE}/tools/repair_274_ui_theme.py"
           cp "${GITHUB_WORKSPACE}/tools/repair_274_ui_theme.py" tools/repair_274_ui_theme.py
-          python3 -u tools/repair_274_ui_theme.py
-          python3 -u "${GITHUB_WORKSPACE}/tools/amoled_ui_audit.py" || true
-          echo "v8.3.274 UI correction applied: floating theme-adaptive capsule, live footer repaint, AMOLED TextView visibility guard."
+          python3 -m py_compile tools/repair_274_ui_theme.py
+          python3 -u tools/repair_274_ui_theme.py 2>&1 | tee "$RUNNER_TEMP/rovex-v274-patch.log"
+          test -f tools/amoled_ui_audit.py
+          python3 -u tools/amoled_ui_audit.py 2>&1 | tee "$RUNNER_TEMP/rovex-amoled-audit.log"
+          echo "v8.3.274 UI correction applied and audited: floating theme-adaptive capsule, live footer repaint, AMOLED TextView visibility guard."
+
+      - name: Persist UI patch diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in "$RUNNER_TEMP/rovex-v274-patch.log" "$RUNNER_TEMP/rovex-amoled-audit.log"; do
+            if [ -f "$f" ]; then
+              echo "===== $f ====="
+              tail -n 300 "$f"
+            fi
+          done
 
       - name: Verify project configuration and source audits
         working-directory: ${{ env.PROJECT_DIR }}
@@ -157,7 +171,8 @@ jobs:
           test -x tools/ruthless_audit.sh
           ./tools/ruthless_audit.sh
           python3 tools/architecture_regression_audit.py
-          echo "--- performance/security source audit ---"\n          python3 "${GITHUB_WORKSPACE}/tools/performance_security_audit.py"
+          echo "--- performance/security source audit ---"
+          python3 "${GITHUB_WORKSPACE}/tools/performance_security_audit.py"
 
       - name: Prepare persistent release signing configuration
         working-directory: ${{ env.PROJECT_DIR }}
