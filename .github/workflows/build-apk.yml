@@ -81,7 +81,7 @@ jobs:
             echo "PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
             exit 0
           fi
-          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f \( -iname 'Rovex_v*_Final_Stability_Verified_Source.zip' -o -iname 'Rovex_v*_Final_Compact_Offline_Source.zip' \) -print | sort -V)
+          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f \( -iname 'Rovex_v*_Final_Stability_Verified_Source.zip' -o -iname 'Rovex_v*_Final_Compact_Offline_Source.zip' -o -iname 'Rovex_v*_Performance_QBankHierarchy_OfflineFix_Source.zip' \) -print | sort -V)
           if [ "${#ZIP_FILES[@]}" -eq 0 ]; then
             echo "ERROR: no verified Rovex source ZIP found."
             exit 1
@@ -103,10 +103,18 @@ jobs:
           test -d "$PROJECT_DIR/app"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      # The persisted source ZIP is the authoritative, already-corrected project.
-      # Historical repair scripts are intentionally NOT replayed here: doing so can mutate
-      # a newer source snapshot and reintroduce exactly the failures those scripts were meant
-      # to fix. The build gate compiles the authoritative source directly.
+      # The persisted source ZIP is authoritative. One current, idempotent repair batch is
+      # allowed below to migrate v8.3.275 -> v8.3.276 and then is removed before packaging.
+      # Historical v272/v273/v274 scripts are never replayed.
+
+      - name: Apply current v8.3.276 repair batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${GITHUB_WORKSPACE}/tools/repair_276_ai_search_amoled.py" tools/repair_276_ai_search_amoled.py
+          python3 tools/repair_276_ai_search_amoled.py
+          rm -f tools/repair_272_phase3.py tools/repair_273_core.py tools/repair_274_ui_theme.py tools/repair_276_ai_search_amoled.py
 
       - name: Verify project configuration and source audits
         working-directory: ${{ env.PROJECT_DIR }}
@@ -133,6 +141,8 @@ jobs:
           test -x tools/ruthless_audit.sh
           ./tools/ruthless_audit.sh
           python3 tools/architecture_regression_audit.py
+          echo "--- AMOLED source audit ---"
+          python3 tools/amoled_ui_audit.py
           echo "--- performance/security source audit ---"
           python3 "${GITHUB_WORKSPACE}/tools/performance_security_audit.py"
 
