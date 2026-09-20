@@ -62,8 +62,7 @@ guard='''private fun enforceAmoledTextVisibility(root:View){
             val lum=.2126*l(android.graphics.Color.red(c))+.7152*l(android.graphics.Color.green(c))+.0722*l(android.graphics.Color.blue(c))
             if(android.graphics.Color.alpha(c)<220 || (lum+.05)/.05<4.5)v.setTextColor(ThemeManager.quizQuestionText(this@QuizActivity))
             v.setLinkTextColor(ThemeManager.quizLinkText(this@QuizActivity))
-        }
-        if(v is ViewGroup)for(i in 0 until v.childCount)walk(v.getChildAt(i))
+        }; if(v is ViewGroup)for(i in 0 until v.childCount)walk(v.getChildAt(i))
     }
     walk(root)
 }'''
