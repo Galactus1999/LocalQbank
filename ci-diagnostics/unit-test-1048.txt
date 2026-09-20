@@ -1,0 +1,3 @@
+Unit-test log was not produced.
+
+--- RUN 1048 / COMMIT 8973dd113b61cba33f37e96df1ad22578e9243e0 ---
