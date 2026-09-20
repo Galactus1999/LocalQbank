@@ -27,6 +27,13 @@ elif code >= 370:
 else:
     raise SystemExit(f"ERROR: unexpected source version {name} ({code}); refusing blind mutation")
 
+dashboard = ROOT / "app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt"
+d = dashboard.read_text(encoding="utf-8")
+if "import android.view.ViewGroup" not in d:
+    d = d.replace("import android.view.View\n", "import android.view.View\nimport android.view.ViewGroup\n", 1)
+d = d.replace("rowsForBucket(rows,subject)", "rowsForSubject(rows,subject)")
+dashboard.write_text(d, encoding="utf-8")
+
 quiz = ROOT / "app/src/main/java/com/localqbank/library/QuizActivity.kt"
 s = quiz.read_text(encoding="utf-8")
 if "import android.text.style.TextAppearanceSpan" not in s:
