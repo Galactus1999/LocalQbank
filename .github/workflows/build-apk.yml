@@ -103,6 +103,33 @@ jobs:
           test -d "$PROJECT_DIR/app"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+      # Compact source ZIPs intentionally omit large vendor QNN binaries so the source
+      # upload stays below the 25 MB handoff limit. Restore the verified native payload
+      # from the already-persisted v8.3.278 Final-Stability source before compilation.
+      - name: Restore verified native accelerator payload
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so ]; then
+            echo "Native accelerator payload already present."
+            exit 0
+          fi
+          BASELINE=$(find "${GITHUB_WORKSPACE}" -maxdepth 1 -type f -name 'Rovex_v8.3.278_Final_Stability_Verified_Source.zip' -print -quit)
+          if [ -z "$BASELINE" ]; then
+            echo "ERROR: verified v8.3.278 baseline source ZIP is required to restore omitted native libraries."
+            exit 1
+          fi
+          TMP="$RUNNER_TEMP/rovex-baseline-native"
+          rm -rf "$TMP"
+          mkdir -p "$TMP"
+          unzip -q "$BASELINE" 'app/src/main/jniLibs/*' -d "$TMP"
+          test -s "$TMP/app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so"
+          rm -rf app/src/main/jniLibs
+          cp -a "$TMP/app/src/main/jniLibs" app/src/main/
+          echo "Restored verified native accelerator payload from v8.3.278 baseline."
+          ls -lh app/src/main/jniLibs/arm64-v8a/
+
       # Deterministic compile normalization for the architecture source.
       - name: Normalize architecture source compile blockers
         working-directory: ${{ env.PROJECT_DIR }}
