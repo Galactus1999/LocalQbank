@@ -26,7 +26,7 @@ qs = qs.replace(
 )
 q.write_text(qs)
 
-m = re.search(r"private fun subjectRows\([\s\S]*?)(?=private fun qbank\()", s)
+m = re.search(r"private fun subjectRows\([\s\S]*?)(?=private fun qbank\(\))", s)
 if m:
     s = s[:m.start()] + s[m.end():]
 start = s.index("private fun qbank(")
