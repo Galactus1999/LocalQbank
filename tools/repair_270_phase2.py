@@ -10,7 +10,7 @@ def one(n):
 # Extend the existing BenResponsePolicy owner with generic CSS/HTML-wrapper sanitization.
 p=one("BenResponsePolicy.kt"); s=p.read_text()
 start=s.index("object BenResponsePolicy {")
-s=s[:start]+"""object BenResponsePolicy {
+s=s[:start]+'''object BenResponsePolicy {
     const val MAX_RESPONSE_CHARS = 16_384
     private val styleBlock = Regex("""(?is)<style\\b[^>]*>.*?</style\\s*>""")
     private val scriptBlock = Regex("""(?is)<script\\b[^>]*>.*?</script\\s*>""")
@@ -31,7 +31,7 @@ s=s[:start]+"""object BenResponsePolicy {
         return BoundedTextPolicy.normalize(x, MAX_RESPONSE_CHARS)
     }
 }
-"""
+'''
 p.write_text(s)
 p=one("BenQuestionAiContextDialog.kt"); s=p.read_text()
 s=s.replace("${sanitizeRovexAiDisplayText(it.text)}","${BenResponsePolicy.normalize(it.text).orEmpty()}")
