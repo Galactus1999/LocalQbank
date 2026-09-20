@@ -17,7 +17,7 @@ s=dash.read_text(encoding="utf-8")
 
 # Replace the shell with an overlay layout so the footer can float like the HTML reference.
 start=s.index("private fun buildShell(){")
-end=s.index("\nprivate fun loadLiveData()",start)
+end=s.index("private fun loadLiveData()",start)
 shell=r'''private fun buildShell(){
     val root=FrameLayout(this).apply{
         setBackgroundColor(ThemeManager.bg(this@RovexSectionDashboardActivity))
@@ -118,6 +118,7 @@ private fun renderThemeChrome(){
 '''
 s=s[:start]+nav+s[end:]
 dash.write_text(s,encoding="utf-8")
+print("dashboard shell/footer PASS")
 
 # MainActivity footer: floating geometry + live theme repaint on resume.
 main=one("MainActivity.kt")
@@ -127,6 +128,7 @@ if "override fun onResume()" not in m:
     pos=m.rfind("\n}")
     m=m[:pos]+insert+m[pos:]
 main.write_text(m,encoding="utf-8")
+print("MainActivity footer refresh PASS")
 
 xml=one("activity_main.xml")
 x=xml.read_text(encoding="utf-8")
@@ -170,6 +172,7 @@ if "private fun enforceAmoledTextVisibility" not in q:
 if "enforceAmoledTextVisibility(window.decorView)" not in q:
     q=q.replace("super.onResume()","super.onResume()\n        window.decorView.post { enforceAmoledTextVisibility(window.decorView) }",1)
 quiz.write_text(q,encoding="utf-8")
+print("QuizActivity AMOLED guard PASS")
 
 # Global source guard: report hard-coded black foregrounds that remain in UI source.
 audit=ROOT/"tools"/"amoled_ui_audit.py"
