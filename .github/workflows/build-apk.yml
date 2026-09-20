@@ -215,7 +215,9 @@ jobs:
           else:
               print("BenResponsePolicy nullable lazy-Regex normalization: already correct")
           PY
-          if grep -nE '(styleBlock|scriptBlock|eventAttribute|styleAttribute|cssRule|htmlTag).*\\.value' app/src/main/java/com/localqbank/library/BenResponsePolicy.kt; then
+          # Check actual Kotlin member-access lines, not the replacement-map string
+          # literals above (those intentionally contain the old ".value" text).
+          if grep -nE '^\\s*(styleBlock|scriptBlock|eventAttribute|styleAttribute|cssRule|htmlTag)\\.value' app/src/main/java/com/localqbank/library/BenResponsePolicy.kt; then
             echo "ERROR: stale BenResponsePolicy .value dereference remains."
             exit 1
           fi
