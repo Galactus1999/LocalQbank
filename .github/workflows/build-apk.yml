@@ -111,6 +111,16 @@ jobs:
           python3 -u tools/repair_272_phase3.py
           echo "Phase-3 corrections applied: Ren Open Match, MainActivity export hardening, HTML-aligned dashboard, QNN payload cleanup, version 8.3.272 (366)."
 
+      - name: Apply v8.3.273 core correction batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "${GITHUB_WORKSPACE}/tools/repair_273_core.py"
+          cp "${GITHUB_WORKSPACE}/tools/repair_273_core.py" tools/repair_273_core.py
+          python3 -u tools/repair_273_core.py
+          echo "v8.3.273 core batch applied: subject hierarchy, Home routing, Frankenstein hardening, response sanitizer."
+
       - name: Verify project configuration and source audits
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
