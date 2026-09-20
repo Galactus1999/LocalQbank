@@ -14,19 +14,19 @@ def f(rel):
 # AMOLED-only repair. No QBank, dashboard, Ben, search, import, SRS, or navigation rewrites.
 g=f("app/build.gradle.kts")
 gs=g.read_text()
-if "versionCode = 370" not in gs or 'versionName = "8.3.276"' not in gs:
+if "versionCode = 372" not in gs or 'versionName = "8.3.278"' not in gs:
     raise SystemExit("AMOLED: expected v8.3.276 / versionCode 370 baseline not found")
 g.write_text(gs.replace("versionCode = 370","versionCode = 371",1).replace('versionName = "8.3.276"','versionName = "8.3.277"',1))
 
 tm=f("app/src/main/java/com/localqbank/library/ThemeManager.kt")
 s=tm.read_text()
 s=s.replace('const val AMOLED="amoled"; const val MIDNIGHT=',
-            'const val LEGACY_AMOLED="amoled"; const val AMOLED="amoled_v2"; const val MIDNIGHT=',1)
+            'const val LEGACY_AMOLED="amoled"; const val LEGACY_AMOLED_V2="amoled_v2"; const val AMOLED="amoled_black_v3"; const val MIDNIGHT=',1)
 s=s.replace('fun get(c:Context)=c.getSharedPreferences("ui",Context.MODE_PRIVATE).getString("theme",LIGHT)?:LIGHT',
 '''fun get(c:Context):String {
         val prefs=c.getSharedPreferences("ui",Context.MODE_PRIVATE)
         val stored=prefs.getString("theme",LIGHT)?:LIGHT
-        if(stored==LEGACY_AMOLED){
+        if(stored==LEGACY_AMOLED || stored==LEGACY_AMOLED_V2){
             prefs.edit().putString("theme",AMOLED).apply()
             return AMOLED
         }
@@ -35,10 +35,10 @@ s=s.replace('fun get(c:Context)=c.getSharedPreferences("ui",Context.MODE_PRIVATE
 needle='    fun dialogBg(c:Context)=if(isDark(c)) elevated(c) else Color.WHITE\n'
 insert='''    /** Dedicated quiz palette. The AMOLED profile is intentionally a new palette ID so old
      * persisted AMOLED state cannot keep carrying stale theme semantics into the quiz renderer. */
-    fun quizQuestionText(c:Context)=if(get(c)==AMOLED) Color.rgb(250,250,250) else text(c)
-    fun quizOptionText(c:Context)=if(get(c)==AMOLED) Color.rgb(255,252,240) else optionText(c)
-    fun quizMutedText(c:Context)=if(get(c)==AMOLED) Color.rgb(205,203,190) else muted(c)
-    fun quizLinkText(c:Context)=if(get(c)==AMOLED) Color.rgb(115,210,255) else accent(c)
+    fun quizQuestionText(c:Context)=if(get(c)==AMOLED) Color.rgb(248,250,252) else text(c)
+    fun quizOptionText(c:Context)=if(get(c)==AMOLED) Color.rgb(255,253,245) else optionText(c)
+    fun quizMutedText(c:Context)=if(get(c)==AMOLED) Color.rgb(190,199,210) else muted(c)
+    fun quizLinkText(c:Context)=if(get(c)==AMOLED) Color.rgb(138,216,255) else accent(c)
 
 '''
 if "fun quizQuestionText(c:Context)" not in s:
@@ -99,6 +99,46 @@ if "TextAppearanceSpan::class.java" not in qs:
         return out'''
     if old not in qs: raise SystemExit("AMOLED: HTML sanitizer block not found")
     qs=qs.replace(old,new,1)
+# Replace the HTML sanitizer with the authoritative AMOLED boundary.
+start=qs.find("    private fun themeSafeSpanned(html: String): Spanned {")
+end=qs.find("    private fun toSpanned(html: String): Spanned {",start)
+if start < 0 or end < 0:
+    raise SystemExit("AMOLED: themeSafeSpanned boundary missing")
+sanitizer='''    private fun themeSafeSpanned(html: String): Spanned {
+        // Imported QBank HTML may contain arbitrary web colours. Android gives character-level
+        // spans higher precedence than TextView.setTextColor(), so a black/dark imported span
+        // can defeat the AMOLED palette. Strip only colour declarations; preserve structure,
+        // emphasis, links, images and other rich formatting.
+        val sanitized = html
+            .replace(Regex("(?is)\\\\b(?:color|bgcolor)\\\\s*=\\\\s*(?:\\\"[^\\\"]*\\\"|'[^']*'|[^\\\\s>]+)"), "")
+            .replace(Regex("(?is)(\\\\bstyle\\\\s*=\\\\s*\\\")([^\\\"]*)(\\\")"), { m ->
+                val body = m.groupValues[2]
+                    .replace(Regex("(?is)(?:^|;)\\\\s*(?:color|background-color)\\\\s*:[^;\\\"]*;?"), ";")
+                "style=\\\"$body\\\""
+            })
+            .replace(Regex("(?is)(\\\\bstyle\\\\s*=\\\\s*')([^']*)(')"), { m ->
+                val body = m.groupValues[2]
+                    .replace(Regex("(?is)(?:^|;)\\\\s*(?:color|background-color)\\\\s*:[^;']*;?"), ";")
+                "style='$body'"
+            })
+            .replace(Regex("(?is)</font>"), "")
+        val parsed = Html.fromHtml(sanitized, Html.FROM_HTML_MODE_LEGACY)
+        if (parsed !is android.text.Spannable) return parsed
+        val out = android.text.SpannableString(parsed)
+        out.getSpans(0, out.length, android.text.style.ForegroundColorSpan::class.java).forEach { out.removeSpan(it) }
+        out.getSpans(0, out.length, android.text.style.BackgroundColorSpan::class.java).forEach { out.removeSpan(it) }
+        out.getSpans(0, out.length, TextAppearanceSpan::class.java).forEach { span ->
+            val start = out.getSpanStart(span)
+            val end = out.getSpanEnd(span)
+            val flags = out.getSpanFlags(span)
+            if (start >= 0 && end > start) {
+                out.removeSpan(span)
+                out.setSpan(TextAppearanceSpan(span.family, span.textStyle, span.textSize, null, null), start, end, flags)
+            } else out.removeSpan(span)
+        }
+        return out
+    }
+
 q.write_text(qs)
 
 # Hard guards prove this batch cannot remove the QBank feature.
@@ -108,4 +148,4 @@ if "private fun qbank(" not in d or "Overall QBank Mastery" not in d or "R.id.na
     raise SystemExit("AMOLED: QBank-preservation guard failed")
 if "4.5" not in qs or 'AMOLED="amoled_v2"' not in s:
     raise SystemExit("AMOLED: final guards failed")
-print("AMOLED-ONLY REPAIR PASS: v8.3.277 / versionCode 371")
+print("AMOLED-ONLY REPAIR PASS: v8.3.278 / versionCode 372")
