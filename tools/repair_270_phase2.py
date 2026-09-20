@@ -141,7 +141,7 @@ s=s.replace('runOnUiThread{if(!isFinishing&&!isDestroyed)render(rows,overall,car
 s=s.replace('{active="stats";render(emptyList(),o,c)}','{switchSection("stats")}')
 s=s.replace('{active="cards";render(emptyList(),o,c)}','{switchSection("cards")}')
 s=s.replace('{active="qbank";loadLiveData()}','{switchSection("qbank")}')
-start=s.index("private fun nav():LinearLayout{"); end=s.index("private fun openSearch()",start)
+start=s.index("private fun nav():View{"); end=s.index("private fun openSearch()",start)
 nav='''private fun nav():View{
     val l=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER;setPadding(d(7),d(7),d(7),d(7));background=android.graphics.drawable.GradientDrawable().apply{setColor(ThemeManager.elevated(this@RovexSectionDashboardActivity));cornerRadius=d(30).toFloat()}}
     listOf("home" to "Home","qbank" to "QBank","cards" to "Cards","stats" to "Stats","mastery" to "Mastery").forEach{(id,label)->
