@@ -20,6 +20,8 @@ g.write_text(gs.replace("versionCode = 370","versionCode = 372",1).replace('vers
 
 tm=f("app/src/main/java/com/localqbank/library/ThemeManager.kt")
 s=tm.read_text()
+s=s.replace('const val LEGACY_AMOLED="amoled"; const val AMOLED="amoled_v2"; const val MIDNIGHT=',
+            'const val LEGACY_AMOLED="amoled"; const val LEGACY_AMOLED_V2="amoled_v2"; const val AMOLED="amoled_black_v3"; const val MIDNIGHT=',1)
 s=s.replace('const val AMOLED="amoled"; const val MIDNIGHT=',
             'const val LEGACY_AMOLED="amoled"; const val LEGACY_AMOLED_V2="amoled_v2"; const val AMOLED="amoled_black_v3"; const val MIDNIGHT=',1)
 s=s.replace('fun get(c:Context)=c.getSharedPreferences("ui",Context.MODE_PRIVATE).getString("theme",LIGHT)?:LIGHT',
