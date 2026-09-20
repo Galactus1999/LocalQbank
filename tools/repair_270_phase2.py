@@ -112,7 +112,7 @@ p.write_text(s)
 
 # Five-section capsule: immediate repaint and latest-request-wins async commit.
 p=one("RovexSectionDashboardActivity.kt"); s=p.read_text()
-s=s.replace('private var active="home"','private var active="home"\nprivate var sectionGeneration=0L\nprivate lateinit var navBar:View',1)
+s=s.replace('private var active="home"','private var active="home"\nprivate var sectionGeneration=0L\nprivate lateinit var navBar:LinearLayout',1)
 s=s.replace('override fun onCreate(b:Bundle?){super.onCreate(b);active=intent.getStringExtra("section")?:"home";buildShell();loadLiveData()}',
 '''override fun onCreate(b:Bundle?){super.onCreate(b);active=intent.getStringExtra("section")?:"home";buildShell();repaintNav();loadLiveData(sectionGeneration,active)}''',1)
 s=s.replace('root.addView(nav(),LinearLayout.LayoutParams(-1,d(68)));setContentView(root)',
@@ -141,7 +141,7 @@ s=s.replace('runOnUiThread{if(!isFinishing&&!isDestroyed)render(rows,overall,car
 s=s.replace('{active="stats";render(emptyList(),o,c)}','{switchSection("stats")}')
 s=s.replace('{active="cards";render(emptyList(),o,c)}','{switchSection("cards")}')
 s=s.replace('{active="qbank";loadLiveData()}','{switchSection("qbank")}')
-start=s.index("private fun nav():View{"); end=s.index("private fun openSearch()",start)
+start=s.index("private fun nav():LinearLayout{"); end=s.index("private fun openSearch()",start)
 nav='''private fun nav():View{
     val l=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER;setPadding(d(7),d(7),d(7),d(7));background=android.graphics.drawable.GradientDrawable().apply{setColor(ThemeManager.elevated(this@RovexSectionDashboardActivity));cornerRadius=d(30).toFloat()}}
     listOf("home" to "Home","qbank" to "QBank","cards" to "Cards","stats" to "Stats","mastery" to "Mastery").forEach{(id,label)->
