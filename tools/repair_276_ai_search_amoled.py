@@ -14,7 +14,7 @@ def f(rel):
 # AMOLED-only repair. No QBank, dashboard, Ben, search, import, SRS, or navigation rewrites.
 g=f("app/build.gradle.kts")
 gs=g.read_text()
-if "versionCode = 372" not in gs or 'versionName = "8.3.278"' not in gs:
+if "versionCode = 370" not in gs or 'versionName = "8.3.276"' not in gs:
     raise SystemExit("AMOLED: expected v8.3.276 / versionCode 370 baseline not found")
 g.write_text(gs.replace("versionCode = 370","versionCode = 372",1).replace('versionName = "8.3.276"','versionName = "8.3.278"',1))
 
