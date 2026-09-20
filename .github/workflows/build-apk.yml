@@ -4,8 +4,7 @@ on:
   # Deliberate manual build gate: source-repair commits must NOT consume Actions minutes.
   # Run this workflow only after the full correction batch has been audited.
   workflow_dispatch:
-  push:
-    branches: ["main"]
+  # Build is manual-only to conserve GitHub Actions minutes while repair batches are audited.
   pull_request:
     branches: ["main"]
 
@@ -190,7 +189,7 @@ jobs:
       # the unit-test Kotlin compilation stage from starting. Normalize that exact defect
       # before Gradle compilation and assert no stale dereference remains.
       - name: Normalize Ben response policy compile blocker
-        working-directory: \${{ env.PROJECT_DIR }}
+        working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
