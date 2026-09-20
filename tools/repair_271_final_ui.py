@@ -269,7 +269,7 @@ private fun nav():LinearLayout{
     return l
 }
 '''
-s = s[:start] + block + "\\n" + s[end:]
+s = s[:helper_start] + block + "\\n" + s[end:]
 
 # Fix the render dispatcher to pass live subject rows into Stats.
 s = s.replace("stats(overall)", "stats(rows,overall)")
