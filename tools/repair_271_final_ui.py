@@ -31,7 +31,7 @@ end = s.index("private fun openSearch()", start)
 
 block = r'''private fun subjectRows(rows:List<Row>) = rows.groupBy { r ->
     val p=r.path.trim()
-    val candidate=p.substringBefore("> ").substringBefore("/").substringBefore("::").trim()
+    val candidate=p.substringBefore(">").substringBefore("/").substringBefore("::").trim()
     if(candidate.isBlank() || candidate.equals("root",true) || candidate.equals("general",true))
         r.name.substringBefore(" - ").substringBefore(" | ").trim().ifBlank{"General"}
     else candidate
