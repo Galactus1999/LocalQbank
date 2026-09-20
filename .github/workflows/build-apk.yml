@@ -81,7 +81,7 @@ jobs:
             echo "PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
             exit 0
           fi
-          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f \( -iname 'Rovex_v*_Final_Stability_Verified_Source.zip' -o -iname 'Rovex_v*_Final_Compact_Offline_Source.zip' -o -iname 'Rovex_v*_Performance_QBankHierarchy_OfflineFix_Source.zip' \) -print | sort -V)
+          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f \( -iname 'Rovex_v*_Final_Stability_Verified_Source.zip' -o -iname 'Rovex_v*_Final_Compact_Offline_Source.zip' -o -iname 'Rovex_v*_Performance_QBankHierarchy_OfflineFix_Source.zip' -o -iname 'Rovex_v*_Architecture_Stable_Source.zip' \) -print | sort -V)
           if [ "${#ZIP_FILES[@]}" -eq 0 ]; then
             echo "ERROR: no verified Rovex source ZIP found."
             exit 1
