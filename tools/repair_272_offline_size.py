@@ -32,8 +32,8 @@ if "com.github.luben:zstd-jni:1.5.7-16@aar" not in gradle.read_text():
 
 # Make the compact build the next monotonic release.
 gs = gradle.read_text()
-gs = re.sub(r'versionName\s*=\s*"8\.3\.271"', 'versionName = "8.3.272"', gs, count=1)
-gs = re.sub(r'versionCode\s*=\s*365', 'versionCode = 366', gs, count=1)
+gs = re.sub(r'versionName\s*=\s*"8\.3\.270"', 'versionName = "8.3.271"', gs, count=1)
+gs = re.sub(r'versionCode\s*=\s*364', 'versionCode = 365', gs, count=1)
 gradle.write_text(gs)
 
 # The accelerator is optional; absence must not become a build-time dependency.
