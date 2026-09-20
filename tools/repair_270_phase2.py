@@ -12,12 +12,12 @@ p=one("BenResponsePolicy.kt"); s=p.read_text()
 start=s.index("object BenResponsePolicy {")
 s=s[:start]+"""object BenResponsePolicy {
     const val MAX_RESPONSE_CHARS = 16_384
-    private val styleBlock = Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
-    private val scriptBlock = Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
-    private val htmlWrapper = Regex("(?is)</?(?:!doctype|html|head|body|main|section|article|div)(?:\\s+[^>]*)?>")
-    private val cssProperty = Regex("(?i)\\b(?:font-family|font-size|line-height|margin(?:-[a-z]+)?|padding(?:-[a-z]+)?|color|background(?:-[a-z]+)?|border(?:-[a-z]+)?|border-radius|display|width|height|min-width|max-width|min-height|max-height|overflow|text-align|vertical-align|letter-spacing|font-weight|text-transform|object-fit|box-shadow|position|top|right|bottom|left|content)\\s*:")
-    private val cssSelector = Regex("(?is)(?:[a-z][a-z0-9_-]*|[.#][a-z][a-z0-9_-]*)(?:\\s*(?:,|>|\\+|~)\\s*(?:[a-z][a-z0-9_-]*|[.#][a-z][a-z0-9_-]*))*")
-    private val cssRule = Regex("(?s)(?:^|(?<=}))\\s*([^{}]{1,240})\\{([^{}]{1,5000})\\}")
+    private val styleBlock = Regex("""(?is)<style\\b[^>]*>.*?</style\\s*>""")
+    private val scriptBlock = Regex("""(?is)<script\\b[^>]*>.*?</script\\s*>""")
+    private val htmlWrapper = Regex("""(?is)</?(?:!doctype|html|head|body|main|section|article|div)(?:\\s+[^>]*)?>""")
+    private val cssProperty = Regex("""(?i)\\b(?:font-family|font-size|line-height|margin(?:-[a-z]+)?|padding(?:-[a-z]+)?|color|background(?:-[a-z]+)?|border(?:-[a-z]+)?|border-radius|display|width|height|min-width|max-width|min-height|max-height|overflow|text-align|vertical-align|letter-spacing|font-weight|text-transform|object-fit|box-shadow|position|top|right|bottom|left|content)\\s*:""")
+    private val cssSelector = Regex("""(?is)(?:[a-z][a-z0-9_-]*|[.#][a-z][a-z0-9_-]*)(?:\\s*(?:,|>|\\+|~)\\s*(?:[a-z][a-z0-9_-]*|[.#][a-z][a-z0-9_-]*))*""")
+    private val cssRule = Regex("""(?s)(?:^|(?<=}))\\s*([^{}]{1,240})\\{([^{}]{1,5000})\\}""")
     fun normalize(raw: String?): String? {
         var x = raw?.replace("\\r\\n","\\n")?.replace("\\r","\\n") ?: return null
         x = x.replace(styleBlock," ").replace(scriptBlock," ").replace(htmlWrapper," ")
