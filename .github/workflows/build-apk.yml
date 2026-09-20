@@ -145,7 +145,7 @@ jobs:
           grep -F 'com.github.luben:zstd-jni:1.5.7-16@aar' app/build.gradle.kts >/dev/null
           test -x tools/ruthless_audit.sh
           ./tools/ruthless_audit.sh
-          python3 tools/architecture_regression_audit.py
+          python3 tools/architecture_regression_audit.py\n          echo "--- performance/security source audit ---"\n          python3 "${GITHUB_WORKSPACE}/tools/performance_security_audit.py"
 
       - name: Prepare persistent release signing configuration
         working-directory: ${{ env.PROJECT_DIR }}
