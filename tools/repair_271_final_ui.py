@@ -279,7 +279,7 @@ private fun nav():LinearLayout{
 s = s[:helper_start] + block + "\\n" + s[end:]
 
 # Fix the render dispatcher to pass live subject rows into Stats.
-s = s.replace("\"stats\"->stats(overall)", "\"stats\"->stats(rows,overall)")
+s = re.sub(r"stats\\(overall\\)", "stats(rows,overall)", s)
 
 # Ensure the AMOLED fix is actually structural, not just span stripping.
 if "setTextColor(ThemeManager.text(this@QuizActivity))" not in qs:
