@@ -171,8 +171,6 @@ jobs:
         if: failure()
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           src="$RUNNER_TEMP/rovex-unit-test.log"
@@ -184,14 +182,33 @@ jobs:
             printf '%s\n' 'Unit-test log was not produced.' > "$out"
           fi
           printf '\n--- RUN %s / COMMIT %s ---\n' "$GITHUB_RUN_NUMBER" "$GITHUB_SHA" >> "$out"
-          git config user.name "Rovex CI Diagnostics"
-          git config user.email "rohitkokane9873@gmail.com"
-          branch="ci-diagnostics-${GITHUB_RUN_NUMBER}"
-          git switch -c "$branch"
-          cp "$out" "$GITHUB_WORKSPACE/rovex-unit-test-diagnostics.txt"
-          git add rovex-unit-test-diagnostics.txt
-          git commit -m "ci: persist unit-test diagnostics for run ${GITHUB_RUN_NUMBER}"
-          git push origin "HEAD:$branch"
+
+      - name: Publish unit-test diagnostics to GitHub branch
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          DIAGNOSTIC_FILE: ${{ runner.temp }}/rovex-unit-test-diagnostics.txt
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('fs');
+            const path = process.env.DIAGNOSTIC_FILE;
+            const content = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : 'Diagnostic file missing';
+            const branch = 'ci-diagnostics-' + context.runNumber;
+            const { owner, repo } = context.repo;
+            const mainRef = await github.rest.git.getRef({ owner, repo, ref: 'heads/main' });
+            try {
+              await github.rest.git.createRef({ owner, repo, ref: 'refs/heads/' + branch, sha: mainRef.data.object.sha });
+            } catch (e) {
+              if (e.status !== 422) throw e;
+            }
+            await github.rest.repos.createOrUpdateFileContents({
+              owner, repo,
+              path: 'ci-diagnostics/unit-test-' + context.runNumber + '.txt',
+              message: 'ci: persist unit-test diagnostics ' + context.runNumber,
+              content: Buffer.from(content, 'utf8').toString('base64'),
+              branch
+            });
 
       - name: Build signed release APK
         working-directory: ${{ env.PROJECT_DIR }}
