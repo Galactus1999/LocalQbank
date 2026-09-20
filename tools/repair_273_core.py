@@ -89,6 +89,9 @@ object BenResponsePolicy {
 }
 '''
 s=p.read_text(encoding="utf-8")
-s=re.sub(r'(?s)object BenResponsePolicy\s*\{.*\}\s*$',policy,s)
+s=re.sub(r'(?s)object BenResponsePolicy\s*\{.*\}\s*
+p.write_text(s,encoding="utf-8")
+print("v273 response policy PASS")
+,lambda _m: policy,s)
 p.write_text(s,encoding="utf-8")
 print("v273 response policy PASS")
