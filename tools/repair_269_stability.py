@@ -11,13 +11,12 @@ def one(n):
 san=R/"app/src/main/java/com/localqbank/library/RovexAiDisplaySanitizer.kt"
 san.write_text(r'''package com.localqbank.library
 
-object RovexAiDisplaySanitizer {
-    private val STYLE=Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
-    private val SCRIPT=Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
-    private val CSS_RUN=Regex("(?is)^\\s*(?:body|html|h1|h2|h3|h4|h5|h6|p|blockquote|code|pre|table|th|td|mark|\\.card|\\.label|\\.answer|img|a)\\s*\\{[^}]{0,6000}\\}.*?(?=Found \\d+ relevant local questions\\.|Clinical concepts:|Q\\d+\\s*[•.-])")
-    fun clean(raw:String?):String {
+    private val rovexAiStyleLeak=Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
+    private val rovexAiScriptLeak=Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
+    private val rovexAiCssRun=Regex("(?is)^\\s*(?:body|html|h1|h2|h3|h4|h5|h6|p|blockquote|code|pre|table|th|td|mark|\\.card|\\.label|\\.answer|img|a)\\s*\\{[^}]{0,6000}\\}.*?(?=Found \\d+ relevant local questions\\.|Clinical concepts:|Q\\d+\\s*[•.-])")
+fun sanitizeRovexAiDisplayText(raw:String?):String {
         var x=raw.orEmpty().replace("\\u0000"," ")
-        x=x.replace(STYLE," ").replace(SCRIPT," ").replace(CSS_RUN," ")
+        x=x.replace(rovexAiStyleLeak," ").replace(rovexAiScriptLeak," ").replace(rovexAiCssRun," ")
         return x.replace(Regex("[ \\t]{2,}")," ").replace(Regex("\\n{3,}"),"\\n\\n").trim()
     }
 }
@@ -27,7 +26,7 @@ p=one("BenQuestionAiContextDialog.kt"); s=p.read_text()
 s=s.replace("Return concise exam-oriented Markdown with headings, short paragraphs, useful comparison tables, and bold key takeaways.",
             "Return concise exam-oriented Markdown with headings, short paragraphs, useful comparison tables, and bold key takeaways. Never output CSS, <style> blocks, HTML document wrappers, or CSS selector source such as body{...}; return only the actual answer content.")
 s=s.replace('val answer = result?.let { "## Free AI\\n\\n${it.text}\\n\\n*${it.provider.label} • ${it.model}*" }',
-            'val answer = result?.let { "## Free AI\\n\\n${RovexAiDisplaySanitizer.clean(it.text)}\\n\\n*${it.provider.label} • ${it.model}*" }')
+            'val answer = result?.let { "## Free AI\\n\\n${sanitizeRovexAiDisplayText(it.text)}\\n\\n*${it.provider.label} • ${it.model}*" }')
 p.write_text(s)
 
 # AMOLED-safe capsule footer: runtime theme owns the colours.
@@ -101,7 +100,7 @@ g.write_text(gs)
 
 # Pre-Gradle source stability gate.
 a=R/"tools/assert_phase2_stability.py"
-a.write_text('''from pathlib import Path\nimport sys\nr=Path(sys.argv[1] if len(sys.argv)>1 else ".")\nd=next(r.rglob("RovexSectionDashboardActivity.kt")).read_text()\nm=next(r.rglob("MainActivity.kt")).read_text()\nf=next(r.rglob("BenQuestionAiContextDialog.kt")).read_text()\nif d.count("private fun progress(")!=1: raise SystemExit("STABILITY: dashboard progress owner duplicated")\nif "analyticsHero(rows)" not in d: raise SystemExit("STABILITY: QBank analytical hero missing")\nif "setOnClickListener{if(r.testId.isNotBlank())" not in d: raise SystemExit("STABILITY: QBank subsection touch target missing")\nif "RovexAiDisplaySanitizer.clean(it.text)" not in f: raise SystemExit("STABILITY: AI display sanitizer missing")\nif not all(x in m for x in ("navHome","navQBank","navCards","navStats","navMastery")): raise SystemExit("STABILITY: five-section footer incomplete")\nprint("Phase-2 stability assertions PASS")\n''')
+a.write_text('''from pathlib import Path\nimport sys\nr=Path(sys.argv[1] if len(sys.argv)>1 else ".")\nd=next(r.rglob("RovexSectionDashboardActivity.kt")).read_text()\nm=next(r.rglob("MainActivity.kt")).read_text()\nf=next(r.rglob("BenQuestionAiContextDialog.kt")).read_text()\nif d.count("private fun progress(")!=1: raise SystemExit("STABILITY: dashboard progress owner duplicated")\nif "analyticsHero(rows)" not in d: raise SystemExit("STABILITY: QBank analytical hero missing")\nif "setOnClickListener{if(r.testId.isNotBlank())" not in d: raise SystemExit("STABILITY: QBank subsection touch target missing")\nif "sanitizeRovexAiDisplayText(it.text)" not in f: raise SystemExit("STABILITY: AI display sanitizer missing")\nif not all(x in m for x in ("navHome","navQBank","navCards","navStats","navMastery")): raise SystemExit("STABILITY: five-section footer incomplete")\nprint("Phase-2 stability assertions PASS")\n''')
 import subprocess
 subprocess.check_call([sys.executable,str(a),str(R)])
 print("8.3.269 stability/UI patch PASS")
