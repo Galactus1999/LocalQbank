@@ -7,12 +7,11 @@ bad = []
 kotlin = list(ROOT.rglob("*.kt"))
 
 for path in kotlin:
-    text = path.read_text(encoding="utf-8", errors="strict")
-    if r"\nprivate " in text or r"\npublic " in text or r"\noverride " in text:
+    source = path.read_text(encoding="utf-8", errors="strict")
+    if r"\nprivate " in source or r"\npublic " in source or r"\noverride " in source:
         bad.append(f"{path}: literal escaped newline before declaration")
-    if r"\r\n" in text or r"\r" in text:
-    for line_no, line in enumerate(text.splitlines(), 1):
-        if re.search(r"(^|[^\\])\\b(?:class|object|fun|val|var|private|public|override)\\b", line) and "\\" in line:
+    for line_no, line in enumerate(source.splitlines(), 1):
+        if re.search(r"(^|[^\\])\b(?:class|object|fun|val|var|private|public|override)\b", line) and "\\" in line:
             bad.append(f"{path}:{line_no}: suspicious backslash in declaration")
 
 if bad:
