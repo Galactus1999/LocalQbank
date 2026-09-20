@@ -61,15 +61,17 @@ print("v273 core patch pass")
 
 # Replace the response hygiene layer with a fail-closed text sanitizer.
 p=app/"src/main/java/com/localqbank/library/BenResponsePolicy.kt"
-policy = """package com.localqbank.library
+policy = r'''package com.localqbank.library
 
 object BenResponsePolicy {
     const val MAX_RESPONSE_CHARS = 16_384
-    private val styleBlock = Regex("(?is)<style\\\\b[^>]*>.*?</style\\\\s*>")
-    private val scriptBlock = Regex("(?is)<script\\\\b[^>]*>.*?</script\\\\s*>")
-    private val eventAttr = Regex("(?is)\\\\s+on[a-z]+\\\\s*=\\\\s*(?:\\\"[^\\\"]*\\\"|'[^']*'|[^\\\\s>]+)")
-    private val dangerousTag = Regex("(?is)</?(?:iframe|object|embed|svg|math|link|meta|base|form|input|textarea|select|button)(?:\\\\s+[^>]*)?>")
-    private val htmlTag = Regex("(?is)</?[a-z][a-z0-9:-]*(?:\\\\s+[^>]*)?/? >".replace(" />","/>"))
+
+    private val styleBlock = Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
+    private val scriptBlock = Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
+    private val eventAttr = Regex("(?is)\\s+on[a-z]+\\s*=\\s*(?:\"[^\"]*\"|'[^']*'|[^\\s>]+)")
+    private val dangerousTag = Regex("(?is)</?(?:iframe|object|embed|svg|math|link|meta|base|form|input|textarea|select|button)(?:\\s+[^>]*)?>")
+    private val htmlTag = Regex("(?is)</?[a-z][a-z0-9:-]*(?:\\s+[^>]*)?/?>")
+
     fun normalize(raw: String?): String? {
         var x = raw?.replace("\\r\\n", "\\n")?.replace("\\r", "\\n") ?: return null
         x = x.replace(styleBlock, " ")
@@ -77,14 +79,14 @@ object BenResponsePolicy {
             .replace(eventAttr, " ")
             .replace(dangerousTag, " ")
             .replace(htmlTag, " ")
-        x = x.replace(Regex("[ \\t]{2,}"), " ")
+            .replace(Regex("[ \\t]{2,}"), " ")
             .replace(Regex("\\n{3,}"), "\\n\\n")
             .trim()
         return BoundedTextPolicy.normalize(x, MAX_RESPONSE_CHARS)
     }
 }
-"""
+'''
 s=p.read_text(encoding="utf-8")
 s=re.sub(r'(?s)object BenResponsePolicy\s*\{.*\}\s*$',policy,s)
 p.write_text(s,encoding="utf-8")
-print("v273 sanitizer added")
+print("v273 response policy PASS")
