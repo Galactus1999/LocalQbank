@@ -16,10 +16,11 @@ if not vc or not vn:
 
 code = int(vc.group(1))
 name = vn.group(1)
-if code == 369 and name == "8.3.275":
+if code in (369, 370) and name in ("8.3.275", "8.3.276"):
     gradle.write_text(
-        text.replace("versionCode = 369", "versionCode = 370")
-            .replace('versionName = "8.3.275"', 'versionName = "8.3.276"', 1),
+        re.sub(r"versionCode = (?:369|370)", "versionCode = 371", text, count=1)
+            .replace('versionName = "8.3.275"', 'versionName = "8.3.277"', 1)
+            .replace('versionName = "8.3.276"', 'versionName = "8.3.277"', 1),
         encoding="utf-8",
     )
 elif code >= 370:
@@ -33,6 +34,145 @@ if "import android.view.ViewGroup" not in d:
     d = d.replace("import android.view.View\n", "import android.view.View\nimport android.view.ViewGroup\n", 1)
 d = d.replace("rowsForBucket(rows,subject)", "rowsForSubject(rows,subject)")
 dashboard.write_text(d, encoding="utf-8")
+
+// Remove the QBank dashboard tab entirely from the five-item bottom navigation.
+// QBank itself remains available through the main library/import/search workflows.
+start = d.find("private fun qbank(")
+if start >= 0:
+    end = d.find("private fun analyticsHero(", start)
+    if end < 0: raise SystemExit("ERROR: qbank function end marker missing")
+    d = d[:start] + d[end:]
+
+d = d.replace(
+    'when(active){"qbank"->qbank(data.rows);"flashcards"->cards(if(data.cards!=null) cardData else Triple(-1,-1,-1));',
+    'when(active){"flashcards"->cards(if(data.cards!=null) cardData else Triple(-1,-1,-1));'
+)
+
+d = d.replace(
+    '    card("All QBank subjects","Browse the complete imported subject/section hierarchy. Nothing is hard-coded.",ThemeManager.accent(this),"OPEN QBANK"){switchSection("qbank")}\n',
+    ''
+)
+
+d = d.replace(
+    '    card("Solved",o.solved.toString()+" questions have recorded progress.",ThemeManager.pastelAccentText(this,0),"OPEN QBANK"){switchSection("qbank")}\n'
+    '    card("Correct",o.correct.toString()+" correct answers • "+o.accuracy+"% accuracy.",ThemeManager.pastelAccentText(this,1),"REVIEW"){switchSection("qbank")}\n'
+    '    card("Wrong",(o.solved-o.correct).coerceAtLeast(0).toString()+" recorded wrong answers.",ThemeManager.pastelAccentText(this,2),"REVIEW"){switchSection("qbank")}\n',
+    '    card("Solved",o.solved.toString()+" questions have recorded progress.",ThemeManager.pastelAccentText(this,0),"DETAILS"){}\n'
+    '    card("Correct",o.correct.toString()+" correct answers • "+o.accuracy+"% accuracy.",ThemeManager.pastelAccentText(this,1),"DETAILS"){}\n'
+    '    card("Wrong",(o.solved-o.correct).coerceAtLeast(0).toString()+" recorded wrong answers.",ThemeManager.pastelAccentText(this,2),"DETAILS"){}\n'
+)
+
+d = d.replace(
+    '    card("Overall QBank Mastery",o.mastery.toString()+"% of imported questions have been attempted at least once.",ThemeManager.accent(this),"OPEN QBANK"){switchSection("qbank")}\n',
+    ''
+)
+
+d = d.replace(
+    'listOf("home" to "Home","qbank" to "QBank","flashcards" to "Cards","analytics" to "Stats","mastery" to "Mastery")',
+    'listOf("home" to "Home","flashcards" to "Cards","analytics" to "Stats","mastery" to "Mastery")'
+)
+
+d = d.replace(
+    'v.text=if(on) "●  "+when(id){"home"->"Home";"qbank"->"QBank";"flashcards"->"Cards";"analytics"->"Stats";else->"Mastery"} else when(id){"home"->"Home";"qbank"->"QBank";"flashcards"->"Cards";"analytics"->"Stats";else->"Mastery"}',
+    'v.text=if(on) "●  "+when(id){"home"->"Home";"flashcards"->"Cards";"analytics"->"Stats";else->"Mastery"} else when(id){"home"->"Home";"flashcards"->"Cards";"analytics"->"Stats";else->"Mastery"}'
+)
+
+d = d.replace(
+    'if(active==id) return',
+    'if(active==id) return'
+)
+d = d.replace(
+    'if(active==id) return\n    active=id',
+    'if(active==id) return\n    if(id=="qbank") return\n    active=id'
+)
+
+dashboard.write_text(d, encoding="utf-8")
+
+// Remove the QBank item from MainActivity's five-item footer.
+main = ROOT / "app/src/main/java/com/localqbank/library/MainActivity.kt"
+m = main.read_text(encoding="utf-8")
+m = m.replace('listOf(R.id.navHome,R.id.navQBank,R.id.navCards,R.id.navStats,R.id.navMastery)',
+              'listOf(R.id.navHome,R.id.navCards,R.id.navStats,R.id.navMastery)')
+m = m.replace('        findViewById<View>(R.id.navQBank)?.setOnClickListener{startActivity(Intent(this,RovexSectionDashboardActivity::class.java).putExtra("section","qbank"))}\n','')
+main.write_text(m, encoding="utf-8")
+
+// Remove navQBank from MainActivity XML and change the remaining capsule to four equal items.
+xml = ROOT / "app/src/main/res/layout/activity_main.xml"
+x = xml.read_text(encoding="utf-8")
+x = re.sub(r'\s*<TextView android:id="@\+id/navQBank"[\s\S]*?/>', '', x, count=1)
+x = x.replace('android:weightSum="5"', 'android:weightSum="4"', 1)
+xml.write_text(x, encoding="utf-8")
+
+// Robust AMOLED contrast enforcement: dark-gray imported text can be invisible on pure black
+// even when it is lighter than the old fixed 0x303030 threshold. Use WCAG-style luminance.
+quiz = ROOT / "app/src/main/java/com/localqbank/library/QuizActivity.kt"
+qs = quiz.read_text(encoding="utf-8")
+old_fn = re.search(r'private fun enforceAmoledTextVisibility\(root: View\)\{[\s\S]*?\n\}\n\noverride fun onResume', qs)
+if not old_fn:
+    raise SystemExit("ERROR: AMOLED visibility function not found")
+new_fn = '''private fun enforceAmoledTextVisibility(root: View){
+    if (ThemeManager.get(this@QuizActivity) != ThemeManager.AMOLED) return
+    fun linear(v:Int):Double {
+        val c=v.coerceIn(0,255)/255.0
+        return if(c<=0.04045) c/12.92 else Math.pow((c+0.055)/1.055,2.4)
+    }
+    fun luminance(color:Int):Double =
+        0.2126*linear(android.graphics.Color.red(color)) +
+        0.7152*linear(android.graphics.Color.green(color)) +
+        0.0722*linear(android.graphics.Color.blue(color))
+    fun walk(v: View){
+        if(v is TextView){
+            val c=v.currentTextColor
+            val alpha=android.graphics.Color.alpha(c)
+            val contrast=(luminance(c)+0.05)/0.05 // AMOLED content background is black.
+            if(alpha < 220 || contrast < 4.5){
+                v.setTextColor(ThemeManager.text(this@QuizActivity))
+            }
+        }
+        if(v is ViewGroup){
+            for(i in 0 until v.childCount) walk(v.getChildAt(i))
+        }
+    }
+    walk(root)
+}
+
+override fun onResume'''
+qs = qs[:old_fn.start()] + new_fn + qs[old_fn.end():]
+
+if "TextAppearanceSpan" not in qs:
+    qs = qs.replace("import android.text.Spanned\n", "import android.text.Spanned\nimport android.text.style.TextAppearanceSpan\n", 1)
+old_cleanup = '''        out.getSpans(0,out.length,android.text.style.ForegroundColorSpan::class.java).forEach{out.removeSpan(it)}
+        out.getSpans(0,out.length,android.text.style.BackgroundColorSpan::class.java).forEach{out.removeSpan(it)}
+        return out'''
+new_cleanup = '''        out.getSpans(0,out.length,android.text.style.ForegroundColorSpan::class.java).forEach{out.removeSpan(it)}
+        out.getSpans(0,out.length,android.text.style.BackgroundColorSpan::class.java).forEach{out.removeSpan(it)}
+        out.getSpans(0,out.length,TextAppearanceSpan::class.java).forEach { span ->
+            val start=out.getSpanStart(span); val end=out.getSpanEnd(span); val flags=out.getSpanFlags(span)
+            if(start<0 || end<=start){ out.removeSpan(span) } else {
+                val replacement=TextAppearanceSpan(span.family,span.textStyle,span.textSize,null,null)
+                out.removeSpan(span); out.setSpan(replacement,start,end,flags)
+            }
+        }
+        return out'''
+if old_cleanup in qs:
+    qs=qs.replace(old_cleanup,new_cleanup,1)
+quiz.write_text(qs, encoding="utf-8")
+
+// Source assertions.
+if 'qbank' in d[d.find('private fun render'):d.find('private fun title')]:
+    raise SystemExit("ERROR: qbank render branch remains")
+if '"qbank" to "QBank"' in d:
+    raise SystemExit("ERROR: QBank remains in dashboard footer")
+if 'navQBank' in m or 'navQBank' in x:
+    raise SystemExit("ERROR: navQBank remains in main footer")
+if 'private fun qbank(' in d:
+    raise SystemExit("ERROR: qbank dashboard function remains")
+if 'Overall QBank Mastery' in d:
+    raise SystemExit("ERROR: QBank card remains in mastery")
+if 'contrast < 4.5' not in qs:
+    raise SystemExit("ERROR: robust AMOLED contrast guard missing")
+
+print("repair_277_qbank_remove_amoled: PASS")
 
 quiz = ROOT / "app/src/main/java/com/localqbank/library/QuizActivity.kt"
 s = quiz.read_text(encoding="utf-8")
