@@ -109,36 +109,18 @@ jobs:
             echo "ERROR: root build.gradle.kts plugin declaration is missing from repository."
             exit 1
           }
-          if [ ! -f android-project/build.gradle.kts ]; then
-            cp build.gradle.kts android-project/build.gradle.kts
-            echo "Injected repository root Gradle plugin declaration into selected source."
-          else
-            # Merge the authoritative Firebase plugin versions into the selected
-            # source root plugin block. This is deterministic and idempotent.
-            python3 - <<'PY'
-from pathlib import Path
-p = Path("android-project/build.gradle.kts")
-s = p.read_text(encoding="utf-8")
-required = [
-    'id("com.google.gms.google-services") version "4.5.0" apply false',
-    'id("com.google.firebase.crashlytics") version "3.0.8" apply false',
-]
-missing = [x for x in required if x not in s]
-if missing:
-    lines = s.splitlines()
-    try:
-        start = next(i for i, line in enumerate(lines) if line.strip() == "plugins {")
-        end = next(i for i in range(start + 1, len(lines)) if lines[i].strip() == "}")
-    except StopIteration:
-        raise SystemExit("ERROR: root plugins block not found in selected source")
-    lines[end:end] = ["    " + x for x in missing]
-    p.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print("Injected:", ", ".join(missing))
-else:
-    print("Firebase plugin declarations already present.")
-PY
-          fi
-          fi
+          # The source ZIP is compact and its root Gradle file may lag the
+          # repository's authoritative plugin classpath. Replace it deterministically
+          # with the checked-in root declaration; this file is intentionally only the
+          # root plugin classpath and contains no app business logic.
+          test -f build.gradle.kts || {
+            echo "ERROR: repository root build.gradle.kts is missing."
+            exit 1
+          }
+          cp build.gradle.kts android-project/build.gradle.kts
+          grep -F 'id("com.google.android.application") version "9.1.1" apply false' android-project/build.gradle.kts >/dev/null
+          grep -F 'id("com.google.android.test") version "9.1.1" apply false' android-project/build.gradle.kts >/dev/null
+          grep -F 'id("org.jetbrains.kotlin.plugin.compose") version "2.2.10" apply false' android-project/build.gradle.kts >/dev/null
           grep -F 'id("com.google.gms.google-services") version "4.5.0" apply false' android-project/build.gradle.kts >/dev/null
           grep -F 'id("com.google.firebase.crashlytics") version "3.0.8" apply false' android-project/build.gradle.kts >/dev/null
           CANDIDATE=$(find android-project -name "settings.gradle.kts" -type f -print -quit)
