@@ -325,7 +325,20 @@ jobs:
             echo "Verified stable source ZIP already persisted."
           else
             git commit -m "chore: persist verified Rovex ${ROVEX_VERSION_NAME} source [skip ci]"
-            git push origin HEAD:main
+            # Another verified-source cleanup/build may have advanced main while this
+            # workflow was building. Rebase our unique versioned ZIP commit before push
+            # instead of failing on a harmless non-fast-forward race.
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then
+                break
+              fi
+              git fetch origin main
+              git rebase origin/main
+              if [ "$attempt" -eq 3 ]; then
+                echo "ERROR: unable to fast-forward verified source ZIP after 3 retries."
+                exit 1
+              fi
+            done
           fi
 
       - name: Upload signed release APK
