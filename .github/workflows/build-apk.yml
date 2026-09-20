@@ -163,7 +163,35 @@ jobs:
       - name: Run unit tests
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
-        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/rovex-unit-test.log"
+
+      - name: Persist unit-test diagnostics on failure
+        if: failure()
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/rovex-unit-test.log"
+          out="$RUNNER_TEMP/rovex-unit-test-diagnostics.txt"
+          if [ -s "$src" ]; then
+            grep -E '(^e: |error:|FAILURE:|Execution failed|Caused by:|Tests run:|FAILED|There were failing tests)' "$src" > "$out" || true
+            if [ ! -s "$out" ]; then tail -n 250 "$src" > "$out"; fi
+          else
+            printf '%s\n' 'Unit-test log was not produced.' > "$out"
+          fi
+          printf '\n--- RUN %s / COMMIT %s ---\n' "$GITHUB_RUN_NUMBER" "$GITHUB_SHA" >> "$out"
+          git config user.name "Rovex CI Diagnostics"
+          git config user.email "rohitkokane9873@gmail.com"
+          branch="ci-diagnostics-${GITHUB_RUN_NUMBER}"
+          git switch -c "$branch"
+          cp "$out" "$GITHUB_WORKSPACE/rovex-unit-test-diagnostics.txt"
+          git add rovex-unit-test-diagnostics.txt
+          git commit -m "ci: persist unit-test diagnostics for run ${GITHUB_RUN_NUMBER}"
+          git push origin "HEAD:$branch"
 
       - name: Build signed release APK
         working-directory: ${{ env.PROJECT_DIR }}
