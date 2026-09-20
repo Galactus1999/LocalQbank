@@ -141,6 +141,7 @@ sanitizer='''    private fun themeSafeSpanned(html: String): Spanned {
         return out
     }
 
+'''
 q.write_text(qs)
 
 # Hard guards prove this batch cannot remove the QBank feature.
