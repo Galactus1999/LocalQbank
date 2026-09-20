@@ -1,0 +1,3 @@
+Unit-test log was not produced.
+
+--- RUN 1025 / COMMIT ad33247fbdea8116546ab6ca67a8a2646fe876f0 ---
