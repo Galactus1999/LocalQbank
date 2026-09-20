@@ -122,7 +122,7 @@ jobs:
           echo "v8.3.273 core batch applied: subject hierarchy, Home routing, Frankenstein hardening, response sanitizer."
 
       - name: Apply v8.3.274 AMOLED and capsule UI correction
-        working-directory: ${{ env.PROJECT_DIR }
+        working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
@@ -156,7 +156,8 @@ jobs:
           grep -F 'com.github.luben:zstd-jni:1.5.7-16@aar' app/build.gradle.kts >/dev/null
           test -x tools/ruthless_audit.sh
           ./tools/ruthless_audit.sh
-          python3 tools/architecture_regression_audit.py\n          echo "--- performance/security source audit ---"\n          python3 "${GITHUB_WORKSPACE}/tools/performance_security_audit.py"
+          python3 tools/architecture_regression_audit.py
+          echo "--- performance/security source audit ---"\n          python3 "${GITHUB_WORKSPACE}/tools/performance_security_audit.py"
 
       - name: Prepare persistent release signing configuration
         working-directory: ${{ env.PROJECT_DIR }}
