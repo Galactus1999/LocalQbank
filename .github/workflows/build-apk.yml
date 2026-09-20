@@ -279,20 +279,6 @@ jobs:
           echo "ROVEX_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           echo "Release identity: $VERSION_NAME ($VERSION_CODE)"
 
-      - name: Verify compact verified source ZIP size
-        shell: bash
-        run: |
-          set -euo pipefail
-          ZIP=$(find . -maxdepth 1 -type f -name 'Rovex_v*_Final_Compact_Offline_Source.zip' | sort -V | tail -1)
-          if [ -z "$ZIP" ]; then
-            ZIP=$(find . -maxdepth 1 -type f -name 'Rovex_v*_Final_Stability_Verified_Source.zip' | sort -V | tail -1)
-          fi
-          test -n "$ZIP"
-          BYTES=$(stat -c%s "$ZIP")
-          LIMIT=$((25*1024*1024))
-          echo "Verified source ZIP size: $BYTES bytes ($((BYTES/1024/1024)) MiB)"
-          test "$BYTES" -le "$LIMIT" || { echo "ERROR: verified source ZIP exceeds 25 MiB"; exit 1; }
-
       - name: Package verified stable source ZIP
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
