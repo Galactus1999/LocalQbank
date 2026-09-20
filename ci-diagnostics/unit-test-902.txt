@@ -1,0 +1,46 @@
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:60:76 Argument type mismatch: actual type is 'RovexSectionDashboardActivity.Row', but 'List<RovexSectionDashboardActivity.Row>' was expected.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:60:76 No value passed for parameter 'o'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:9 Function 'subjectRows' without a body must be abstract.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:49 Syntax error: Expecting a '>'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:49 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:51 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:55 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:56 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:63 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:63 Function declaration must have a name.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:67 Unresolved reference 'path'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:72 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:91 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:92 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:95 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:95 Function declaration must have a name.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:97 Unresolved reference 'subject'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:104 Syntax error: Expecting ')'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:104 Syntax error: Unexpected tokens (use ';' to separate expressions on the same line).
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:140 Unresolved reference 'position'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:151 Unresolved reference 'items'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:169 Unresolved reference 'subject'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:177 Unresolved reference 'items'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:192 Unresolved reference 'total'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:199 Unresolved reference 'items'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:214 Unresolved reference 'solved'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:222 Unresolved reference 'items'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:237 Unresolved reference 'correct'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:246 Unresolved reference 'f'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:255 Unresolved reference 'f'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:266 Unresolved reference 'subject'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:274 Unresolved reference 'f'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:284 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:285 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:293 Syntax error: Expecting member declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:293 Function declaration must have a name.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:95:297 Unresolved reference 'name'.
+> Task :app:compileDebugKotlin FAILED
+FAILURE: Build failed with an exception.
+Execution failed for task ':app:compileDebugKotlin'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+BUILD FAILED in 1m 17s
+
+--- RUN 902 / COMMIT 59806322160a25160480fec45e0edbb3648c3a6d ---
