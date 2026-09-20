@@ -283,7 +283,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ZIP=$(find . -maxdepth 1 -type f -name 'Rovex_v*_Final_Stability_Verified_Source.zip' | sort -V | tail -1)
+          ZIP=$(find . -maxdepth 1 -type f -name 'Rovex_v*_Final_Compact_Offline_Source.zip' | sort -V | tail -1)
+          if [ -z "$ZIP" ]; then
+            ZIP=$(find . -maxdepth 1 -type f -name 'Rovex_v*_Final_Stability_Verified_Source.zip' | sort -V | tail -1)
+          fi
           test -n "$ZIP"
           BYTES=$(stat -c%s "$ZIP")
           LIMIT=$((25*1024*1024))
