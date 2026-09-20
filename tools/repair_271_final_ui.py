@@ -25,10 +25,11 @@ qs = qs.replace(
 )
 q.write_text(qs)
 
-start = s.index("private fun qbank(")
+helper_start = s.index("private fun subjectRows(")
+start = s.index("private fun qbank(", helper_start)
 end = s.index("private fun openSearch()", start)
 
-block = r'''private fun subjectRows(rows:List<Row>):List<Row>{
+block = r'''private fun subjectRows(rows:List<Row>): List<Row> {
     fun subjectOf(r:Row):String{
         val p=r.path.trim()
         val candidate=p.substringBefore(">").substringBefore("/").substringBefore("::").trim()
@@ -269,6 +270,9 @@ private fun nav():LinearLayout{
 }
 '''
 s = s[:start] + block + "\\n" + s[end:]
+
+# Fix the render dispatcher to pass live subject rows into Stats.
+s = s.replace("stats(overall)", "stats(rows,overall)")
 
 # Ensure the AMOLED fix is actually structural, not just span stripping.
 if "setTextColor(ThemeManager.text(this@QuizActivity))" not in qs:
