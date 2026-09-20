@@ -17,7 +17,11 @@ s=dash.read_text(encoding="utf-8")
 
 # Replace the shell with an overlay layout so the footer can float like the HTML reference.
 start=s.index("private fun buildShell(){")
-end=s.index("private fun loadLiveData()",start)
+next_match=re.search(r"\n(?:private|override|public|protected)\s+fun\s+\w+", s[start+1:])
+if next_match:
+    end=start+1+next_match.start()
+else:
+    end=s.rfind("\n}")
 shell=r'''private fun buildShell(){
     val root=FrameLayout(this).apply{
         setBackgroundColor(ThemeManager.bg(this@RovexSectionDashboardActivity))
@@ -43,7 +47,7 @@ s=s[:start]+shell+s[end:]
 
 # Make the footer a true floating capsule with a live theme refresh.
 start=s.index("private fun nav():")
-# nav is last function in this class in the current dashboard implementation.
+# Replace nav through the class closing brace; the generated block owns the remaining lifecycle helpers.
 end=s.rfind("\n}")
 nav=r'''private fun nav():View{
     val l=LinearLayout(this).apply{
