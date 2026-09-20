@@ -113,15 +113,31 @@ jobs:
             cp build.gradle.kts android-project/build.gradle.kts
             echo "Injected repository root Gradle plugin declaration into selected source."
           else
-            # The selected v8.3.283 source contains its own root plugin block, but
-            # Firebase plugin declarations were omitted. Add the authoritative
-            # versions idempotently before Gradle configuration.
-            if ! grep -F 'id("com.google.gms.google-services") version "4.5.0" apply false' android-project/build.gradle.kts >/dev/null; then
-              sed -i '0,/^}/s//    id("com.google.gms.google-services") version "4.5.0" apply false\\n}/' android-project/build.gradle.kts
-            fi
-            if ! grep -F 'id("com.google.firebase.crashlytics") version "3.0.8" apply false' android-project/build.gradle.kts >/dev/null; then
-              sed -i '0,/^}/s//    id("com.google.firebase.crashlytics") version "3.0.8" apply false\\n}/' android-project/build.gradle.kts
-            fi
+            # Merge the authoritative Firebase plugin versions into the selected
+            # source root plugin block. This is deterministic and idempotent.
+            python3 - <<'PY'
+from pathlib import Path
+p = Path("android-project/build.gradle.kts")
+s = p.read_text(encoding="utf-8")
+required = [
+    'id("com.google.gms.google-services") version "4.5.0" apply false',
+    'id("com.google.firebase.crashlytics") version "3.0.8" apply false',
+]
+missing = [x for x in required if x not in s]
+if missing:
+    lines = s.splitlines()
+    try:
+        start = next(i for i, line in enumerate(lines) if line.strip() == "plugins {")
+        end = next(i for i in range(start + 1, len(lines)) if lines[i].strip() == "}")
+    except StopIteration:
+        raise SystemExit("ERROR: root plugins block not found in selected source")
+    lines[end:end] = ["    " + x for x in missing]
+    p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print("Injected:", ", ".join(missing))
+else:
+    print("Firebase plugin declarations already present.")
+PY
+          fi
           fi
           grep -F 'id("com.google.gms.google-services") version "4.5.0" apply false' android-project/build.gradle.kts >/dev/null
           grep -F 'id("com.google.firebase.crashlytics") version "3.0.8" apply false' android-project/build.gradle.kts >/dev/null
