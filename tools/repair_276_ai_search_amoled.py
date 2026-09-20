@@ -53,37 +53,11 @@ if "import kotlin.math.pow" not in qs:
 start=qs.find("private fun enforceAmoledTextVisibility(root: View){")
 end=qs.find("\noverride fun onResume()",start)
 if start<0 or end<0: raise SystemExit("AMOLED: visibility guard not found")
-guard='''private fun enforceAmoledTextVisibility(root: View){
-    if(ThemeManager.get(this@QuizActivity)!=ThemeManager.AMOLED) return
-    fun normalize(v: TextView){
-        // Only imported quiz HTML is normalized. Semantic UI colours remain untouched.
-        if(v.tag != "amoled-html-text") return
-        val current=v.text
-        if(current is android.text.Spanned){
-            val out=android.text.SpannableString(current)
-            out.getSpans(0,out.length,android.text.style.ForegroundColorSpan::class.java).forEach{out.removeSpan(it)}
-            out.getSpans(0,out.length,android.text.style.BackgroundColorSpan::class.java).forEach{out.removeSpan(it)}
-            out.getSpans(0,out.length,TextAppearanceSpan::class.java).forEach { span ->
-                val a=out.getSpanStart(span); val b=out.getSpanEnd(span); val flags=out.getSpanFlags(span)
-                if(a>=0 && b>a){ out.removeSpan(span); out.setSpan(TextAppearanceSpan(span.family,span.textStyle,span.textSize,null,null),a,b,flags) }
-                else out.removeSpan(span)
-            }
-            v.text=out
-        }
-        val c=v.currentTextColor
-        val a=android.graphics.Color.alpha(c)
-        val r=android.graphics.Color.red(c)/255.0
-        val gg=android.graphics.Color.green(c)/255.0
-        val b=android.graphics.Color.blue(c)/255.0
-        fun lin(x:Double)=if(x<=0.04045)x/12.92 else ((x+0.055)/1.055).pow(2.4)
-        val luminance=.2126*lin(r)+.7152*lin(gg)+.0722*lin(b)
-        val contrast=(luminance+.05)/.05
-        if(a<220 || contrast<4.5) v.setTextColor(ThemeManager.quizQuestionText(this@QuizActivity))
-        v.setLinkTextColor(ThemeManager.quizLinkText(this@QuizActivity))
-    }
-    fun walk(v: View){
-        if(v is TextView) normalize(v)
-        if(v is ViewGroup) for(i in 0 until v.childCount) walk(v.getChildAt(i))
+guard='''private fun enforceAmoledTextVisibility(root:View){
+    if(ThemeManager.get(this@QuizActivity)!=ThemeManager.AMOLED)return
+    fun walk(v:View){
+        if(v is TextView && v.tag=="amoled-html-text"){ val c=v.currentTextColor; fun l(x:Int)=if(x/255.0<=.04045)x/3294.6 else Math.pow((x/255.0+.055)/1.055,2.4); val lum=.2126*l(android.graphics.Color.red(c))+.7152*l(android.graphics.Color.green(c))+.0722*l(android.graphics.Color.blue(c)); if(android.graphics.Color.alpha(c)<220 || (lum+.05)/.05<4.5)v.setTextColor(ThemeManager.quizQuestionText(this@QuizActivity)); v.setLinkTextColor(ThemeManager.quizLinkText(this@QuizActivity)) }
+        if(v is ViewGroup)for(i in 0 until v.childCount)walk(v.getChildAt(i))
     }
     walk(root)
 }'''
