@@ -11,16 +11,15 @@ def one(n):
 san=R/"app/src/main/java/com/localqbank/library/RovexAiDisplaySanitizer.kt"
 san.write_text(r'''package com.localqbank.library
 
-    private val rovexAiStyleLeak=Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
-    private val rovexAiScriptLeak=Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
-    private val rovexAiCssRun=Regex("(?is)^\\s*(?:body|html|h1|h2|h3|h4|h5|h6|p|blockquote|code|pre|table|th|td|mark|\\.card|\\.label|\\.answer|img|a)\\s*\\{[^}]{0,6000}\\}.*?(?=Found \\d+ relevant local questions\\.|Clinical concepts:|Q\\d+\\s*[•.-])")
+private val rovexAiStyleLeak=Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
+private val rovexAiScriptLeak=Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
+private val rovexAiCssRun=Regex("(?is)^\\s*(?:body|html|h1|h2|h3|h4|h5|h6|p|blockquote|code|pre|table|th|td|mark|\\.card|\\.label|\\.answer|img|a)\\s*\\{[^}]{0,6000}\\}.*?(?=Found \\d+ relevant local questions\\.|Clinical concepts:|Q\\d+\\s*[•.-])")
 fun sanitizeRovexAiDisplayText(raw:String?):String {
-        var x=raw.orEmpty().replace("\\u0000"," ")
-        x=x.replace(rovexAiStyleLeak," ").replace(rovexAiScriptLeak," ").replace(rovexAiCssRun," ")
-        return x.replace(Regex("[ \\t]{2,}")," ").replace(Regex("\\n{3,}"),"\\n\\n").trim()
-    }
+    var x=raw.orEmpty().replace("\\u0000"," ")
+    x=x.replace(rovexAiStyleLeak," ").replace(rovexAiScriptLeak," ").replace(rovexAiCssRun," ")
+    return x.replace(Regex("[ \\t]{2,}")," ").replace(Regex("\\n{3,}"),"\\n\\n").trim()
 }
-''')
+'''))
 
 p=one("BenQuestionAiContextDialog.kt"); s=p.read_text()
 s=s.replace("Return concise exam-oriented Markdown with headings, short paragraphs, useful comparison tables, and bold key takeaways.",
