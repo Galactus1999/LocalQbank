@@ -66,21 +66,23 @@ policy = r'''package com.localqbank.library
 object BenResponsePolicy {
     const val MAX_RESPONSE_CHARS = 16_384
 
-    private val styleBlock = Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
-    private val scriptBlock = Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
-    private val eventAttr = Regex("(?is)\\s+on[a-z]+\\s*=\\s*(?:\"[^\"]*\"|'[^']*'|[^\\s>]+)")
-    private val dangerousTag = Regex("(?is)</?(?:iframe|object|embed|svg|math|link|meta|base|form|input|textarea|select|button)(?:\\s+[^>]*)?>")
-    private val htmlTag = Regex("(?is)</?[a-z][a-z0-9:-]*(?:\\s+[^>]*)?/?>")
+    private val styleBlock = Regex("""(?is)<style\\b[^>]*>.*?</style\\s*>""")
+    private val scriptBlock = Regex("""(?is)<script\\b[^>]*>.*?</script\\s*>""")
+    private val eventAttr = Regex("""(?is)\\s+on[a-z]+\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+)""")
+    private val dangerousTag = Regex("""(?is)</?(?:iframe|object|embed|svg|math|link|meta|base|form|input|textarea|select|button)(?:\\s+[^>]*)?>""")
+    private val htmlTag = Regex("""(?is)</?[a-z][a-z0-9:-]*(?:\\s+[^>]*)?/?>""")
+    private val repeatedSpaces = Regex("""[ \\t]{2,}""")
+    private val repeatedNewlines = Regex("""\\n{3,}""")
 
     fun normalize(raw: String?): String? {
-        var x = raw?.replace("\\r\\n", "\\n")?.replace("\\r", "\\n") ?: return null
+        var x = raw?.replace("\r\n", "\n")?.replace("\r", "\n") ?: return null
         x = x.replace(styleBlock, " ")
             .replace(scriptBlock, " ")
             .replace(eventAttr, " ")
             .replace(dangerousTag, " ")
             .replace(htmlTag, " ")
-            .replace(Regex("[ \\t]{2,}"), " ")
-            .replace(Regex("\\n{3,}"), "\\n\\n")
+            .replace(repeatedSpaces, " ")
+            .replace(repeatedNewlines, "\n\n")
             .trim()
         return BoundedTextPolicy.normalize(x, MAX_RESPONSE_CHARS)
     }
