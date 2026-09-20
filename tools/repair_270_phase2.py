@@ -112,7 +112,7 @@ p.write_text(s)
 
 # Five-section capsule: immediate repaint and latest-request-wins async commit.
 p=one("RovexSectionDashboardActivity.kt"); s=p.read_text()
-s=s.replace('private var active="home"','private var active="home"\nprivate var sectionGeneration=0L\nprivate lateinit var navBar:LinearLayout',1)
+s=s.replace('private var active="home"','private var active="home"\nprivate var sectionGeneration=0L\nprivate lateinit var navBar:View',1)
 s=s.replace('override fun onCreate(b:Bundle?){super.onCreate(b);active=intent.getStringExtra("section")?:"home";buildShell();loadLiveData()}',
 '''override fun onCreate(b:Bundle?){super.onCreate(b);active=intent.getStringExtra("section")?:"home";buildShell();repaintNav();loadLiveData(sectionGeneration,active)}''',1)
 s=s.replace('root.addView(nav(),LinearLayout.LayoutParams(-1,d(68)));setContentView(root)',
