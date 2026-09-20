@@ -79,7 +79,7 @@ jobs:
             echo "PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
             exit 0
           fi
-          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f -iname 'Rovex_v*_Final_Stability_Verified_Source.zip' -print | sort -V)
+          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f \( -iname 'Rovex_v*_Final_Stability_Verified_Source.zip' -o -iname 'Rovex_v*_Final_Compact_Offline_Source.zip' \) -print | sort -V)
           if [ "${#ZIP_FILES[@]}" -eq 0 ]; then
             echo "ERROR: no verified Rovex source ZIP found."
             exit 1
@@ -101,7 +101,8 @@ jobs:
           test -d "$PROJECT_DIR/app"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      - name: Apply deterministic 8.3.268 stability/UI repair
+      - name: Apply legacy stability/UI repair only to pre-8.3.271 sources
+        if: ${{ !contains(env.ROVEX_SOURCE_ZIP, 'v8.3.271') }}
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
