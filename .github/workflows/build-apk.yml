@@ -101,6 +101,17 @@ jobs:
           rm -rf android-project
           mkdir -p android-project
           unzip -q "$ZIP_FILE" -d android-project
+          # Compact handoff ZIPs may omit the tiny root Gradle plugin declaration.
+          # Keep that declaration version-controlled at repository root and inject it
+          # into the selected source before any Gradle configuration/build step.
+          if [ ! -f android-project/build.gradle.kts ]; then
+            test -f build.gradle.kts || {
+              echo "ERROR: root build.gradle.kts plugin declaration is missing from both repository and source ZIP."
+              exit 1
+            }
+            cp build.gradle.kts android-project/build.gradle.kts
+            echo "Injected repository root Gradle plugin declaration into selected source."
+          fi
           CANDIDATE=$(find android-project -name "settings.gradle.kts" -type f -print -quit)
           test -n "$CANDIDATE" || { echo "ERROR: settings.gradle.kts not found in source ZIP."; exit 1; }
           PROJECT_DIR=$(dirname "$CANDIDATE")
