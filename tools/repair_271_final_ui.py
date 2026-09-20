@@ -40,7 +40,6 @@ block = r'''private fun subjectRows(rows:List<Row>) = rows.groupBy { r ->
         Row(subject,items.sumOf{it.total},items.sumOf{it.solved},items.sumOf{it.correct},
             first.testId,first.position,subject,first.source)
     }.sortedBy{it.name.lowercase()}
-}
 
 private fun themedCard(title:String,subtitle:String,accent:Int,action:String?=null,onClick:(()->Unit)?=null):View{
     val box=LinearLayout(this).apply{
