@@ -105,9 +105,20 @@ g.write_text(gs)
 
 # Pre-Gradle source stability gate.
 a=R/"tools/assert_phase2_stability.py"
-a.write_text('''from pathlib import Path\nimport sys\nr=Path(sys.argv[1] if len(sys.argv)>1 else ".")\nd=next(r.rglob("RovexSectionDashboardActivity.kt")).read_text()\nm=next(r.rglob("MainActivity.kt")).read_text()\nf=next(r.rglob("BenQuestionAiContextDialog.kt")).read_text()\nif d.count("private fun progress(")!=1: raise SystemExit("STABILITY: dashboard progress owner duplicated")\nif "analyticsHero(rows)" not in d: raise SystemExit("STABILITY: QBank analytical hero missing")
-if "groupBy{it.path.ifBlank{\"General\"}}" not in d: raise SystemExit("STABILITY: QBank subject grouping missing")
-if "subject-wise hierarchy" not in d: raise SystemExit("STABILITY: QBank hierarchy label missing")\nif "setOnClickListener{if(r.testId.isNotBlank())" not in d: raise SystemExit("STABILITY: QBank subsection touch target missing")\nif "BenResponsePolicy.normalize(it.text).orEmpty()" not in f: raise SystemExit("STABILITY: AI display normalization missing")\nif not all(x in m for x in ("navHome","navQBank","navCards","navStats","navMastery")): raise SystemExit("STABILITY: five-section footer incomplete")\nprint("Phase-2 stability assertions PASS")\n''')
+a.write_text('''from pathlib import Path
+import sys
+r=Path(sys.argv[1] if len(sys.argv)>1 else ".")
+d=next(r.rglob("RovexSectionDashboardActivity.kt")).read_text()
+m=next(r.rglob("MainActivity.kt")).read_text()
+f=next(r.rglob("BenQuestionAiContextDialog.kt")).read_text()
+if d.count("private fun progress(")!=1: raise SystemExit("STABILITY: dashboard progress owner duplicated")
+if "analyticsHero(rows)" not in d: raise SystemExit("STABILITY: QBank analytical hero missing")
+if "refs.groupBy{it.testId}" not in d: raise SystemExit("STABILITY: QBank test grouping missing")
+if "setOnClickListener{if(r.testId.isNotBlank())" not in d: raise SystemExit("STABILITY: QBank subsection touch target missing")
+if "BenResponsePolicy.normalize(it.text).orEmpty()" not in f: raise SystemExit("STABILITY: AI display normalization missing")
+if not all(x in m for x in ("navHome","navQBank","navCards","navStats","navMastery")): raise SystemExit("STABILITY: five-section footer incomplete")
+print("Phase-2 stability assertions PASS")
+''')
 import subprocess
 subprocess.check_call([sys.executable,str(a),str(R)])
 print("8.3.269 stability/UI patch PASS")
