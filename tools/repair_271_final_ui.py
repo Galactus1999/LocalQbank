@@ -26,21 +26,30 @@ qs = qs.replace(
 )
 q.write_text(qs)
 
-helper_start = s.index("private fun subjectRows(")
-start = s.index("private fun qbank(", helper_start)
+m = re.search(r"private fun subjectRows\([\s\S]*?)(?=private fun qbank\()", s)
+if m:
+    s = s[:m.start()] + s[m.end():]
+start = s.index("private fun qbank(")
 end = s.index("private fun openSearch()", start)
 
-block = r'''private fun subjectRows(rows:List<Row>) = rows.groupBy { r ->
-    val p=r.path.trim()
-    val candidate=p.substringBefore(">").substringBefore("/").substringBefore("::").trim()
-    if(candidate.isBlank() || candidate.equals("root",true) || candidate.equals("general",true))
-        r.name.substringBefore(" - ").substringBefore(" | ").trim().ifBlank{"General"}
-    else candidate
-}.map{(subject,items)->
-        val first=items.minByOrNull{it.position} ?: items.first()
-        Row(subject,items.sumOf{it.total},items.sumOf{it.solved},items.sumOf{it.correct},
-            first.testId,first.position,subject,first.source)
-    }.sortedBy{it.name.lowercase()}
+block = r'''private fun subjectRows(rows: List<Row>): List<Row> {
+    val grouped = linkedMapOf<String, MutableList<Row>>()
+    for (r in rows) {
+        val raw = r.path.trim()
+        val first = raw.substringBefore(">").substringBefore("/").substringBefore("::").trim()
+        val subject = if (first.isBlank() || first.equals("root", true) || first.equals("general", true))
+            r.name.substringBefore(" - ").substringBefore(" | ").trim().ifBlank { "General" }
+        else first
+        grouped.getOrPut(subject) { mutableListOf() }.add(r)
+    }
+    return grouped.map { entry ->
+        val subject = entry.key
+        val items = entry.value
+        val first = items.minByOrNull { it.position } ?: items.first()
+        Row(subject, items.sumOf { it.total }, items.sumOf { it.solved }, items.sumOf { it.correct },
+            first.testId, first.position, subject, first.source)
+    }.sortedBy { it.name.lowercase() }
+}
 
 private fun themedCard(title:String,subtitle:String,accent:Int,action:String?=null,onClick:(()->Unit)?=null):View{
     val box=LinearLayout(this).apply{
