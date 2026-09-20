@@ -244,7 +244,7 @@ jobs:
 
           flash = root / "RovexFlashcardSummaryView.kt"
           s = flash.read_text(encoding="utf-8")
-          s2 = s.replace("isFakeBoldTextText", "isFakeBoldText")
+          s2 = s.replace(".isFakeBold", ".isFakeBoldText")
           if "import kotlin.math.sin" not in s2:
               s2 = s2.replace("import kotlin.math.min\n", "import kotlin.math.min\nimport kotlin.math.sin\n")
           if "isFakeBold" in s2.replace("isFakeBoldText", ""):
@@ -255,7 +255,7 @@ jobs:
 
           perf = root / "RovexPerformanceLabView.kt"
           s = perf.read_text(encoding="utf-8")
-          s2 = s.replace("isFakeBoldTextText", "isFakeBoldText")
+          s2 = s.replace(".isFakeBold", ".isFakeBoldText")
           if "isFakeBold" in s2.replace("isFakeBoldText", ""):
               raise SystemExit("RovexPerformanceLabView: stale isFakeBold reference remains")
           if s2 != s:
