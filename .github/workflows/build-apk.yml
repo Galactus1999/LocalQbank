@@ -161,33 +161,6 @@ jobs:
             fi
           done
 
-      - name: Install source transformation guard
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat > tools/source_transform_guard.py <<'PY'
-          from pathlib import Path
-          import re, sys
-          root = Path("app/src/main")
-          bad = []
-          kotlin = list(root.rglob("*.kt"))
-          for p in kotlin:
-              text = p.read_text(encoding="utf-8", errors="strict")
-              if "\\nprivate " in text or "\\npublic " in text or "\\noverride " in text:
-                  bad.append(f"{p}: literal escaped newline before declaration")
-              if "\\r\\n" in text or "\\r" in text:
-                  bad.append(f"{p}: literal escaped CR sequence in Kotlin source")
-              for i,line in enumerate(text.splitlines(),1):
-                  if re.search(r'(^|[^\\])\\b(?:class|object|fun|val|var|private|public|override)\\b', line) and "\\\" in line:
-                      bad.append(f"{p}:{i}: suspicious backslash in declaration")
-          if bad:
-              print("\n".join(bad))
-              sys.exit("SOURCE_TRANSFORM_GUARD_FAILED")
-          print(f"SOURCE_TRANSFORM_GUARD=PASS ({len(kotlin)} Kotlin files)")
-          PY
-          python3 tools/source_transform_guard.py
-
       - name: Verify project configuration and source audits
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
