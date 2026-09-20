@@ -90,7 +90,78 @@ dash.write_text(d, encoding="utf-8")
 print("PHASE3: dashboard OK", flush=True)
 
 gradle = app / "build.gradle.kts"
-g = gradle.read_text(encoding="utf-8").replace('versionCode = 365','versionCode = 366').replace('versionName = "8.3.271"','versionName = "8.3.272"')
+g = re.sub(r'(?m)^\s*versionCode\s*=\s*\d+\s*
+gradle.write_text(g, encoding="utf-8")
+print("PHASE3: version OK", flush=True)
+
+# AGP 9 compatibility: LiteRT 1.4.x currently ships litert-support and
+# litert-support-api with the same org.tensorflow.lite.support namespace.
+# Keep this project-wide opt-out until the upstream AARs receive distinct
+# namespaces. Fail closed if the source archive does not contain gradle.properties.
+gradle_props = root / "gradle.properties"
+if not gradle_props.exists():
+    raise SystemExit("PHASE3 FAIL: gradle.properties missing; cannot apply AGP 9 LiteRT namespace mitigation")
+gp = gradle_props.read_text(encoding="utf-8")
+if not re.search(r"(?m)^\s*android\.uniquePackageNames\s*=", gp):
+    gp = gp.rstrip() + "\nandroid.uniquePackageNames=false\n"
+else:
+    gp = re.sub(r"(?m)^\s*android\.uniquePackageNames\s*=.*$", "android.uniquePackageNames=false", gp)
+gradle_props.write_text(gp, encoding="utf-8")
+print("PHASE3: AGP9 LiteRT namespace mitigation OK", flush=True)
+
+for name in ["libQnnHtpPrepare.so","libQnnHtpV75Skel.so","libQnnSystem.so","libQnnHtp.so","libQnnIr.so","libQnnSaver.so","libQnnHtpV75Stub.so","libLiteRtCompilerPlugin_Qualcomm.so","libLiteRtDispatch_Qualcomm.so"]:
+    (app / "src/main/jniLibs/arm64-v8a" / name).unlink(missing_ok=True)
+print("PHASE3: QNN cleanup OK", flush=True)
+
+# Hard assertions.
+assert "openMatchButton = TextView(this)" in ren.read_text(encoding="utf-8")
+assert "openMatchButton?.setOnClickListener" in ren.read_text(encoding="utf-8")
+assert 'MainActivity" android:exported="false"' in manifest.read_text(encoding="utf-8")
+assert '"flashcards"' in dash.read_text(encoding="utf-8")
+assert '"analytics"' in dash.read_text(encoding="utf-8")
+assert "private fun subjectRows(rows:List<Row>)" in dash.read_text(encoding="utf-8")
+assert "token==sectionGeneration" in dash.read_text(encoding="utf-8")
+assert 'versionName = "8.3.272"' in gradle.read_text(encoding="utf-8")
+assert "versionCode = 366" in gradle.read_text(encoding="utf-8")
+assert re.search(r"(?m)^android\.uniquePackageNames=false$", (root / "gradle.properties").read_text(encoding="utf-8"))
+print("PHASE3: ALL ASSERTIONS PASS", flush=True)
+, '        versionCode = 366', gradle.read_text(encoding="utf-8"), count=1)
+g = re.sub(r'(?m)^\s*versionName\s*=\s*"[^"]+"\s*
+gradle.write_text(g, encoding="utf-8")
+print("PHASE3: version OK", flush=True)
+
+# AGP 9 compatibility: LiteRT 1.4.x currently ships litert-support and
+# litert-support-api with the same org.tensorflow.lite.support namespace.
+# Keep this project-wide opt-out until the upstream AARs receive distinct
+# namespaces. Fail closed if the source archive does not contain gradle.properties.
+gradle_props = root / "gradle.properties"
+if not gradle_props.exists():
+    raise SystemExit("PHASE3 FAIL: gradle.properties missing; cannot apply AGP 9 LiteRT namespace mitigation")
+gp = gradle_props.read_text(encoding="utf-8")
+if not re.search(r"(?m)^\s*android\.uniquePackageNames\s*=", gp):
+    gp = gp.rstrip() + "\nandroid.uniquePackageNames=false\n"
+else:
+    gp = re.sub(r"(?m)^\s*android\.uniquePackageNames\s*=.*$", "android.uniquePackageNames=false", gp)
+gradle_props.write_text(gp, encoding="utf-8")
+print("PHASE3: AGP9 LiteRT namespace mitigation OK", flush=True)
+
+for name in ["libQnnHtpPrepare.so","libQnnHtpV75Skel.so","libQnnSystem.so","libQnnHtp.so","libQnnIr.so","libQnnSaver.so","libQnnHtpV75Stub.so","libLiteRtCompilerPlugin_Qualcomm.so","libLiteRtDispatch_Qualcomm.so"]:
+    (app / "src/main/jniLibs/arm64-v8a" / name).unlink(missing_ok=True)
+print("PHASE3: QNN cleanup OK", flush=True)
+
+# Hard assertions.
+assert "openMatchButton = TextView(this)" in ren.read_text(encoding="utf-8")
+assert "openMatchButton?.setOnClickListener" in ren.read_text(encoding="utf-8")
+assert 'MainActivity" android:exported="false"' in manifest.read_text(encoding="utf-8")
+assert '"flashcards"' in dash.read_text(encoding="utf-8")
+assert '"analytics"' in dash.read_text(encoding="utf-8")
+assert "private fun subjectRows(rows:List<Row>)" in dash.read_text(encoding="utf-8")
+assert "token==sectionGeneration" in dash.read_text(encoding="utf-8")
+assert 'versionName = "8.3.272"' in gradle.read_text(encoding="utf-8")
+assert "versionCode = 366" in gradle.read_text(encoding="utf-8")
+assert re.search(r"(?m)^android\.uniquePackageNames=false$", (root / "gradle.properties").read_text(encoding="utf-8"))
+print("PHASE3: ALL ASSERTIONS PASS", flush=True)
+, '        versionName = "8.3.272"', g, count=1)
 gradle.write_text(g, encoding="utf-8")
 print("PHASE3: version OK", flush=True)
 
