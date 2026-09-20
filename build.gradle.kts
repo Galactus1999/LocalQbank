@@ -1,8 +1,8 @@
 plugins {
-    // AGP 9.1.1 is compatible with the pinned Gradle 9.3.1 wrapper and
-    // supports compileSdk 37. Keep plugin versions explicit so CI can resolve
-    // the Android application/test and Compose compiler plugins.
+    // Explicit versions keep compact source handoffs independently resolvable in CI.
     id("com.android.application") version "9.1.1" apply false
     id("com.android.test") version "9.1.1" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.10" apply false
+    id("com.google.gms.google-services") version "4.5.0" apply false
+    id("com.google.firebase.crashlytics") version "3.0.8" apply false
 }
