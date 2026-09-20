@@ -276,7 +276,7 @@ private fun nav():LinearLayout{
     return l
 }
 '''
-s = s[:helper_start] + block + "\\n" + s[end:]
+s = s[:start] + block + "\\n" + s[end:]
 
 # Fix the render dispatcher to pass live subject rows into Stats.
 s = re.sub(r"stats\(overall\)", "stats(rows,overall)", s)
@@ -295,7 +295,7 @@ g.write_text(gs)
 # Compile-risk/source assertions before Gradle.
 checks = [
     ("private fun nav():LinearLayout" in s, "nav return type"),
-    ("private fun subjectRows(rows:List<Row>)" in s, "subject aggregation"),
+    ("private fun subjectRows(rows: List<Row>): List<Row> {" in s, "subject aggregation"),
     ("private fun cards(c:Triple<Int,Int,Int>)" in s, "flashcard section"),
     ("private fun stats(rows:List<Row>,o:Row)" in s, "stats section"),
     ("private fun mastery(rows:List<Row>,o:Row)" in s, "mastery section"),
