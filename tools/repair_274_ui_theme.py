@@ -47,8 +47,11 @@ s=s[:start]+shell+s[end:]
 
 # Make the footer a true floating capsule with a live theme refresh.
 start=s.index("private fun nav():")
-# Replace nav through the class closing brace; the generated block owns the remaining lifecycle helpers.
-end=s.rfind("\n}")
+next_nav=re.search(r"\n(?:private|override|public|protected)\s+fun\s+\w+", s[start+1:])
+if next_nav:
+    end=start+1+next_nav.start()
+else:
+    raise SystemExit("Cannot safely locate nav() end; refusing destructive replacement.")
 nav=r'''private fun nav():View{
     val l=LinearLayout(this).apply{
         orientation=LinearLayout.HORIZONTAL
@@ -159,7 +162,7 @@ private fun enforceAmoledTextVisibility(root: View){
             val c=v.currentTextColor and 0x00FFFFFF
             val looksBlack=c<=blackishThreshold
             if(looksBlack){
-                v.setTextColor(ThemeManager.text(this))
+                v.setTextColor(ThemeManager.text(this@QuizActivity))
             }
         }
         if(v is ViewGroup){
@@ -170,8 +173,12 @@ private fun enforceAmoledTextVisibility(root: View){
 }
 '''
 if "private fun enforceAmoledTextVisibility" not in q:
-    pos=q.rfind("\n}")
-    q=q[:pos]+helper+q[pos:]
+    marker="override fun onResume()"
+    if marker in q:
+        q=q.replace(marker,helper+"\n"+marker,1)
+    else:
+        pos=q.rfind("\n}")
+        q=q[:pos]+helper+q[pos:]
 # Apply after layout/content updates at safe lifecycle points.
 if "enforceAmoledTextVisibility(window.decorView)" not in q:
     q=q.replace("super.onResume()","super.onResume()\n        window.decorView.post { enforceAmoledTextVisibility(window.decorView) }",1)
