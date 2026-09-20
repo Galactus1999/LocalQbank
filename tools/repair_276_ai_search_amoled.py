@@ -188,7 +188,7 @@ baseline = ROOT / "tools" / "architecture_baseline.json"
 if baseline.is_file():
     data = json.loads(baseline.read_text(encoding="utf-8"))
     data.setdefault("activity_persistence", {}).setdefault(
-        "RovexSectionDashboardActivity", {}
+        "RovexSectionDashboardActivity.kt", {}
     )["qbank_db_ctor"] = 1
     baseline.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
