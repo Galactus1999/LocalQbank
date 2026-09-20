@@ -184,6 +184,41 @@ jobs:
           PY
           grep -E 'Intent\(this@RenActivity, ?QuizActivity::class\.java\)' app/src/main/java/com/localqbank/library/RenActivity.kt >/dev/null
           grep -F 'private fun analyticsHero(rows: List<Row>)' app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt >/dev/null
+
+      # BenResponsePolicy v2 uses lazy Regex values. The source handoff contained an
+      # accidental .value dereference on those nullable Regex objects, which prevented
+      # the unit-test Kotlin compilation stage from starting. Normalize that exact defect
+      # before Gradle compilation and assert no stale dereference remains.
+      - name: Normalize Ben response policy compile blocker
+        working-directory: \${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/src/main/java/com/localqbank/library/BenResponsePolicy.kt")
+          s = p.read_text(encoding="utf-8")
+          before = s
+          replacements = {
+              "styleBlock.value?.let": "styleBlock?.let",
+              "scriptBlock.value?.let": "scriptBlock?.let",
+              "eventAttribute.value?.let": "eventAttribute?.let",
+              "styleAttribute.value?.let": "styleAttribute?.let",
+              "cssRule.value?.let": "cssRule?.let",
+              "htmlTag.value?.let": "htmlTag?.let",
+          }
+          for old, new in replacements.items():
+              s = s.replace(old, new)
+          if s != before:
+              p.write_text(s, encoding="utf-8")
+              print("BenResponsePolicy nullable lazy-Regex normalization: FIXED")
+          else:
+              print("BenResponsePolicy nullable lazy-Regex normalization: already correct")
+          PY
+          if grep -nE '(styleBlock|scriptBlock|eventAttribute|styleAttribute|cssRule|htmlTag).*\\.value' app/src/main/java/com/localqbank/library/BenResponsePolicy.kt; then
+            echo "ERROR: stale BenResponsePolicy .value dereference remains."
+            exit 1
+          fi
       # The persisted source ZIP is authoritative. No historical repair scripts are replayed.
       # This prevents stale repair logic from mutating the uploaded verified source before build.
 
