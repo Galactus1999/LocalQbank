@@ -113,44 +113,15 @@ jobs:
             cp build.gradle.kts android-project/build.gradle.kts
             echo "Injected repository root Gradle plugin declaration into selected source."
           else
-            # Compact v8.3.283 source contains its own root plugin block, but the
-            # Firebase plugin declarations were omitted. app/build.gradle.kts applies
-            # both Firebase plugins when google-services.json is present, so Gradle must
-            # see their versions in the root plugin classpath. Merge them idempotently.
-            python3 - <<'PY'
-from pathlib import Path
-src_path = Path("android-project/build.gradle.kts")
-src = src_path.read_text(encoding="utf-8")
-required = [
-    'id("com.google.gms.google-services") version "4.5.0" apply false',
-    'id("com.google.firebase.crashlytics") version "3.0.8" apply false',
-]
-missing = [line for line in required if line not in src]
-if missing:
-    lines = src.splitlines()
-    insert_at = None
-    depth = 0
-    in_plugins = False
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if stripped == "plugins {":
-            in_plugins = True
-            depth = 1
-            continue
-        if in_plugins:
-            depth += line.count("{") - line.count("}")
-            if depth == 0:
-                insert_at = i
-                break
-    if insert_at is None:
-        raise SystemExit("Cannot locate root plugins block in selected source build.gradle.kts")
-    lines[insert_at:insert_at] = ["    " + x for x in missing]
-    src_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print("Injected missing Firebase plugin declarations:", ", ".join(missing))
-else:
-    print("Firebase root plugin declarations already present.")
-PY
-          fi
+            # The selected v8.3.283 source contains its own root plugin block, but
+            # Firebase plugin declarations were omitted. Add the authoritative
+            # versions idempotently before Gradle configuration.
+            if ! grep -F 'id("com.google.gms.google-services") version "4.5.0" apply false' android-project/build.gradle.kts >/dev/null; then
+              sed -i '0,/^}/s//    id("com.google.gms.google-services") version "4.5.0" apply false\\n}/' android-project/build.gradle.kts
+            fi
+            if ! grep -F 'id("com.google.firebase.crashlytics") version "3.0.8" apply false' android-project/build.gradle.kts >/dev/null; then
+              sed -i '0,/^}/s//    id("com.google.firebase.crashlytics") version "3.0.8" apply false\\n}/' android-project/build.gradle.kts
+            fi
           grep -F 'id("com.google.gms.google-services") version "4.5.0" apply false' android-project/build.gradle.kts >/dev/null
           grep -F 'id("com.google.firebase.crashlytics") version "3.0.8" apply false' android-project/build.gradle.kts >/dev/null
           CANDIDATE=$(find android-project -name "settings.gradle.kts" -type f -print -quit)
