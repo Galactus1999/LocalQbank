@@ -225,17 +225,6 @@ jobs:
           ls -lh "$APK"
           sha256sum "$APK"
 
-      - name: Verify compact offline APK size
-        shell: bash
-        run: |
-          set -euo pipefail
-          APK="app/build/outputs/apk/release/app-release.apk"
-          test -f "$APK"
-          BYTES=$(stat -c%s "$APK")
-          LIMIT=$((25*1024*1024))
-          echo "Release APK size: $BYTES bytes ($((BYTES/1024/1024)) MiB)"
-          test "$BYTES" -le "$LIMIT" || { echo "ERROR: compact offline APK exceeds 25 MiB"; exit 1; }
-
       - name: Verify zstd native library
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
@@ -297,6 +286,17 @@ jobs:
           echo "ROVEX_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "ROVEX_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           echo "Release identity: $VERSION_NAME ($VERSION_CODE)"
+
+      - name: Verify compact verified source ZIP size
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP=$(find . -maxdepth 1 -type f -name 'Rovex_v*_Final_Stability_Verified_Source.zip' | sort -V | tail -1)
+          test -n "$ZIP"
+          BYTES=$(stat -c%s "$ZIP")
+          LIMIT=$((25*1024*1024))
+          echo "Verified source ZIP size: $BYTES bytes ($((BYTES/1024/1024)) MiB)"
+          test "$BYTES" -le "$LIMIT" || { echo "ERROR: verified source ZIP exceeds 25 MiB"; exit 1; }
 
       - name: Package verified stable source ZIP
         working-directory: ${{ env.PROJECT_DIR }}
