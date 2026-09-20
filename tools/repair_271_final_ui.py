@@ -268,8 +268,7 @@ private fun nav():LinearLayout{
     return l
 }
 '''
-s = s[:start] + block + "
-" + s[end:]
+s = s[:start] + block + "\\n" + s[end:]
 
 # Ensure the AMOLED fix is actually structural, not just span stripping.
 if "setTextColor(ThemeManager.text(this@QuizActivity))" not in qs:
