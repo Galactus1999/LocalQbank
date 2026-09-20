@@ -101,6 +101,15 @@ jobs:
           test -d "$PROJECT_DIR/app"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+      - name: Apply v8.3.272 phase-3 correction batch
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f tools/repair_272_phase3.py
+          python3 tools/repair_272_phase3.py
+          echo "Phase-3 corrections applied: Ren Open Match, MainActivity export hardening, HTML-aligned dashboard, QNN payload cleanup, version 8.3.272 (366)."
+
       - name: Verify project configuration and source audits
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
