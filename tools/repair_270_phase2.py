@@ -159,6 +159,34 @@ gs=re.sub(r'versionName\s*=\s*"8\.3\.269"','versionName = "8.3.270"',gs,count=1)
 gs=re.sub(r'versionCode\s*=\s*363','versionCode = 364',gs,count=1)
 g.write_text(gs)
 
+# Regression tests for the exact CSS-leak classes that previously escaped the fixed selector list.
+t=R/"app/src/test/java/com/localqbank/library/BenResponsePolicyPhase2Test.kt"
+t.parent.mkdir(parents=True,exist_ok=True)
+t.write_text("""package com.localqbank.library
+import org.junit.Assert.*
+import org.junit.Test
+class BenResponsePolicyPhase2Test {
+    @Test fun stripsGenericCssSelectorsButKeepsClinicalText() {
+        val raw = "body{font-size:16px;color:#000} th{background:#111;color:#fff} mark{padding:2px} .card{margin:8px} .label{font-weight:bold} img{width:100%}\\nClinical concepts: malignancy\\nFound 18 relevant local questions."
+        val out = BenResponsePolicy.normalize(raw).orEmpty()
+        assertFalse(out.contains("body{"))
+        assertFalse(out.contains("th{"))
+        assertFalse(out.contains("mark{"))
+        assertFalse(out.contains(".card{"))
+        assertFalse(out.contains(".label{"))
+        assertFalse(out.contains("img{"))
+        assertTrue(out.contains("Clinical concepts: malignancy"))
+        assertTrue(out.contains("Found 18 relevant local questions."))
+    }
+    @Test fun stripsHtmlWrappersWithoutDeletingAnswer() {
+        val out = BenResponsePolicy.normalize("<html><body><p>Correct answer: beta blocker</p></body></html>").orEmpty()
+        assertTrue(out.contains("Correct answer: beta blocker"))
+        assertFalse(out.contains("<html>"))
+        assertFalse(out.contains("<body>"))
+    }
+}
+""",encoding="utf-8")
+
 # Deterministic pre-Gradle gate.
 a=R/"tools/assert_phase2_stability.py"
 a.write_text("""from pathlib import Path
