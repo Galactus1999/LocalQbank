@@ -14,8 +14,7 @@ if obsolete.exists(): obsolete.unlink()
 p=one("BenQuestionAiContextDialog.kt"); s=p.read_text()
 s=s.replace("Return concise exam-oriented Markdown with headings, short paragraphs, useful comparison tables, and bold key takeaways.",
             "Return concise exam-oriented Markdown with headings, short paragraphs, useful comparison tables, and bold key takeaways. Never output CSS, <style> blocks, HTML document wrappers, or CSS selector source such as body{...}; return only the actual answer content.")
-s=s.replace('val answer = result?.let { "## Free AI\\n\\n${it.text}\\n\\n*${it.provider.label} • ${it.model}*" }',
-            'val answer = result?.let { "## Free AI\\n\\n${BenResponsePolicy.normalize(it.text).orEmpty()}\\n\\n*${it.provider.label} • ${it.model}*" }')
+s=s.replace('${it.text}', '${BenResponsePolicy.normalize(it.text).orEmpty()}')
 p.write_text(s)
 
 # AMOLED-safe capsule footer: runtime theme owns the colours.
