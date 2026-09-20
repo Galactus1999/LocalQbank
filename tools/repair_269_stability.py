@@ -48,11 +48,28 @@ s=s.replace('''b.addView(TextView(this).apply{text=r.solved.toString()+"/"+r.tot
 start=s.index("private fun qbank(rows:List<Row>){")
 end=s.index("private fun cards(",start)
 q='''private fun qbank(rows:List<Row>){
-    title("QBank","Main Bank • all subjects combined")
+    title("QBank","Main Bank • subject-wise hierarchy")
     analyticsHero(rows)
-    section("SUB-QBANKS / SECTIONS")
-    if(rows.isEmpty())card("No imported QBank yet","Import content first; this view never invents question counts.",ThemeManager.accent(this),"SEARCH"){openSearch()}
-    rows.forEachIndexed{index,r->progress(r,index)}
+    section("SUBJECTS / SECTIONS")
+    if(rows.isEmpty()){
+        card("No imported QBank yet","Import content first; this view never invents question counts.",ThemeManager.accent(this),"IMPORT"){startActivity(Intent(this,HtmlImportActivity::class.java))}
+        return
+    }
+    val grouped=rows.groupBy{it.path.ifBlank{"General"}}
+        .toSortedMap(compareBy(String.CASE_INSENSITIVE_ORDER){it})
+    grouped.forEach{(subject,items)->
+        val header=TextView(this).apply{
+            text=subject
+            textSize=15f
+            setTypeface(null,Typeface.BOLD)
+            setTextColor(ThemeManager.text(this@RovexSectionDashboardActivity))
+            setPadding(d(4),d(8),d(4),d(7))
+            content.addView(this)
+        }
+        items.sortedWith(compareBy<Row>{it.position}.thenBy{it.name.lowercase()}).forEachIndexed{index,r->
+            progress(r,index)
+        }
+    }
 }
 private fun analyticsHero(rows:List<Row>){
     val total=rows.sumOf{it.total};val solved=rows.sumOf{it.solved};val correct=rows.sumOf{it.correct}
@@ -62,11 +79,11 @@ private fun analyticsHero(rows:List<Row>){
     val ring=FrameLayout(this)
     val gauge=ProgressBar(this,null,android.R.attr.progressBarStyleLarge).apply{isIndeterminate=false;max=100;progress=mastery;progressTintList=android.content.res.ColorStateList.valueOf(ThemeManager.accent(this@RovexSectionDashboardActivity))}
     ring.addView(gauge,FrameLayout.LayoutParams(d(112),d(112),Gravity.CENTER))
-    ring.addView(TextView(this).apply{text=mastery.toString()+"%\\nMASTERY";gravity=Gravity.CENTER;textSize=17f;setTypeface(null,Typeface.BOLD);setTextColor(ThemeManager.text(this@RovexSectionDashboardActivity))},FrameLayout.LayoutParams(d(112),d(112),Gravity.CENTER))
+    ring.addView(TextView(this).apply{text=mastery.toString()+"%\nMASTERY";gravity=Gravity.CENTER;textSize=17f;setTypeface(null,Typeface.BOLD);setTextColor(ThemeManager.text(this@RovexSectionDashboardActivity))},FrameLayout.LayoutParams(d(112),d(112),Gravity.CENTER))
     top.addView(ring,LinearLayout.LayoutParams(d(126),d(126)))
     val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(10),0,0,0)}
     info.addView(TextView(this).apply{text="Main QBank";textSize=23f;setTypeface(null,Typeface.BOLD);setTextColor(ThemeManager.text(this@RovexSectionDashboardActivity))})
-    info.addView(TextView(this).apply{text="All subjects combined\\n"+rows.size+" topics";textSize=13f;setTextColor(ThemeManager.muted(this@RovexSectionDashboardActivity));setPadding(0,d(4),0,d(7))})
+    info.addView(TextView(this).apply{text="All subjects combined\n"+rows.size+" sub-QBanks";textSize=13f;setTextColor(ThemeManager.muted(this@RovexSectionDashboardActivity));setPadding(0,d(4),0,d(7))})
     info.addView(TextView(this).apply{text=solved.toString()+" / "+total+" Questions";textSize=14f;setTypeface(null,Typeface.BOLD);setTextColor(ThemeManager.text(this@RovexSectionDashboardActivity));setPadding(d(10),d(7),d(10),d(7));background=ThemeManager.transparentSectionDrawable(this@RovexSectionDashboardActivity)})
     info.addView(TextView(this).apply{text=accuracy.toString()+"% Accuracy";textSize=13f;setTypeface(null,Typeface.BOLD);setTextColor(ThemeManager.pastelAccentText(this@RovexSectionDashboardActivity,0));setPadding(0,d(7),0,0)})
     top.addView(info,LinearLayout.LayoutParams(0,-2,1f));box.addView(top)
@@ -88,7 +105,9 @@ g.write_text(gs)
 
 # Pre-Gradle source stability gate.
 a=R/"tools/assert_phase2_stability.py"
-a.write_text('''from pathlib import Path\nimport sys\nr=Path(sys.argv[1] if len(sys.argv)>1 else ".")\nd=next(r.rglob("RovexSectionDashboardActivity.kt")).read_text()\nm=next(r.rglob("MainActivity.kt")).read_text()\nf=next(r.rglob("BenQuestionAiContextDialog.kt")).read_text()\nif d.count("private fun progress(")!=1: raise SystemExit("STABILITY: dashboard progress owner duplicated")\nif "analyticsHero(rows)" not in d: raise SystemExit("STABILITY: QBank analytical hero missing")\nif "setOnClickListener{if(r.testId.isNotBlank())" not in d: raise SystemExit("STABILITY: QBank subsection touch target missing")\nif "BenResponsePolicy.normalize(it.text).orEmpty()" not in f: raise SystemExit("STABILITY: AI display normalization missing")\nif not all(x in m for x in ("navHome","navQBank","navCards","navStats","navMastery")): raise SystemExit("STABILITY: five-section footer incomplete")\nprint("Phase-2 stability assertions PASS")\n''')
+a.write_text('''from pathlib import Path\nimport sys\nr=Path(sys.argv[1] if len(sys.argv)>1 else ".")\nd=next(r.rglob("RovexSectionDashboardActivity.kt")).read_text()\nm=next(r.rglob("MainActivity.kt")).read_text()\nf=next(r.rglob("BenQuestionAiContextDialog.kt")).read_text()\nif d.count("private fun progress(")!=1: raise SystemExit("STABILITY: dashboard progress owner duplicated")\nif "analyticsHero(rows)" not in d: raise SystemExit("STABILITY: QBank analytical hero missing")
+if "groupBy{it.path.ifBlank{\"General\"}}" not in d: raise SystemExit("STABILITY: QBank subject grouping missing")
+if "subject-wise hierarchy" not in d: raise SystemExit("STABILITY: QBank hierarchy label missing")\nif "setOnClickListener{if(r.testId.isNotBlank())" not in d: raise SystemExit("STABILITY: QBank subsection touch target missing")\nif "BenResponsePolicy.normalize(it.text).orEmpty()" not in f: raise SystemExit("STABILITY: AI display normalization missing")\nif not all(x in m for x in ("navHome","navQBank","navCards","navStats","navMastery")): raise SystemExit("STABILITY: five-section footer incomplete")\nprint("Phase-2 stability assertions PASS")\n''')
 import subprocess
 subprocess.check_call([sys.executable,str(a),str(R)])
 print("8.3.269 stability/UI patch PASS")
