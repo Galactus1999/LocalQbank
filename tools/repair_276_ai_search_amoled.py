@@ -16,7 +16,7 @@ g=f("app/build.gradle.kts")
 gs=g.read_text()
 if "versionCode = 372" not in gs or 'versionName = "8.3.278"' not in gs:
     raise SystemExit("AMOLED: expected v8.3.276 / versionCode 370 baseline not found")
-g.write_text(gs.replace("versionCode = 370","versionCode = 371",1).replace('versionName = "8.3.276"','versionName = "8.3.277"',1))
+g.write_text(gs.replace("versionCode = 370","versionCode = 372",1).replace('versionName = "8.3.276"','versionName = "8.3.278"',1))
 
 tm=f("app/src/main/java/com/localqbank/library/ThemeManager.kt")
 s=tm.read_text()
@@ -146,6 +146,6 @@ d=f("app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt")
 m=f("app/src/main/java/com/localqbank/library/MainActivity.kt").read_text()
 if "private fun qbank(" not in d or "Overall QBank Mastery" not in d or "R.id.navQBank" not in m:
     raise SystemExit("AMOLED: QBank-preservation guard failed")
-if "4.5" not in qs or 'AMOLED="amoled_v2"' not in s:
+if "4.5" not in qs or 'AMOLED="amoled_black_v3"' not in s:
     raise SystemExit("AMOLED: final guards failed")
 print("AMOLED-ONLY REPAIR PASS: v8.3.278 / versionCode 372")
