@@ -9,7 +9,7 @@ new=r'''private fun subjectKey(r:Row):String{
     val raw=r.path.trim()
     return raw.split(">", "/", "::").firstOrNull()?.trim().orEmpty().ifBlank{"General"}
 }
-private fun subjectGroups(rows:List<Row>):List<Pair<String,List<Row>>>{
+private fun subjectRows(rows:List<Row>):List<Row> = rows.sortedBy{it.name.lowercase()}\nprivate fun subjectGroups(rows:List<Row>):List<Pair<String,List<Row>>>{
     return rows.groupBy{subjectKey(it)}.toList().sortedBy{it.first.lowercase()}
 }
 private fun qbank(rows:List<Row>){
@@ -60,29 +60,7 @@ print("v273 core patch pass")
 
 # Replace the response hygiene layer with a fail-closed text sanitizer.
 p=app/"src/main/java/com/localqbank/library/BenResponsePolicy.kt"
-policy=r'''package com.localqbank.library
-
-object BenResponsePolicy {
-    const val MAX_RESPONSE_CHARS=16_384
-    private val styleBlock=Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
-    private val scriptBlock=Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
-    private val fencedDangerous=Regex("(?is)\`\`\`\\s*(?:html|css|scss|javascript|js|typescript|tsx|jsx)\\s*\\n.*?\`\`\`")
-    private val eventAttr=Regex("(?is)\\s+on[a-z]+\\s*=\\s*(?:\"[^\"]*\"|'[^']*'|[^\\s>]+)")
-    private val dangerousTag=Regex("(?is)</?(?:iframe|object|embed|svg|math|link|meta|base|form|input|textarea|select|button)(?:\\s+[^>]*)?>")
-    private val htmlTag=Regex("(?is)</?[a-z][a-z0-9:-]*(?:\\s+[^>]*)?/? >".replace(" />","/>"))
-    private val cssRule=Regex("(?s)(?:(?:^|\\n)\\s*)[^\\n{}]{1,240}\\{[^{}\\n]{0,5000}\\}")
-    fun normalize(raw:String?):String? {
-        var x=raw?.replace("\\r\\n","\\n")?.replace("\\r","\\n") ?: return null
-        x=x.replace(styleBlock," ").replace(scriptBlock," ").replace(fencedDangerous," ")
-        x=x.replace(eventAttr," ").replace(dangerousTag," ")
-        repeat(4){x=cssRule.replace(x," ")}
-        x=htmlTag.replace(x," ")
-        x=x.replace(Regex("[ \\t]{2,}")," ").replace(Regex("\\n{3,}"),"\\n\\n").trim()
-        return BoundedTextPolicy.normalize(x,MAX_RESPONSE_CHARS)
-    }
-}
-'''
-s=p.read_text(encoding="utf-8")
+policy=r'''package com.localqbank.library\n\nobject BenResponsePolicy {\n    const val MAX_RESPONSE_CHARS = 16_384\n    private val styleBlock = Regex("(?is)<style\\\\b[^>]*>.*?</style\\\\s*>")\n    private val scriptBlock = Regex("(?is)<script\\\\b[^>]*>.*?</script\\\\s*>")\n    private val eventAttr = Regex("(?is)\\\\s+on[a-z]+\\\\s*=\\\\s*(?:\\\"[^\\\"]*\\\"|'[^']*'|[^\\\\s>]+)")\n    private val dangerousTag = Regex("(?is)</?(?:iframe|object|embed|svg|math|link|meta|base|form|input|textarea|select|button)(?:\\\\s+[^>]*)?>")\n    private val htmlTag = Regex("(?is)</?[a-z][a-z0-9:-]*(?:\\\\s+[^>]*)?/? >".replace(" />","/>") )\n    fun normalize(raw: String?): String? {\n        var x = raw?.replace("\\\\r\\\\n", "\\\\n")?.replace("\\\\r", "\\\\n") ?: return null\n        x = x.replace(styleBlock, " ").replace(scriptBlock, " ").replace(eventAttr, " ").replace(dangerousTag, " ").replace(htmlTag, " ")\n        x = x.replace(Regex("[ \\\\t]{2,}"), " ").replace(Regex("\\\\n{3,}"), "\\\\n\\\\n").trim()\n        return BoundedTextPolicy.normalize(x, MAX_RESPONSE_CHARS)\n    }\n}\n'''\ns=p.read_text(encoding="utf-8")
 s=re.sub(r'(?s)object BenResponsePolicy\s*\{.*\}\s*$',policy,s)
 p.write_text(s,encoding="utf-8")
 print("v273 sanitizer added")
