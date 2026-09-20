@@ -103,18 +103,8 @@ jobs:
           test -d "$PROJECT_DIR/app"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      # The persisted source ZIP is authoritative. One current, idempotent repair batch is
-      # allowed below to migrate v8.3.275 -> v8.3.276 and then is removed before packaging.
-      # Historical v272/v273/v274 scripts are never replayed.
-
-      - name: Apply current v8.3.276 repair batch
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          cp "${GITHUB_WORKSPACE}/tools/repair_276_ai_search_amoled.py" tools/repair_276_ai_search_amoled.py
-          python3 tools/repair_276_ai_search_amoled.py
-          rm -f tools/repair_272_phase3.py tools/repair_273_core.py tools/repair_274_ui_theme.py tools/repair_276_ai_search_amoled.py
+      # The persisted source ZIP is authoritative. No historical repair scripts are replayed.
+      # This prevents stale repair logic from mutating the uploaded verified source before build.
 
       - name: Verify project configuration and source audits
         working-directory: ${{ env.PROJECT_DIR }}
