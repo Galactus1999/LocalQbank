@@ -7,9 +7,32 @@ def one(n):
     if len(p)!=1: raise SystemExit(f"ERROR: expected one {n}, found {len(p)}")
     return p[0]
 
-# Remove redundant sanitizer singleton/file; use existing BenResponsePolicy.
-obsolete=R/"app/src/main/java/com/localqbank/library/RovexAiDisplaySanitizer.kt"
-if obsolete.exists(): obsolete.unlink()
+# Extend the existing BenResponsePolicy owner with generic CSS/HTML-wrapper sanitization.
+p=one("BenResponsePolicy.kt"); s=p.read_text()
+start=s.index("object BenResponsePolicy {")
+s=s[:start]+"""object BenResponsePolicy {
+    const val MAX_RESPONSE_CHARS = 16_384
+    private val styleBlock = Regex("(?is)<style\\b[^>]*>.*?</style\\s*>")
+    private val scriptBlock = Regex("(?is)<script\\b[^>]*>.*?</script\\s*>")
+    private val htmlWrapper = Regex("(?is)</?(?:!doctype|html|head|body|main|section|article|div)(?:\\s+[^>]*)?>")
+    private val cssProperty = Regex("(?i)\\b(?:font-family|font-size|line-height|margin(?:-[a-z]+)?|padding(?:-[a-z]+)?|color|background(?:-[a-z]+)?|border(?:-[a-z]+)?|border-radius|display|width|height|min-width|max-width|min-height|max-height|overflow|text-align|vertical-align|letter-spacing|font-weight|text-transform|object-fit|box-shadow|position|top|right|bottom|left|content)\\s*:")
+    private val cssSelector = Regex("(?is)(?:[a-z][a-z0-9_-]*|[.#][a-z][a-z0-9_-]*)(?:\\s*(?:,|>|\\+|~)\\s*(?:[a-z][a-z0-9_-]*|[.#][a-z][a-z0-9_-]*))*")
+    private val cssRule = Regex("(?s)(?:^|(?<=}))\\s*([^{}]{1,240})\\{([^{}]{1,5000})\\}")
+    fun normalize(raw: String?): String? {
+        var x = raw?.replace("\\r\\n","\\n")?.replace("\\r","\\n") ?: return null
+        x = x.replace(styleBlock," ").replace(scriptBlock," ").replace(htmlWrapper," ")
+        repeat(5) {
+            x = cssRule.replace(x) { m ->
+                val selector = m.groupValues[1].trim()
+                val declarations = m.groupValues[2]
+                if (cssSelector.matches(selector) && cssProperty.containsMatchIn(declarations)) " " else m.value
+            }
+        }
+        return BoundedTextPolicy.normalize(x, MAX_RESPONSE_CHARS)
+    }
+}
+"""
+p.write_text(s)
 p=one("BenQuestionAiContextDialog.kt"); s=p.read_text()
 s=s.replace("${sanitizeRovexAiDisplayText(it.text)}","${BenResponsePolicy.normalize(it.text).orEmpty()}")
 p.write_text(s)
@@ -147,7 +170,10 @@ if "private fun themeSafeSpanned(html: String): Spanned" not in q: raise SystemE
 if "private fun optionSpanned(html:String): Spanned = themeSafeSpanned(html)" not in q: raise SystemExit("STABILITY: options not routed through shared sanitizer")
 if "openMatchButton = TextView(this).apply" not in ren: raise SystemExit("STABILITY: matched-question button not instantiated")
 if "openMatchButton?.setOnClickListener" not in ren: raise SystemExit("STABILITY: matched-question action wiring missing")
-if "BenResponsePolicy.normalize(it.text).orEmpty()" not in f: raise SystemExit("STABILITY: Free AI display normalization missing")
+if "BenResponsePolicy.normalize(it.text).orEmpty()" not in f: raise SystemExit("STABILITY: Free AI dialog normalization missing")
+bp=next(r.rglob("BenResponsePolicy.kt")).read_text()
+if "cssRule" not in bp or "cssSelector" not in bp or "cssProperty" not in bp: raise SystemExit("STABILITY: generic CSS sanitizer missing")
+if "private fun cleanAiAnswer(raw:String):String = BenResponsePolicy.normalize(raw).orEmpty().trim()" not in ren: raise SystemExit("STABILITY: Ren display cleaner not upgraded")
 if (r/"app/src/main/java/com/localqbank/library/RovexAiDisplaySanitizer.kt").exists(): raise SystemExit("STABILITY: redundant sanitizer file still generated")
 print("Phase-2 stability assertions PASS")
 """,encoding="utf-8")
