@@ -144,9 +144,12 @@ jobs:
           before = s
           s = s.replace("Intent(this,QuizActivity::class.java)", "Intent(this@RenActivity,QuizActivity::class.java)")
           s = s.replace("Intent(this, QuizActivity::class.java)", "Intent(this@RenActivity, QuizActivity::class.java)")
-          if s == before:
-              raise SystemExit("RenActivity compile guard found no QuizActivity Intent receiver to normalize")
-          ren.write_text(s, encoding="utf-8")
+          # The source may already contain the corrected receiver. This normalization
+          # must therefore be idempotent; only fail if an uncorrected receiver remains.
+          if "Intent(this@RenActivity,QuizActivity::class.java)" not in s and "Intent(this@RenActivity, QuizActivity::class.java)" not in s:
+              raise SystemExit("RenActivity compile guard found neither corrected nor normalizable QuizActivity Intent receiver")
+          if s != before:
+              ren.write_text(s, encoding="utf-8")
 
           dash = Path("app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt")
           d = dash.read_text(encoding="utf-8")
