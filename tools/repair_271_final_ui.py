@@ -10,6 +10,7 @@ def one(name):
     return hits[0]
 
 # Final dashboard/UI correction after the 8.3.270 repair chain.
+# 8.3.271.1 compile-verified repair chain marker.
 p = one("RovexSectionDashboardActivity.kt")
 s = p.read_text()
 
