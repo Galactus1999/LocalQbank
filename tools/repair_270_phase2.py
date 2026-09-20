@@ -40,11 +40,11 @@ p.write_text(s)
 # Shared AMOLED-safe HTML span sanitizer for questions, explanations, answers and options.
 p=one("QuizActivity.kt"); s=p.read_text()
 if "private fun themeSafeSpanned(html: String): Spanned" not in s:
-    helper="""    private fun themeSafeSpanned(html: String): Spanned {
+    helper='''    private fun themeSafeSpanned(html: String): Spanned {
         val sanitized = html
-            .replace(Regex("(?is)<font\\s+[^>]*color\\s*=\\s*['\"][^'\"]+['\"][^>]*>"), "")
-            .replace(Regex("(?is)</font>"), "")
-            .replace(Regex("(?is)style\\s*=\\s*['\"][^'\"]*color\\s*:[^;\"]+;?[^'\"]*['\"]"), "")
+            .replace(Regex("""(?is)<font\\s+[^>]*color\\s*=\\s*['"][^'"]+['"][^>]*>"""), "")
+            .replace(Regex("""(?is)</font>"""), "")
+            .replace(Regex("""(?is)style\\s*=\\s*['"][^'"]*color\\s*:[^;"]+;?[^'"]*['"]"""), "")
         val parsed = Html.fromHtml(sanitized, Html.FROM_HTML_MODE_LEGACY)
         if (parsed !is android.text.Spannable) return parsed
         val out = android.text.SpannableString(parsed)
@@ -52,7 +52,7 @@ if "private fun themeSafeSpanned(html: String): Spanned" not in s:
         return out
     }
 
-"""
+'''
     pos=s.index("    private fun toSpanned(html: String): Spanned")
     s=s[:pos]+helper+s[pos:]
 old="""    private fun toSpanned(html: String): Spanned {
