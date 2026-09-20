@@ -1,0 +1,3 @@
+Unit-test log was not produced.
+
+--- RUN 971 / COMMIT a8766e9c85d1d88b0dc071b4e48e6df5bf0e7f35 ---
