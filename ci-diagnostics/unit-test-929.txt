@@ -1,0 +1,23 @@
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:4:1 Syntax error: Expecting a top level declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:4:9 Syntax error: Expecting a top level declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:4:12 Syntax error: Expecting a top level declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:4:13 Syntax error: Expecting a top level declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:4:23 Syntax error: Expecting a top level declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:4:24 Syntax error: Expecting a top level declaration.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:9:66 Unsupported escape sequence.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:10:69 Unsupported escape sequence.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:11:41 Unsupported escape sequence.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:11:52 Unsupported escape sequence.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:11:56 Unsupported escape sequence.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:11:83 Unsupported escape sequence.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:12:131 Unsupported escape sequence.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/app/src/main/java/com/localqbank/library/BenResponsePolicy.kt:13:61 Unsupported escape sequence.
+> Task :app:compileDebugKotlin FAILED
+FAILURE: Build failed with an exception.
+Execution failed for task ':app:compileDebugKotlin'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+BUILD FAILED in 1m 16s
+
+--- RUN 929 / COMMIT 5b0ea5822673c3b2e88f78d3b9ad99b44eccf306 ---
