@@ -47,7 +47,7 @@ s=s.replace('''b.addView(TextView(this).apply{text=r.solved.toString()+"/"+r.tot
 
 start=s.index("private fun qbank(rows:List<Row>){")
 end=s.index("private fun cards(",start)
-q='''private fun qbank(rows:List<Row>){
+q=r'''private fun qbank(rows:List<Row>){
     title("QBank","Main Bank • subject-wise hierarchy")
     analyticsHero(rows)
     section("SUBJECTS / SECTIONS")
