@@ -3,8 +3,11 @@ import re
 app=Path(".")/"app"
 p=app/"src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt"
 d=p.read_text()
-a=d.index("private fun subjectRows(rows:List<Row>):List<Row>{")
-b=d.index("\nprivate fun analyticsHero(",a)
+try:
+    a=d.index("private fun subjectRows(rows:List<Row>):List<Row>{")
+    b=d.index("\nprivate fun analyticsHero(",a)
+except ValueError:
+    a=b=-1
 new=r'''private fun subjectKey(r:Row):String{
     val raw=r.path.trim()
     return raw.split(">", "/", "::").firstOrNull()?.trim().orEmpty().ifBlank{"General"}
@@ -43,7 +46,7 @@ private fun qbank(rows:List<Row>){
     }
 }
 '''
-d=d[:a]+new+d[b:]
+d=d[:a]+new+d[b:] if a >= 0 else d
 d=d.replace('setOnClickListener{switchSection(id)}','setOnClickListener{if(id=="home"){startActivity(Intent(this@RovexSectionDashboardActivity,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP));finish()}else switchSection(id)}')
 p.write_text(d)
 p=app/"src/main/java/com/localqbank/library/RenActivity.kt"
