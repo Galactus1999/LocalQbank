@@ -122,6 +122,7 @@ jobs:
             if ! grep -F 'id("com.google.firebase.crashlytics") version "3.0.8" apply false' android-project/build.gradle.kts >/dev/null; then
               sed -i '0,/^}/s//    id("com.google.firebase.crashlytics") version "3.0.8" apply false\\n}/' android-project/build.gradle.kts
             fi
+          fi
           grep -F 'id("com.google.gms.google-services") version "4.5.0" apply false' android-project/build.gradle.kts >/dev/null
           grep -F 'id("com.google.firebase.crashlytics") version "3.0.8" apply false' android-project/build.gradle.kts >/dev/null
           CANDIDATE=$(find android-project -name "settings.gradle.kts" -type f -print -quit)
