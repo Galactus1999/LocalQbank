@@ -4,8 +4,6 @@ on:
   # Deliberate manual build gate: source-repair commits must NOT consume Actions minutes.
   # Run this workflow only after the full correction batch has been audited.
   workflow_dispatch:
-  push:
-    branches: ["main"]
 
 concurrency:
   group: rovex-release-build
@@ -102,9 +100,9 @@ jobs:
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       # Every repair is treated as an untrusted source transformation. The workflow
-      # snapshots the workspace, applies ONE correction batch, performs source hygiene
-      # checks, then compiles immediately. A broken generated Kotlin file is therefore
-      # caught at the batch that created it instead of being buried under later patches.
+      # applies ONE correction batch, performs source hygiene checks, then compiles immediately.
+      # A broken generated Kotlin file is therefore caught at the batch that created it
+      # instead of being buried under later patches.
       - name: Apply and compile v8.3.272 correction batch
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
