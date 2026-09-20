@@ -1,9 +1,13 @@
 name: Build Ben QBank APK
 
 on:
+  # Deliberate manual build gate: source-repair commits must NOT consume Actions minutes.
+  # Run this workflow only after the full correction batch has been audited.
   workflow_dispatch:
-  push:
-    branches: ["main"]
+
+concurrency:
+  group: rovex-release-build
+  cancel-in-progress: true
 
 permissions:
   contents: write
