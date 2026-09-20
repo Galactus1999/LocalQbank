@@ -73,14 +73,19 @@ jobs:
             echo "PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
             exit 0
           fi
-          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.ZIP" \) -print | sort)
-          if [ "${#ZIP_FILES[@]}" -ne 1 ]; then
-            printf 'ERROR: expected exactly one source ZIP, found %s:\n' "${#ZIP_FILES[@]}"
-            printf '  %s\n' "${ZIP_FILES[@]}"
+          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f -iname 'Rovex_v*_Final_Stability_Verified_Source.zip' -print | sort -V)
+          if [ "${#ZIP_FILES[@]}" -eq 0 ]; then
+            echo "ERROR: no verified Rovex source ZIP found."
             exit 1
           fi
-          ZIP_FILE="${ZIP_FILES[0]}"
-          echo "Using ZIP: $ZIP_FILE"
+          # Older verified source ZIPs may remain persisted in the repository. Always use
+          # the highest-version source instead of failing or accidentally selecting an older one.
+          ZIP_FILE="${ZIP_FILES[${#ZIP_FILES[@]}-1]}"
+          echo "Using latest verified source ZIP: $ZIP_FILE"
+          if [ "${#ZIP_FILES[@]}" -gt 1 ]; then
+            echo "Ignoring older verified source ZIPs:"
+            printf '  %s\n' "${ZIP_FILES[@]:0:${#ZIP_FILES[@]}-1}"
+          fi
           rm -rf android-project
           mkdir -p android-project
           unzip -q "$ZIP_FILE" -d android-project
