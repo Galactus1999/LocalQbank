@@ -35,8 +35,8 @@ if "import android.view.ViewGroup" not in d:
 d = d.replace("rowsForBucket(rows,subject)", "rowsForSubject(rows,subject)")
 dashboard.write_text(d, encoding="utf-8")
 
-// Remove the QBank dashboard tab entirely from the five-item bottom navigation.
-// QBank itself remains available through the main library/import/search workflows.
+# Remove the QBank dashboard tab entirely from the five-item bottom navigation.
+# QBank itself remains available through the main library/import/search workflows.
 start = d.find("private fun qbank(")
 if start >= 0:
     end = d.find("private fun analyticsHero(", start)
@@ -88,7 +88,7 @@ d = d.replace(
 
 dashboard.write_text(d, encoding="utf-8")
 
-// Remove the QBank item from MainActivity's five-item footer.
+# Remove the QBank item from MainActivity's five-item footer.
 main = ROOT / "app/src/main/java/com/localqbank/library/MainActivity.kt"
 m = main.read_text(encoding="utf-8")
 m = m.replace('listOf(R.id.navHome,R.id.navQBank,R.id.navCards,R.id.navStats,R.id.navMastery)',
@@ -96,15 +96,15 @@ m = m.replace('listOf(R.id.navHome,R.id.navQBank,R.id.navCards,R.id.navStats,R.i
 m = m.replace('        findViewById<View>(R.id.navQBank)?.setOnClickListener{startActivity(Intent(this,RovexSectionDashboardActivity::class.java).putExtra("section","qbank"))}\n','')
 main.write_text(m, encoding="utf-8")
 
-// Remove navQBank from MainActivity XML and change the remaining capsule to four equal items.
+# Remove navQBank from MainActivity XML and change the remaining capsule to four equal items.
 xml = ROOT / "app/src/main/res/layout/activity_main.xml"
 x = xml.read_text(encoding="utf-8")
 x = re.sub(r'\s*<TextView android:id="@\+id/navQBank"[\s\S]*?/>', '', x, count=1)
 x = x.replace('android:weightSum="5"', 'android:weightSum="4"', 1)
 xml.write_text(x, encoding="utf-8")
 
-// Robust AMOLED contrast enforcement: dark-gray imported text can be invisible on pure black
-// even when it is lighter than the old fixed 0x303030 threshold. Use WCAG-style luminance.
+# Robust AMOLED contrast enforcement: dark-gray imported text can be invisible on pure black
+# even when it is lighter than the old fixed 0x303030 threshold. Use WCAG-style luminance.
 quiz = ROOT / "app/src/main/java/com/localqbank/library/QuizActivity.kt"
 qs = quiz.read_text(encoding="utf-8")
 old_fn = re.search(r'private fun enforceAmoledTextVisibility\(root: View\)\{[\s\S]*?\n\}\n\noverride fun onResume', qs)
@@ -158,7 +158,7 @@ if old_cleanup in qs:
     qs=qs.replace(old_cleanup,new_cleanup,1)
 quiz.write_text(qs, encoding="utf-8")
 
-// Source assertions.
+# Source assertions.
 if 'qbank' in d[d.find('private fun render'):d.find('private fun title')]:
     raise SystemExit("ERROR: qbank render branch remains")
 if '"qbank" to "QBank"' in d:
