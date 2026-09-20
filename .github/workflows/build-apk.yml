@@ -103,65 +103,10 @@ jobs:
           test -d "$PROJECT_DIR/app"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      # Every repair is treated as an untrusted source transformation. The workflow
-      # applies ONE correction batch, performs source hygiene checks, then compiles immediately.
-      # A broken generated Kotlin file is therefore caught at the batch that created it
-      # instead of being buried under later patches.
-      - name: Apply and compile v8.3.272 correction batch
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f "${GITHUB_WORKSPACE}/tools/repair_272_phase3.py"
-          cp "${GITHUB_WORKSPACE}/tools/repair_272_phase3.py" tools/repair_272_phase3.py
-          python3 -m py_compile tools/repair_272_phase3.py
-          python3 -u tools/repair_272_phase3.py
-          git diff --check
-          python3 "${GITHUB_WORKSPACE}/tools/source_transform_guard.py"
-          ./gradlew :app:compileDebugKotlin --no-daemon --stacktrace
-          echo "v8.3.272 correction batch independently compiled."
-
-      - name: Apply and compile v8.3.273 correction batch
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f "${GITHUB_WORKSPACE}/tools/repair_273_core.py"
-          cp "${GITHUB_WORKSPACE}/tools/repair_273_core.py" tools/repair_273_core.py
-          python3 -m py_compile tools/repair_273_core.py
-          python3 -u tools/repair_273_core.py
-          git diff --check
-          python3 "${GITHUB_WORKSPACE}/tools/source_transform_guard.py"
-          ./gradlew :app:compileDebugKotlin --no-daemon --stacktrace
-          echo "v8.3.273 correction batch independently compiled."
-
-      - name: Apply and compile v8.3.274 UI/theme correction batch
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f "${GITHUB_WORKSPACE}/tools/repair_274_ui_theme.py"
-          cp "${GITHUB_WORKSPACE}/tools/repair_274_ui_theme.py" tools/repair_274_ui_theme.py
-          python3 -m py_compile tools/repair_274_ui_theme.py
-          python3 -u tools/repair_274_ui_theme.py 2>&1 | tee "$RUNNER_TEMP/rovex-v274-patch.log"
-          test -f tools/amoled_ui_audit.py
-          python3 -u tools/amoled_ui_audit.py 2>&1 | tee "$RUNNER_TEMP/rovex-amoled-audit.log"
-          git diff --check
-          python3 "${GITHUB_WORKSPACE}/tools/source_transform_guard.py"
-          ./gradlew :app:compileDebugKotlin --no-daemon --stacktrace
-          echo "v8.3.274 UI/theme correction batch independently compiled."
-
-      - name: Persist UI patch diagnostics on failure
-        if: failure()
-        shell: bash
-        run: |
-          set -euo pipefail
-          for f in "$RUNNER_TEMP/rovex-v274-patch.log" "$RUNNER_TEMP/rovex-amoled-audit.log"; do
-            if [ -f "$f" ]; then
-              echo "===== $f ====="
-              tail -n 300 "$f"
-            fi
-          done
+      # The persisted source ZIP is the authoritative, already-corrected project.
+      # Historical repair scripts are intentionally NOT replayed here: doing so can mutate
+      # a newer source snapshot and reintroduce exactly the failures those scripts were meant
+      # to fix. The build gate compiles the authoritative source directly.
 
       - name: Verify project configuration and source audits
         working-directory: ${{ env.PROJECT_DIR }}
