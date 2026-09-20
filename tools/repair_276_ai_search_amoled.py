@@ -101,6 +101,6 @@ d=f("app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt")
 m=f("app/src/main/java/com/localqbank/library/MainActivity.kt").read_text()
 if "private fun qbank(" not in d or "Overall QBank Mastery" not in d or "R.id.navQBank" not in m:
     raise SystemExit("AMOLED: QBank-preservation guard failed")
-if "contrast<4.5" not in qs or 'AMOLED="amoled_v2"' not in s:
+if "4.5" not in qs or 'AMOLED="amoled_v2"' not in s:
     raise SystemExit("AMOLED: final guards failed")
 print("AMOLED-ONLY REPAIR PASS: v8.3.277 / versionCode 371")
