@@ -9,7 +9,8 @@ new=r'''private fun subjectKey(r:Row):String{
     val raw=r.path.trim()
     return raw.split(">", "/", "::").firstOrNull()?.trim().orEmpty().ifBlank{"General"}
 }
-private fun subjectRows(rows:List<Row>):List<Row> = rows.sortedBy{it.name.lowercase()}\nprivate fun subjectGroups(rows:List<Row>):List<Pair<String,List<Row>>>{
+private fun subjectRows(rows:List<Row>):List<Row> = rows.sortedBy{it.name.lowercase()}
+private fun subjectGroups(rows:List<Row>):List<Pair<String,List<Row>>>{
     return rows.groupBy{subjectKey(it)}.toList().sortedBy{it.first.lowercase()}
 }
 private fun qbank(rows:List<Row>){
