@@ -29,15 +29,13 @@ helper_start = s.index("private fun subjectRows(")
 start = s.index("private fun qbank(", helper_start)
 end = s.index("private fun openSearch()", start)
 
-block = r'''private fun subjectRows(rows:List<Row>): List<Row> {
-    fun subjectOf(r:Row):String{
-        val p=r.path.trim()
-        val candidate=p.substringBefore(">").substringBefore("/").substringBefore("::").trim()
-        return if(candidate.isBlank() || candidate.equals("root",true) || candidate.equals("general",true)) {
-            r.name.substringBefore(" - ").substringBefore(" | ").trim().ifBlank{"General"}
-        } else candidate
-    }
-    return rows.groupBy(::subjectOf).map{(subject,items)->
+block = r'''private fun subjectRows(rows:List<Row>) = rows.groupBy { r ->
+    val p=r.path.trim()
+    val candidate=p.substringBefore("> ").substringBefore("/").substringBefore("::").trim()
+    if(candidate.isBlank() || candidate.equals("root",true) || candidate.equals("general",true))
+        r.name.substringBefore(" - ").substringBefore(" | ").trim().ifBlank{"General"}
+    else candidate
+}.map{(subject,items)->
         val first=items.minByOrNull{it.position} ?: items.first()
         Row(subject,items.sumOf{it.total},items.sumOf{it.solved},items.sumOf{it.correct},
             first.testId,first.position,subject,first.source)
@@ -272,7 +270,7 @@ private fun nav():LinearLayout{
 s = s[:helper_start] + block + "\\n" + s[end:]
 
 # Fix the render dispatcher to pass live subject rows into Stats.
-s = s.replace("stats(overall)", "stats(rows,overall)")
+s = s.replace("\"stats\"->stats(overall)", "\"stats\"->stats(rows,overall)")
 
 # Ensure the AMOLED fix is actually structural, not just span stripping.
 if "setTextColor(ThemeManager.text(this@QuizActivity))" not in qs:
