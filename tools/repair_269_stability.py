@@ -19,7 +19,7 @@ fun sanitizeRovexAiDisplayText(raw:String?):String {
     x=x.replace(rovexAiStyleLeak," ").replace(rovexAiScriptLeak," ").replace(rovexAiCssRun," ")
     return x.replace(Regex("[ \\t]{2,}")," ").replace(Regex("\\n{3,}"),"\\n\\n").trim()
 }
-'''))
+''')
 
 p=one("BenQuestionAiContextDialog.kt"); s=p.read_text()
 s=s.replace("Return concise exam-oriented Markdown with headings, short paragraphs, useful comparison tables, and bold key takeaways.",
