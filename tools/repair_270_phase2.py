@@ -103,6 +103,13 @@ if "openMatchButton = TextView(this).apply" not in s:
     s=s.replace(needle,insert,1)
 p.write_text(s)
 
+# Route the actual Frankenstein display cleaner through the upgraded generic policy.
+p=one("RenActivity.kt"); s=p.read_text()
+a=s.index("    private fun cleanAiAnswer")
+b=s.index("\n    private fun currentPromptForContext()",a)
+s=s[:a]+"    private fun cleanAiAnswer(raw:String):String = BenResponsePolicy.normalize(raw).orEmpty().trim()"+s[b:]
+p.write_text(s)
+
 # Five-section capsule: immediate repaint and latest-request-wins async commit.
 p=one("RovexSectionDashboardActivity.kt"); s=p.read_text()
 s=s.replace('private var active="home"','private var active="home"\nprivate var sectionGeneration=0L\nprivate lateinit var navBar:LinearLayout',1)
