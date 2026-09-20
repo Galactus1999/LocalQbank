@@ -1,0 +1,15 @@
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/src/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:245:33 Unresolved reference 'ViewGroup'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/src/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:250:12 Unresolved reference 'addView'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/src/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:309:19 Unresolved reference 'rowsForBucket'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/src/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:310:34 Unresolved reference 'total'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/src/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:310:67 Unresolved reference 'solved'.
+e: file:///home/runner/work/LocalQbank/LocalQbank/android-project/src/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt:310:102 Unresolved reference 'correct'.
+FAILURE: Build failed with an exception.
+Execution failed for task ':app:compileDebugKotlin'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+BUILD FAILED in 49s
+
+--- RUN 967 / COMMIT b753abf4ed247752072ef94d40894c1d1d7ecf4b ---
