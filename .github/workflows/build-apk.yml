@@ -225,6 +225,17 @@ jobs:
           ls -lh "$APK"
           sha256sum "$APK"
 
+      - name: Verify compact offline APK size
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -f "$APK"
+          BYTES=$(stat -c%s "$APK")
+          LIMIT=$((25*1024*1024))
+          echo "Release APK size: $BYTES bytes ($((BYTES/1024/1024)) MiB)"
+          test "$BYTES" -le "$LIMIT" || { echo "ERROR: compact offline APK exceeds 25 MiB"; exit 1; }
+
       - name: Verify zstd native library
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
