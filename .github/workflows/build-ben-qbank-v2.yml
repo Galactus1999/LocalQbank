@@ -34,6 +34,7 @@ jobs:
           chmod +x "$d/gradlew"
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 36/g' "$d/app/build.gradle.kts"
+          sed -i 's/fun read(match:String):List<SearchHit>=/fun read(match:String):List<SearchHit> =/' "$d/app/src/main/java/com/localqbank/library/QBankDb.kt"
       - name: Prepare Gradle compatibility init
         run: |
           set -euo pipefail
