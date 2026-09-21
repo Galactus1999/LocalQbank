@@ -3,6 +3,11 @@ name: Build Ben QBank v3 - Rovex UI Revolution
 # Intentionally manual-only. All automatic release builds now use the canonical
 # source produced by the final-release workflow.
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/patch_304.py'
+      - '.github/workflows/build-ben-qbank-v3.yml'
   workflow_dispatch:
 jobs:
   build:
