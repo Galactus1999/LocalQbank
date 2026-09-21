@@ -1,6 +1,6 @@
 name: Build Ben QBank v3 - Rovex UI Revolution
 # V304 COMPILE REPAIR GATE
-# repair-script revision 55846271 / QBank drawable receiver fix
+# repair-script revision 55846271 / QBank drawable receiver fix; resilient Gradle bootstrap
 # ARCHIVED PATCH-CHAIN BUILDER
 # Intentionally manual-only. All automatic release builds now use the canonical
 # source produced by the final-release workflow.
@@ -85,8 +85,26 @@ jobs:
             cp -a "$RUNNER_TEMP/qnn/app/src/main/jniLibs" app/src/main/
           fi
           test -s "$target"
+      - name: Prepare resilient Gradle distribution
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/.*gradle-\\([0-9][0-9.]*\\)-bin.zip.*/\\1/p' "$PROJECT_DIR/gradle/wrapper/gradle-wrapper.properties" | head -n1)"
+          test -n "$version"
+          zip="$RUNNER_TEMP/gradle-$version-bin.zip"
+          dir="$RUNNER_TEMP/gradle-$version"
+          if [ ! -s "$zip" ]; then
+            curl --fail --location --retry 6 --retry-all-errors --retry-delay 2 --connect-timeout 20 \
+              "https://github.com/gradle/gradle-distributions/releases/download/v$version/gradle-$version-bin.zip" \
+              -o "$zip"
+          fi
+          test -s "$zip"
+          rm -rf "$dir"
+          mkdir -p "$dir"
+          unzip -q "$zip" -d "$dir"
+          echo "GRADLE_BIN=$dir/gradle-$version/bin/gradle" >> "$GITHUB_ENV"
+          test -x "$dir/gradle-$version/bin/gradle"
       - name: Release build
-        run: cd "$PROJECT_DIR" && ./gradlew :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
+        run: cd "$PROJECT_DIR" && "$GRADLE_BIN" :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
       - name: Normalize and sign release
         env:
           KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
