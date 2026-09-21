@@ -189,17 +189,4 @@ if "import android.content.Intent" not in hs:
     hs=hs.replace("import android.content.Context","import android.content.Context\nimport android.content.Intent",1)
 hp.write_text(hs)
 
-dp=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
-ds=dp.read_text()
-a=ds.find("    private fun showCalendarEvents(c: MainActivity) {")
-b=ds.find("    private fun openPlanner",a)
-if a >= 0 and b > a:
-    block=ds[a:b]
-    block=re.sub(r'\bc\b', 'ctx', block)
-    block=block.replace("showCalendarEvents(ctx: MainActivity)","showCalendarEvents(ctx: MainActivity)")
-    ds=ds[:a]+block+ds[b:]
-else:
-    raise SystemExit("UI6 calendar block not found")
-
-
 print("Rovex UI6 fixes applied")
