@@ -43,7 +43,7 @@ jobs:
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ExperiencePerformanceManager.kt"
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RenCognitiveEngine.kt"
           grep -q 'localSearchCommand' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ExperiencePerformanceManager.kt"
-          grep -q 'db.search(variant, 180)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RenCognitiveEngine.kt"
+          grep -q 'db.search(variant, 80)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RenCognitiveEngine.kt"
           ! grep -q 'out.setSpan(ForegroundColorSpan' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/QuizRichTextRenderer.kt"
           grep -q 'versionName = "8.3.294"' "$PROJECT_DIR/app/build.gradle.kts"
       - name: Package v8.3.294 source under 25MB
