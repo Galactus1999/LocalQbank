@@ -135,12 +135,12 @@ edit("app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt",[
         else Toast.makeText(c, "Calendar access was not granted. Rovex can still export plans to your calendar app.", Toast.LENGTH_LONG).show()
     }
 
-    private fun showCalendarEvents(c: MainActivity) {
+    private fun showCalendarEvents(ctx: MainActivity) {
         val now = Calendar.getInstance()
         val start = (now.clone() as Calendar).apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
         val end = (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
         val events = mutableListOf<Triple<Long,Long,String>>()
-        val resolver = c.contentResolver
+        val resolver = ctx.contentResolver
         val projection = arrayOf(CalendarContract.Instances.BEGIN, CalendarContract.Instances.END, CalendarContract.Instances.TITLE, CalendarContract.Instances.EVENT_LOCATION, CalendarContract.Instances.CALENDAR_ID)
         val builder = CalendarContract.Instances.CONTENT_URI.buildUpon()
         android.content.ContentUris.appendId(builder, start)
@@ -158,22 +158,22 @@ edit("app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt",[
                 }
             }
         }.onFailure {
-            Toast.makeText(c,"Could not read calendar: " + (it.message ?: "unknown error"),Toast.LENGTH_LONG).show()
+            Toast.makeText(ctx,"Could not read calendar: " + (it.message ?: "unknown error"),Toast.LENGTH_LONG).show()
             return
         }
-        val body=LinearLayout(c).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(c,18),0,dp(c,18),dp(c,4))}
-        if(events.isEmpty()) body.addView(text(c,"No calendar events found for today. If your Google Calendar is synced on this device, its events will appear here after calendar access is granted.",13f,ThemeManager.text(c),false).apply{setPadding(0,dp(8),0,dp(8))})
+        val body=LinearLayout(ctx).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(ctx,18),0,dp(ctx,18),dp(ctx,4))}
+        if(events.isEmpty()) body.addView(text(ctx,"No calendar events found for today. If your Google Calendar is synced on this device, its events will appear here after calendar access is granted.",13f,ThemeManager.text(ctx),false).apply{setPadding(0,dp(8),0,dp(8))})
         else {
             val fmt=SimpleDateFormat("HH:mm",Locale.getDefault())
             events.take(30).forEach { (b,e,title) ->
-                val line=LinearLayout(c).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(c,12),dp(9),dp(c,12),dp(9));background=card(c,Color.argb(70,50,170,255),Color.argb(55,135,70,230))}
-                line.addView(text(c,fmt.format(java.util.Date(b))+"–"+fmt.format(java.util.Date(e)),11f,ThemeManager.accent(c),true))
-                line.addView(text(c,title,13f,ThemeManager.text(c),true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(c,3)})
-                body.addView(line,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(c,6)})
+                val line=LinearLayout(ctx).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(ctx,12),dp(9),dp(ctx,12),dp(9));background=card(ctx,Color.argb(70,50,170,255),Color.argb(55,135,70,230))}
+                line.addView(text(ctx,fmt.format(java.util.Date(b))+"–"+fmt.format(java.util.Date(e)),11f,ThemeManager.accent(ctx),true))
+                line.addView(text(ctx,title,13f,ThemeManager.text(ctx),true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(ctx,3)})
+                body.addView(line,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(ctx,6)})
             }
         }
-        val dialog=AlertDialog.Builder(c).setTitle("Today's Calendar").setView(body).setNegativeButton("Close",null).setPositiveButton("Refresh",null).create()
-        dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { dialog.dismiss(); showCalendarEvents(c) } }
+        val dialog=AlertDialog.Builder(ctx).setTitle("Today's Calendar").setView(body).setNegativeButton("Close",null).setPositiveButton("Refresh",null).create()
+        dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { dialog.dismiss(); showCalendarEvents(ctx) } }
         dialog.show()
     }
 
@@ -188,25 +188,6 @@ hs=hp.read_text()
 if "import android.content.Intent" not in hs:
     hs=hs.replace("import android.content.Context","import android.content.Context\nimport android.content.Intent",1)
 hp.write_text(hs)
-
-# Final normalization: keep navigation labels on one Kotlin source line.
-hs=re.sub(r'(?s)  val names=arrayOf\("⌂.*?nav\.addView\(n,LinearLayout\.LayoutParams\(0,d\(58,a\),1f\)\)\}',
-'''  val names=arrayOf("⌂ Home","▣ QBank","▤ Cards","▥ Lab","••• More")
-  names.indices.forEach{i->
-    val n=tv(a,names[i],12f,if(i==0)ThemeManager.text(a) else ThemeManager.muted(a),true)
-    n.gravity=Gravity.CENTER
-    if(i==0)n.background=GradientDrawable().apply{cornerRadius=d(22,a).toFloat();setColor(if(dark)Color.argb(85,35,150,255) else Color.argb(125,55,165,255));setStroke(d(1,a),Color.argb(180,60,205,255))}
-    n.setOnClickListener{when(i){
-      1->a.startActivity(Intent(a,RovexSectionDashboardActivity::class.java).putExtra("section","qbank").addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
-      2->pF?.performClick()
-      3->pL?.performClick()
-      4->a.startActivity(Intent(a,StudyToolsActivity::class.java))
-    }}
-    nav.addView(n,LinearLayout.LayoutParams(0,d(58,a),1f))
-  }
-}''',hs,count=1)
-hp.write_text(hs)
-
 
 dp=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
 ds=dp.read_text()
