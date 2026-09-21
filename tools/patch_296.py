@@ -97,11 +97,11 @@ replace(rel,'''        val noteFile = File(notesDir, "q_$safeId.txt")
         if (old != note) writeAtomic(noteFile, note)
 ''')
 replace(rel,'''        tableRx.findAll(explanation).take(8).forEachIndexed { index, m ->
-            File(tablesDir, "q_$\{safeId}_$index.html").writeText(m.value)
+            File(tablesDir, "q_${safeId}_$index.html").writeText(m.value)
             tables++
         }
 ''','''        tableRx.findAll(explanation).take(8).forEachIndexed { index, m ->
-            writeAtomic(File(tablesDir, "q_$\{safeId}_$index.html"), m.value)
+            writeAtomic(File(tablesDir, "q_${safeId}_$index.html"), m.value)
             tables++
         }
 ''')
