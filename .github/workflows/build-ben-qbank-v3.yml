@@ -39,6 +39,7 @@ jobs:
           d="$(dirname "$p")"
           chmod +x "$d/gradlew"
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
+          python3 "$GITHUB_WORKSPACE/tools/fix_v304_compile_errors.py" "$d"
           grep -q 'versionName = "8.3.304"' "$d/app/build.gradle.kts"
           grep -q 'versionCode = 398' "$d/app/build.gradle.kts"
           grep -q 'RovexPopupTheme' "$d/app/src/main/java/com/localqbank/library/RovexPopupTheme.kt"
