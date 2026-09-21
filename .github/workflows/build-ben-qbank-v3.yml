@@ -4,7 +4,6 @@ on:
     branches: [main]
     paths:
       - 'Rovex_LATEST_UPLOAD.zip'
-      - '.github/workflows/build-ben-qbank-v3.yml'
   workflow_dispatch:
 jobs:
   build:
