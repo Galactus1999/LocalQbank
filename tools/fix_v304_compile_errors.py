@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__import__("sys").argv[1]).resolve() if len(__import__("sys").argv) > 1 else Path(__file__).resolve().parents[1]
 JAVA = ROOT / "app/src/main/java/com/localqbank/library"
 
 def patch(name, replacements):
