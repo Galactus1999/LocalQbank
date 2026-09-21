@@ -36,6 +36,8 @@ jobs:
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 36/g' "$d/app/build.gradle.kts"
           sed -i 's/fun read(match:String):List<SearchHit>=/fun read(match:String):List<SearchHit> =/' "$d/app/src/main/java/com/localqbank/library/QBankDb.kt"
           # v8.3.295 compile correction: the local variable "tag" shadows View.tag.
+          r="$d/app/src/main/java/com/localqbank/library/RenActivity.kt"
+          grep -q 'import android.view.ViewGroup' "$r" || sed -i '/import android.view.View$/a import android.view.ViewGroup' "$r"
           q="$d/app/src/main/java/com/localqbank/library/QuizActivity.kt"
           sed -i 's/apply { tag=/apply { this.tag=/' "$q"
           sed -i 's/^                    tag = "quiz:" + role$/                    this.tag = "quiz:" + role/' "$q"
