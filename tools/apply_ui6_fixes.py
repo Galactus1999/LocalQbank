@@ -198,4 +198,11 @@ if "import android.content.Intent" not in hs:
     hs=hs.replace("import android.content.Context","import android.content.Context\nimport android.content.Intent",1)
 hp.write_text(hs)
 
+# The project defines dp as an Int extension (e.g. 18.dp(ctx)), not dp(ctx, 18).
+cp=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+cs=cp.read_text()
+for n in (18,4,8,9,12,13,3,6):
+    cs=cs.replace(f"dp(ctx,{n})",f"{n}.dp(ctx)")
+cp.write_text(cs)
+
 print("Rovex UI6 fixes applied")
