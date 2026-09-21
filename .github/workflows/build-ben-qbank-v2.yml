@@ -56,6 +56,13 @@ jobs:
           grep -q 'versionName = "8.3.296"' "$PROJECT_DIR/app/build.gradle.kts"
           grep -q 'this.tag=' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/QuizActivity.kt"
           grep -q 'this.tag = "quiz:" + role' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/QuizActivity.kt"
+          test -f "$PROJECT_DIR/app/src/main/baseline-prof/baseline-prof.txt"
+          grep -q 'androidx.profileinstaller:profileinstaller:1.4.1' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'versionCode = 390' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'RovexAtomicFile.replace(temp, destination)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/BenNeuralModelManager.kt"
+          grep -q 'RovexAtomicFile.replace(temp, file)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ApkgImporter.kt"
+          grep -q 'frankensteinWorkspaceStartup' "$PROJECT_DIR/benchmark/src/main/kotlin/com/localqbank/library/benchmark/ColdStartupBenchmark.kt"
+          ! grep -R -q 'catch (t: Throwable)' "$PROJECT_DIR/app/src/main/java"
       - name: Package v8.3.296 source under 25MB
         run: |
           set -euo pipefail
