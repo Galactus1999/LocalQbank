@@ -59,7 +59,7 @@ jobs:
           grep -q 'width:auto;min-width:100%' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RenActivity.kt"
           grep -q 'ORIENTATION_LANDSCAPE' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
           grep -q 'android:resizeableActivity="true"' "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
-          grep -q 'if(isLandscape())d(44)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt"
+          grep -q 'isLandscape()).*d(44)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt"
           grep -q 'RovexAdaptiveUi.apply(activity)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ResilienceManager.kt"
           grep -q 'OBSIDIAN_NIGHT' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ThemeManager.kt"
           ! grep -q 'AMOLED_DARK' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ThemeManager.kt"
