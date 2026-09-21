@@ -8,7 +8,11 @@ def edit(rel,repls):
     p=root/rel
     s=p.read_text()
     for old,new in repls:
-        if old not in s: raise SystemExit("UI6 patch anchor missing: "+rel)
+        # Accept a source ZIP that already contains this repair.
+        if old not in s:
+            if new in s:
+                continue
+            raise SystemExit("UI6 patch anchor missing: "+rel)
         s=s.replace(old,new,1)
     p.write_text(s)
 
