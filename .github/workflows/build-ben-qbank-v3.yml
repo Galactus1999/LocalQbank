@@ -31,16 +31,35 @@ jobs:
           set -euo pipefail
           rm -rf "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/rovex"
-          unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.295_Ben_Fast_Table_Durability_Final.zip" -d "$RUNNER_TEMP/rovex"
-          p="$(find "$RUNNER_TEMP/rovex" -name settings.gradle.kts -type f -print -quit)"
+          # v8.3.300 is the intended handoff ZIP for this update line.
+          # Prefer the real ZIP when present; otherwise reconstruct that ZIP once
+          # from the verified 8.3.295 baseline, then use the ZIP itself as input
+          # for every post-300 change.
+          rm -rf "$RUNNER_TEMP/base300" "$RUNNER_TEMP/rovex300"
+          mkdir -p "$RUNNER_TEMP/base300" "$RUNNER_TEMP/rovex300"
+          if [ -s "$GITHUB_WORKSPACE/Rovex_v8.3.300_Final_Source.zip" ]; then
+            cp "$GITHUB_WORKSPACE/Rovex_v8.3.300_Final_Source.zip" "$RUNNER_TEMP/base300/Rovex_v8.3.300_Final_Source.zip"
+          else
+            unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.295_Ben_Fast_Table_Durability_Final.zip" -d "$RUNNER_TEMP/base300"
+            p300="$(find "$RUNNER_TEMP/base300" -name settings.gradle.kts -type f -print -quit)"
+            test -n "$p300"
+            d300="$(dirname "$p300")"
+            chmod +x "$d300/gradlew"
+            for n in 296 297 298 299 300; do
+              cp "$GITHUB_WORKSPACE/tools/patch_${n}.py" "$d300/patch_${n}.py"
+              (cd "$d300" && python3 "patch_${n}.py" && rm -f "patch_${n}.py")
+            done
+            (cd "$d300" && zip -qr "$RUNNER_TEMP/base300/Rovex_v8.3.300_Final_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*')
+            test "$(stat -c%s "$RUNNER_TEMP/base300/Rovex_v8.3.300_Final_Source.zip")" -lt 25000000
+          fi
+          unzip -q "$RUNNER_TEMP/base300/Rovex_v8.3.300_Final_Source.zip" -d "$RUNNER_TEMP/rovex300"
+          p="$(find "$RUNNER_TEMP/rovex300" -name settings.gradle.kts -type f -print -quit)"
           test -n "$p"
           d="$(dirname "$p")"
           chmod +x "$d/gradlew"
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
-          for n in 296 297 298 299 300; do
-            cp "$GITHUB_WORKSPACE/tools/patch_${n}.py" "$d/patch_${n}.py"
-            (cd "$d" && python3 "patch_${n}.py" && rm -f "patch_${n}.py")
-          done
+          grep -q 'versionName = "8.3.300"' "$d/app/build.gradle.kts"
+          grep -q 'versionCode = 394' "$d/app/build.gradle.kts"
           cp "$GITHUB_WORKSPACE/tools/patch_301.py" "$d/patch_301.py"
           cp -a "$GITHUB_WORKSPACE/tools/theme301" "$d/theme301"
           (cd "$d" && python3 patch_301.py && rm -f patch_301.py && rm -rf theme301)
