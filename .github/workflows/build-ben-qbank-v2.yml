@@ -13,15 +13,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: platform-tools
       - name: Install Android build tools
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager 'platforms;android-35' 'platform-tools' 'build-tools;35.0.0'
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER" || SDKMANAGER="$(command -v sdkmanager)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-35' 'platform-tools' 'build-tools;35.0.0'
       - name: Extract source
         run: |
           set -euo pipefail
@@ -34,13 +32,11 @@ jobs:
           test -f "$d/gradlew"
           chmod +x "$d/gradlew"
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
-      - name: Normalize compile SDK for current runner
+      - name: Normalize compile SDK
         run: |
           set -euo pipefail
           cd "$PROJECT_DIR"
-          if grep -Eq 'compileSdk[[:space:]]*=[[:space:]]*37' app/build.gradle.kts; then
-            sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 35/' app/build.gradle.kts
-          fi
+          sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 35/g' app/build.gradle.kts || true
       - name: Restore native payload
         run: |
           set -euo pipefail
