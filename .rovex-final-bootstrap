@@ -1,1 +1,1 @@
-One-time bootstrap marker: build the verified v8.3.303 source artifact as the canonical repository source, then retire the patch chain.
+One-time bootstrap marker: retry canonical v8.3.303 final build after workflow correction.
