@@ -94,15 +94,26 @@ jobs:
           ! grep -q 'Obsidian Night' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
           ! grep -q 'Pandora • Avatar' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
           ! grep -R -E -q 'ThemeManager\.(DARK|SEPIA|OBSIDIAN_NIGHT|MIDNIGHT|COSMOS|AVATAR)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library"
-          grep -q 'ROVEX_UI_REVOLUTION_303' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexRevolutionAuditMarker.kt"
-          grep -q 'RovexHomeRevolution.apply(this)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
-          grep -q 'RovexLiveBackdrop' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
-          grep -q 'ImageView->image' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
-          grep -q 'ROVEX_PHASE_304_DAILY_STUDY_HUB' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexRoadmapMarker.kt"
-          grep -q 'RovexDailyStudyHub.install(a, content, pF)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
-          grep -q 'ACTION_INSERT' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
-          grep -q 'Daily Progress Heatmap' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
-          grep -q 'Daily Schedule Planner' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+          checks=(
+            "ROVEX_UI_REVOLUTION_303|$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexRevolutionAuditMarker.kt"
+            "RovexHomeRevolution.apply(this)|$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
+            "RovexLiveBackdrop|$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+            "ImageView->image|$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
+            "ROVEX_PHASE_304_DAILY_STUDY_HUB|$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexRoadmapMarker.kt"
+            "RovexDailyStudyHub.install(a, content, pF)|$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+            "ACTION_INSERT|$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+            "Daily Progress Heatmap|$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+            "Daily Schedule Planner|$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+          )
+          for item in "${checks[@]}"; do
+            needle="${item%%|*}"
+            file="${item#*|}"
+            if ! grep -Fq "$needle" "$file"; then
+              echo "ROVEX_VERIFY_FAIL needle=[$needle] file=[$file]"
+              exit 1
+            fi
+            echo "ROVEX_VERIFY_OK needle=[$needle]"
+          done
       - name: Package source under 25MB
         run: |
           set -euo pipefail
