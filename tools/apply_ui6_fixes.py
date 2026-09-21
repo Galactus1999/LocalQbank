@@ -11,7 +11,13 @@ def edit(rel,repls):
         s=s.replace(old,new,1)
     p.write_text(s)
 
-edit("app/build.gradle.kts",[("compileSdk = 36","compileSdk = 37")])
+p=root/"app/build.gradle.kts"
+g=p.read_text()
+if "compileSdk = 36" in g:
+    g=g.replace("compileSdk = 36","compileSdk = 37",1)
+elif "compileSdk = 37" not in g:
+    raise SystemExit("UI6 patch anchor missing: compileSdk")
+p.write_text(g)
 
 edit("app/src/main/AndroidManifest.xml",[(
     '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
