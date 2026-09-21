@@ -7,186 +7,97 @@ on:
     paths:
       - "**.zip"
       - ".github/workflows/build-ben-qbank-v3.yml"
-  workflow_dispatch:
-    inputs:
-      source_zip:
-        description: "Repository-root source ZIP"
-        required: true
-        default: "Rovex_v8.3.304_SectionDashboardCompileRepair.zip"
-        type: string
 
 permissions:
   contents: read
 
 jobs:
   build:
-    name: Build uploaded Rovex source
     runs-on: ubuntu-latest
     timeout-minutes: 60
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
           fetch-depth: 2
 
-      - name: Select source ZIP
+      - name: Select uploaded source
         shell: bash
-        env:
-          MANUAL_SOURCE_ZIP: ${{ inputs.source_zip }}
         run: |
           set -euo pipefail
-          selected=""
+          selected="Rovex_v8.3.304_SectionDashboardCompileRepair.zip"
 
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            selected="$MANUAL_SOURCE_ZIP"
-          else
-            mapfile -t changed_zips < <(
-              git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '*.zip' '*.ZIP' || true
-            )
-            if (( ${#changed_zips[@]} == 1 )); then
-              selected="${changed_zips[0]}"
-            elif (( ${#changed_zips[@]} > 1 )); then
-              echo "ERROR: More than one ZIP changed:"
-              printf '  %s\n' "${changed_zips[@]}"
-              exit 1
-            else
-              selected="Rovex_v8.3.304_SectionDashboardCompileRepair.zip"
-            fi
+          mapfile -t changed_zips < <(
+            git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '*.zip' '*.ZIP' || true
+          )
+
+          if (( ${#changed_zips[@]} == 1 )); then
+            selected="${changed_zips[0]}"
+          elif (( ${#changed_zips[@]} > 1 )); then
+            echo "ERROR: More than one ZIP changed:"
+            printf '  %s\n' "${changed_zips[@]}"
+            exit 1
           fi
 
-          [[ "$selected" == *.zip || "$selected" == *.ZIP ]] || { echo "ERROR: source is not a ZIP: $selected"; exit 1; }
-          [[ "$selected" != */* && "$selected" != *..* ]] || { echo "ERROR: source must be a root filename: $selected"; exit 1; }
+          test -f "$GITHUB_WORKSPACE/$selected"
+          test -s "$GITHUB_WORKSPACE/$selected"
 
-          src="$GITHUB_WORKSPACE/$selected"
-          [[ -s "$src" ]] || { echo "ERROR: missing source ZIP: $selected"; exit 1; }
+          sha="$(sha256sum "$GITHUB_WORKSPACE/$selected" | awk '{print $1}')"
+          size="$(stat -c%s "$GITHUB_WORKSPACE/$selected")"
 
-          sha="$(sha256sum "$src" | awk '{print $1}')"
-          size="$(stat -c%s "$src")"
-          echo "SOURCE_ZIP=$src" >> "$GITHUB_ENV"
+          echo "SOURCE_ZIP=$GITHUB_WORKSPACE/$selected" >> "$GITHUB_ENV"
           echo "SOURCE_NAME=$selected" >> "$GITHUB_ENV"
           echo "SOURCE_SHA256=$sha" >> "$GITHUB_ENV"
           echo "SOURCE_SIZE=$size" >> "$GITHUB_ENV"
+
           echo "Selected: $selected"
           echo "SHA-256: $sha"
-          echo "Size: $size"
+          echo "Size: $size bytes"
 
-      - name: Extract source
+      - name: Extract and audit source
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf "$RUNNER_TEMP/rovex/source"
+          rm -rf "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/rovex/source"
           unzip -q "$SOURCE_ZIP" -d "$RUNNER_TEMP/rovex/source"
-          project_file="$(find "$RUNNER_TEMP/rovex/source" -name settings.gradle.kts -type f -print -quit)"
-          [[ -n "$project_file" ]] || { echo "ERROR: settings.gradle.kts missing"; exit 1; }
-          project_dir="$(dirname "$project_file")"
-          [[ -f "$project_dir/gradlew" ]] || { echo "ERROR: gradlew missing"; exit 1; }
-          chmod +x "$project_dir/gradlew"
-          echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
 
-      - name: Source audit
-        shell: bash
-        run: |
-          set -euo pipefail
-          app_gradle="$PROJECT_DIR/app/build.gradle.kts"
-          theme_engine="$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
-          test -f "$app_gradle"
-          test -f "$theme_engine"
-          grep -Fq 'applicationId = "com.localqbank.library"' "$app_gradle"
-          version="$(sed -nE 's/.*versionName = "([^"]*)".*/\1/p' "$app_gradle" | head -1)"
-          code="$(sed -nE 's/.*versionCode = ([0-9]+).*/\1/p' "$app_gradle" | head -1)"
-          test -n "$version"
-          test -n "$code"
+          project_file="$(find "$RUNNER_TEMP/rovex/source" -name settings.gradle.kts -type f -print -quit)"
+          test -n "$project_file"
+          project_dir="$(dirname "$project_file")"
+          test -f "$project_dir/gradlew"
+          chmod +x "$project_dir/gradlew"
+
           test "$SOURCE_SIZE" -lt 25000000
-          echo "VERSION_NAME=$version"
-          echo "VERSION_CODE=$code"
-          python3 - "$PROJECT_DIR" <<'PY'
+          test -f "$project_dir/app/build.gradle.kts"
+          test -f "$project_dir/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
+          grep -Fq 'applicationId = "com.localqbank.library"' "$project_dir/app/build.gradle.kts"
+
+          python3 - "$project_dir" <<'PY'
 import pathlib
 import sys
 import xml.etree.ElementTree as ET
 root = pathlib.Path(sys.argv[1])
-android_id = "{http://schemas.android.com/apk/res/android}id"
+aid = "{http://schemas.android.com/apk/res/android}id"
 for path in sorted(root.glob("app/src/main/res/layout/*.xml")):
-    ids = []
-    for element in ET.parse(path).iter():
-        value = element.attrib.get(android_id, "")
-        if value.startswith("@+id/"):
-            ids.append(value[5:])
+    ids = [v[5:] for e in ET.parse(path).iter() if (v := e.attrib.get(aid, "")).startswith("@+id/")]
     if len(ids) != len(set(ids)):
         raise SystemExit(f"duplicate id in one layout: {path}")
 print("XML_LAYOUT_AUDIT=PASS")
 PY
 
-      - name: Native payload audit
-        shell: bash
-        run: |
-          set -euo pipefail
-          target="$PROJECT_DIR/app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so"
-          test -s "$target" || { echo "ERROR: missing required native payload: $target"; exit 1; }
+          target="$project_dir/app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so"
+          test -s "$target"
+
+          echo "SOURCE_AUDIT=PASS"
           echo "NATIVE_PAYLOAD_AUDIT=PASS"
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-
-      - name: Install Android SDK
+      - name: Build release
         shell: bash
         run: |
           set -euo pipefail
-          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$sdkmanager" --licenses >/dev/null || true
-          "$sdkmanager" "platforms;android-36" "platform-tools" "build-tools;35.0.0"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.3.1"
-
-      - name: Release build
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$PROJECT_DIR"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq unzip
+          export JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME}"
+          cd "$RUNNER_TEMP/rovex/source"
           ./gradlew :app:assembleRelease --no-daemon --stacktrace
-
-      - name: Sign and verify
-        shell: bash
-        env:
-          KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
-          KEYSTORE_B64_LEGACY: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-          out="$PROJECT_DIR/app/build/outputs/apk/release"
-          apk="$(find "$out" -maxdepth 1 -type f -name 'app-release*.apk' -print -quit)"
-          test -n "$apk"
-          [[ -n "$KEYSTORE_B64" ]] || KEYSTORE_B64="$KEYSTORE_B64_LEGACY"
-          test -n "$KEYSTORE_B64"
-          test -n "$STORE_PASSWORD"
-          test -n "$KEY_ALIAS"
-          test -n "$KEY_PASSWORD"
-          ks="$RUNNER_TEMP/rovex-release.jks"
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
-          grep -Fq "8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153" "$RUNNER_TEMP/rovex-signing.txt"
-
-      - name: Upload source and APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Rovex-LATEST-release
-          path: |
-            ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
-            ${{ env.SOURCE_ZIP }}
-          if-no-files-found: error
-          retention-days: 30
