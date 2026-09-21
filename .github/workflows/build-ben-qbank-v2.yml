@@ -53,6 +53,24 @@ jobs:
           test -s "$target"
       - name: Release
         run: cd "$PROJECT_DIR" && ./gradlew :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
+      - name: Sign release APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64"
+          test -n "$STORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          ks="$RUNNER_TEMP/rovex-release.jks"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
+          apk="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
+
       - name: Verify
         run: |
           apk="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
