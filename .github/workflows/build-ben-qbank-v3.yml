@@ -1,7 +1,8 @@
 name: Build Ben QBank v3 - Rovex UI Revolution
+# ARCHIVED PATCH-CHAIN BUILDER
+# Intentionally manual-only. All automatic release builds now use the canonical
+# source produced by the final-release workflow.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 jobs:
   build:
