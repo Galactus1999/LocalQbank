@@ -77,22 +77,59 @@ p.write_text(s)
 # QBank dashboard: import button and main QBank access are visible in the QBank section itself.
 p = JAVA / "RovexSectionDashboardActivity.kt"
 s = p.read_text()
-if 'ActivityResultContracts' not in s:
-    s = s.replace('import android.widget.*', 'import android.widget.*\nimport androidx.activity.result.contract.ActivityResultContracts')
-if 'qbankImportLauncher' not in s:
-    marker='private var renderedTheme:String?=null\n'
-    if marker not in s: raise SystemExit("ROVEX_CI_PATCH_MISSING Section renderedTheme")
-    s=s.replace(marker, '''private var renderedTheme:String?=null\nprivate val qbankImportLauncher = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){ uris ->\n    if(uris.isNotEmpty()) startActivity(Intent(this,HtmlImportActivity::class.java).putParcelableArrayListExtra("uris",ArrayList(uris)))\n}\n''',1)
-old='private fun qbank(rows:List<Row>){\n    title("QBank","19 subjects with QBank / PYQ / Custom / test categories")\n    analyticsHero(rows)'
-new='''private fun qbank(rows:List<Row>){\n    title("QBank","19 subjects with QBank / PYQ / Custom / test categories")\n    val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}\n    fun action(text:String,primary:Boolean=false,click:()->Unit)=TextView(this).apply{this.text=text;textSize=11.5f;setTypeface(null,Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(if(primary)ThemeManager.peacockText(this@RovexSectionDashboardActivity) else ThemeManager.accent(this@RovexSectionDashboardActivity));background=GradientDrawable().apply{setColor(if(primary)ThemeManager.accent(this@RovexSectionDashboardActivity) else ThemeManager.elevated(this@RovexSectionDashboardActivity));cornerRadius=d(18).toFloat();setStroke(d(1),ThemeManager.accent(this@RovexSectionDashboardActivity))};setOnClickListener{click()}}\n    actions.addView(action("＋ IMPORT QBANK",true){qbankImportLauncher.launch(arrayOf("text/html","text/plain","application/xhtml+xml"))},LinearLayout.LayoutParams(0,d(46),1f).apply{rightMargin=d(5)})\n    actions.addView(action("⌂ MAIN QBANK"){sectionScroll.scrollTo(0,0)},LinearLayout.LayoutParams(0,d(46),1f).apply{leftMargin=d(5)})\n    renderTargetOrContent().addView(actions,LinearLayout.LayoutParams(-1,d(52)).apply{bottomMargin=d(10)})\n    analyticsHero(rows)'''
-if old in s: s=s.replace(old,new,1)
-elif '＋ IMPORT QBANK' not in s: raise SystemExit("ROVEX_CI_PATCH_MISSING QBank action row")
-p.write_text(s)
-
-p = JAVA / "RovexSectionDashboardActivity.kt"
-s = p.read_text()
+if "import androidx.activity.result.contract.ActivityResultContracts" in s:
+    s=s.replace("import androidx.activity.result.contract.ActivityResultContracts\n","")
+if "qbankImportLauncher = registerForActivityResult" in s:
+    import re
+    s=re.sub(r'private val qbankImportLauncher = registerForActivityResult\\(ActivityResultContracts.OpenMultipleDocuments\\)\\{ uris ->.*?\\n\\}\\n','',s,flags=re.S)
 if "import android.graphics.drawable.GradientDrawable" not in s:
     s=s.replace("import android.graphics.Color", "import android.graphics.Color\nimport android.graphics.drawable.GradientDrawable")
+if "private val V304_QBANK_IMPORT_REQUEST" not in s:
+    s=s.replace("private var renderedTheme:String?=null", "private var renderedTheme:String?=null\nprivate val V304_QBANK_IMPORT_REQUEST=9304")
+if "override fun onActivityResult(requestCode:Int" not in s:
+    marker2="override fun onCreate(b:Bundle?){"
+    callback='''override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){
+    super.onActivityResult(requestCode,resultCode,data)
+    if(requestCode==V304_QBANK_IMPORT_REQUEST && resultCode==Activity.RESULT_OK){
+        val uris=ArrayList<android.net.Uri>()
+        data?.data?.let{uris.add(it)}
+        data?.clipData?.let{clip->for(i in 0 until clip.itemCount){val u=clip.getItemAt(i).uri;if(!uris.contains(u))uris.add(u)}}
+        if(uris.isNotEmpty()) startActivity(Intent(this,HtmlImportActivity::class.java).putParcelableArrayListExtra("uris",uris))
+    }
+}
+'''
+    s=s.replace(marker2,callback+marker2,1)
+s=s.replace('qbankImportLauncher.launch(arrayOf("text/html","text/plain","application/xhtml+xml"))','startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply{type="text/html";putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);addCategory(Intent.CATEGORY_OPENABLE)},V304_QBANK_IMPORT_REQUEST)')
+s=s.replace('cornerRadius=d(30).toFloat()','cornerRadius=this@RovexSectionDashboardActivity.d(30).toFloat()')
+p.write_text(s)
+
+# Restore the small compile-safety imports/fixes that predated the navigation work.
+p = JAVA / "RovexHomeRevolution.kt"
+s = p.read_text()
+if "import android.content.Intent" not in s:
+    s=s.replace("import android.content.Context", "import android.content.Context\nimport android.content.Intent")
+p.write_text(s)
+
+p = JAVA / "RovexSearchChaseView.kt"
+s = p.read_text()
+if "import android.graphics.Color" not in s:
+    s=s.replace("import android.graphics.Canvas", "import android.graphics.Canvas\nimport android.graphics.Color")
+p.write_text(s)
+
+p = JAVA / "SearchActivity.kt"
+s = p.read_text()
+s=s.replace("ThemeManager.transparentSectionDrawable(this)", "ThemeManager.transparentSectionDrawable(this@SearchActivity)")
+s=s.replace("ThemeManager.text(this);gravity=Gravity.CENTER", "ThemeManager.text(this@SearchActivity);gravity=Gravity.CENTER")
+s=s.replace("ThemeManager.text(this))}", "ThemeManager.text(this@SearchActivity))}")
+p.write_text(s)
+
+p = JAVA / "SettingsScreen.kt"
+s = p.read_text()
+old='''private fun themeSwatch(key:String):Int=when(key){
+        ThemeManager.presets.firstOrNull{it.key==key}?.c1 ?: Color.rgb(247,249,255)
+    }'''
+if old in s:
+    s=s.replace(old,'private fun themeSwatch(key:String):Int = ThemeManager.presets.firstOrNull{it.key==key}?.c1 ?: Color.rgb(247,249,255)',1)
 p.write_text(s)
 
 print("ROVEX_CI_COMPILE_AND_NAV_FIXES=APPLIED")
