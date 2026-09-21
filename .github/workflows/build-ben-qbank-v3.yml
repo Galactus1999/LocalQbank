@@ -1,6 +1,6 @@
 name: Build Ben QBank v3 - Rovex UI Revolution
 # V304 COMPILE REPAIR GATE
-# repair-script revision f3b6a837
+# repair-script revision f3b6a837 / signing digest normalized
 # ARCHIVED PATCH-CHAIN BUILDER
 # Intentionally manual-only. All automatic release builds now use the canonical
 # source produced by the final-release workflow.
@@ -107,7 +107,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$out/app-release.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$out/app-release.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$out/app-release.apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
-          grep -Fq '8D:EC:BE:AC:90:6A:40:54:6B:33:2F:35:62:93:13:EF:6B:A6:86:0D:10:06:AA:D0:7B:76:15:38:22:8C:01:53' "$RUNNER_TEMP/rovex-signing.txt"
+          grep -Fq '8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153' "$RUNNER_TEMP/rovex-signing.txt"
       - uses: actions/upload-artifact@v4
         with:
           name: Rovex-v8.3.304-release
