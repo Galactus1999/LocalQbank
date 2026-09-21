@@ -1,6 +1,6 @@
 name: Build Ben QBank v3 - Rovex UI Revolution
 # V304 COMPILE REPAIR GATE
-# repair-script revision b0ab6135 / UI navigation + compile repair
+# repair-script revision fe3285e1 / UI navigation compile final
 # ARCHIVED PATCH-CHAIN BUILDER
 # Intentionally manual-only. All automatic release builds now use the canonical
 # source produced by the final-release workflow.
