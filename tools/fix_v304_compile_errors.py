@@ -89,4 +89,10 @@ if old in s: s=s.replace(old,new,1)
 elif '＋ IMPORT QBANK' not in s: raise SystemExit("ROVEX_CI_PATCH_MISSING QBank action row")
 p.write_text(s)
 
-p = JAVA / "RovexSectionDashboardActivity.kt"\ns = p.read_text()\nif "import android.graphics.drawable.GradientDrawable" not in s:\n    s=s.replace("import android.graphics.Color", "import android.graphics.Color\\nimport android.graphics.drawable.GradientDrawable")\np.write_text(s)\n\nprint("ROVEX_CI_COMPILE_AND_NAV_FIXES=APPLIED")
+p = JAVA / "RovexSectionDashboardActivity.kt"
+s = p.read_text()
+if "import android.graphics.drawable.GradientDrawable" not in s:
+    s=s.replace("import android.graphics.Color", "import android.graphics.Color\nimport android.graphics.drawable.GradientDrawable")
+p.write_text(s)
+
+print("ROVEX_CI_COMPILE_AND_NAV_FIXES=APPLIED")
