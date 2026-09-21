@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - '**.zip'
+      - '.github/workflows/build-ben-qbank-v3.yml'
   workflow_dispatch:
     inputs:
       source_zip:
@@ -85,6 +86,12 @@ jobs:
 
           if [ -z "$selected" ] && [ -f "$GITHUB_WORKSPACE/Rovex_LATEST_UPLOAD.zip" ]; then
             selected="Rovex_LATEST_UPLOAD.zip"
+          fi
+
+          # A workflow-only push is also a deliberate build request.
+          # Use the current canonical uploaded source when no ZIP changed.
+          if [ -z "$selected" ] && [ -f "$GITHUB_WORKSPACE/Rovex_v8.3.304_SectionDashboardCompileRepair.zip" ]; then
+            selected="Rovex_v8.3.304_SectionDashboardCompileRepair.zip"
           fi
 
           if [ -z "$selected" ]; then
