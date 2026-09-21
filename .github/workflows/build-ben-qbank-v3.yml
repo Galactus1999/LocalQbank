@@ -47,18 +47,7 @@ jobs:
           test -n "$version"; test -n "$code"
           echo "Uploaded source: v$version ($code)"
           echo "SHA-256: $SOURCE_SHA256"
-          python3 - "$PROJECT_DIR" <<'PY'
-import pathlib,sys,xml.etree.ElementTree as ET
-root=pathlib.Path(sys.argv[1])
-for p in root.glob("app/src/main/res/layout/*.xml"):
-    tree=ET.parse(p)
-    ids=[]
-    for e in tree.iter():
-        v=e.attrib.get("{http://schemas.android.com/apk/res/android}id","")
-        if v.startswith("@+id/"): ids.append(v[5:])
-    if len(ids)!=len(set(ids)): raise SystemExit(f"duplicate id in one layout: {p}")
-print("XML_LAYOUT_AUDIT=PASS")
-PY
+          python3 -c 'import pathlib,sys,xml.etree.ElementTree as ET; root=pathlib.Path(sys.argv[1]); [(_ for _ in ()).throw(SystemExit(f"duplicate id in one layout: {p}")) if (lambda ids: len(ids)!=len(set(ids)))([e.attrib.get("{http://schemas.android.com/apk/res/android}id","")[5:] for e in ET.parse(p).iter() if e.attrib.get("{http://schemas.android.com/apk/res/android}id","").startswith("@+id/")]) else None for p in root.glob("app/src/main/res/layout/*.xml")]; print("XML_LAYOUT_AUDIT=PASS")' "$PROJECT_DIR"
       - name: Verify source ZIP size
         run: test "$(stat -c%s "$GITHUB_WORKSPACE/Rovex_LATEST_UPLOAD.zip")" -lt 25000000
       - name: Upload exact source used
