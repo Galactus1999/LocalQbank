@@ -37,7 +37,7 @@ jobs:
       - name: Prepare Gradle compatibility init
         run: |
           set -euo pipefail
-          printf '%s\n' 'gradle.projectsEvaluated { allprojects { project -> project.tasks.matching { it.name.contains("AarMetadata", ignoreCase = true) }.configureEach { enabled = false } } }' > "$RUNNER_TEMP/disable-aar-metadata.gradle"
+          printf '%s\n' 'gradle.projectsEvaluated { allprojects { project -> project.tasks.matching { it.name.contains("AarMetadata") }.configureEach { enabled = false } } }' > "$RUNNER_TEMP/disable-aar-metadata.gradle"
       - name: Restore native payload
         run: |
           set -euo pipefail
