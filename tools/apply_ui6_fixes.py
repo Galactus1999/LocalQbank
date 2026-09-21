@@ -189,14 +189,24 @@ if "import android.content.Intent" not in hs:
     hs=hs.replace("import android.content.Context","import android.content.Context\nimport android.content.Intent",1)
 hp.write_text(hs)
 
-# Repair Kotlin nav label escapes if a source variant materialized literal newlines.
-hs=hs.replace('''val names=arrayOf("⌂
-Home","▣
-QBank","▤
-Cards","▥
-Lab","•••
-More")''', r'''val names=arrayOf("⌂\nHome","▣\nQBank","▤\nCards","▥\nLab","•••\nMore")''')
+# Final normalization: keep navigation labels on one Kotlin source line.
+hs=re.sub(r'(?s)  val names=arrayOf\("⌂.*?nav\.addView\(n,LinearLayout\.LayoutParams\(0,d\(58,a\),1f\)\)\}',
+'''  val names=arrayOf("⌂ Home","▣ QBank","▤ Cards","▥ Lab","••• More")
+  names.indices.forEach{i->
+    val n=tv(a,names[i],12f,if(i==0)ThemeManager.text(a) else ThemeManager.muted(a),true)
+    n.gravity=Gravity.CENTER
+    if(i==0)n.background=GradientDrawable().apply{cornerRadius=d(22,a).toFloat();setColor(if(dark)Color.argb(85,35,150,255) else Color.argb(125,55,165,255));setStroke(d(1,a),Color.argb(180,60,205,255))}
+    n.setOnClickListener{when(i){
+      1->a.startActivity(Intent(a,RovexSectionDashboardActivity::class.java).putExtra("section","qbank").addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+      2->pF?.performClick()
+      3->pL?.performClick()
+      4->a.startActivity(Intent(a,StudyToolsActivity::class.java))
+    }}
+    nav.addView(n,LinearLayout.LayoutParams(0,d(58,a),1f))
+  }
+}''',hs,count=1)
 hp.write_text(hs)
+
 
 dp=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
 ds=dp.read_text()
@@ -204,19 +214,11 @@ a=ds.find("    private fun showCalendarEvents(c: MainActivity) {")
 b=ds.find("    private fun openPlanner",a)
 if a >= 0 and b > a:
     block=ds[a:b]
-    block=block.replace("showCalendarEvents(c: MainActivity)","showCalendarEvents(ctx: MainActivity)",1)
-    block=re.sub(r"\bc\.", "ctx.", block)
-    block=block.replace("dp(c,","dp(ctx,")
-    block=block.replace("text(c,","text(ctx,")
-    block=block.replace("card(c,","card(ctx,")
-    block=block.replace("ThemeManager.text(c)","ThemeManager.text(ctx)")
-    block=block.replace("ThemeManager.accent(c)","ThemeManager.accent(ctx)")
-    block=block.replace("Toast.makeText(c,","Toast.makeText(ctx,")
-    block=block.replace("showCalendarEvents(c)","showCalendarEvents(ctx)")
-    block=block.replace("LinearLayout(ctx)","LinearLayout(ctx)")
+    block=re.sub(r'\bc\b', 'ctx', block)
+    block=block.replace("showCalendarEvents(ctx: MainActivity)","showCalendarEvents(ctx: MainActivity)")
     ds=ds[:a]+block+ds[b:]
-    dp.write_text(ds)
 else:
     raise SystemExit("UI6 calendar block not found")
+
 
 print("Rovex UI6 fixes applied")
