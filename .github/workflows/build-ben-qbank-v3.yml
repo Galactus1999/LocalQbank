@@ -24,6 +24,7 @@ jobs:
           rm -rf "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/rovex"
           unzip -q Rovex_v8.3.304_SectionDashboardCompileRepair.zip -d "$RUNNER_TEMP/rovex"
+          sed -i 's/compileSdk = 36/compileSdk = 37/' "$RUNNER_TEMP/rovex/app/build.gradle.kts"
           echo "PROJECT_DIR=$RUNNER_TEMP/rovex" >> "$GITHUB_ENV"
           test -f "$RUNNER_TEMP/rovex/settings.gradle.kts"
           test -f "$RUNNER_TEMP/rovex/gradlew"
@@ -38,7 +39,7 @@ jobs:
       - name: Install SDK
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+          sdkmanager "platforms;android-37" "build-tools;36.0.0" "platform-tools"
 
       - name: Build release
         run: |
