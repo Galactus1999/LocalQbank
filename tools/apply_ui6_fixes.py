@@ -201,7 +201,7 @@ hp.write_text(hs)
 # The project defines dp as an Int extension (e.g. 18.dp(ctx)), not dp(ctx, 18).
 cp=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
 cs=cp.read_text()
-cs=re.sub(r"\\bdp\\s*\\(\\s*ctx\\s*,\\s*(\\d+)\\s*\\)", lambda m: f"{m.group(1)}.dp(ctx)", cs)
+cs=re.sub(r"\bdp\s*\(\s*ctx\s*,\s*(\d+)\s*\)", lambda m: f"{m.group(1)}.dp(ctx)", cs)
 cp.write_text(cs)
 
 print("Rovex UI6 fixes applied")
