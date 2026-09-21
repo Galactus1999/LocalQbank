@@ -21,7 +21,7 @@ jobs:
           sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$sdkmanager" --licenses >/dev/null || true
           "$sdkmanager" 'platforms;android-36' 'platform-tools' 'build-tools;35.0.0'
-      - name: Prepare Rovex v8.3.303
+      - name: Prepare Rovex v8.3.304
         run: |
           set -euo pipefail
           rm -rf "$RUNNER_TEMP/rovex"
@@ -43,18 +43,20 @@ jobs:
           (cd "$d" && python3 patch_302.py && rm -f patch_302.py)
           cp "$GITHUB_WORKSPACE/tools/patch_303.py" "$d/patch_303.py"
           (cd "$d" && python3 patch_303.py && rm -f patch_303.py)
+          cp "$GITHUB_WORKSPACE/tools/patch_304.py" "$d/patch_304.py"
+          (cd "$d" && python3 patch_304.py && rm -f patch_304.py)
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 36/g' "$d/app/build.gradle.kts"
           r="$d/app/src/main/java/com/localqbank/library/RenActivity.kt"
           grep -q 'import android.view.ViewGroup' "$r" || sed -i '/import android.view.View$/a import android.view.ViewGroup' "$r"
           q="$d/app/src/main/java/com/localqbank/library/QuizActivity.kt"
           sed -i 's/apply { tag=/apply { this.tag=/' "$q"
           sed -i 's/^                    tag = "quiz:" + role$/                    this.tag = "quiz:" + role/' "$q"
-      - name: Verify v8.3.303 UI revolution
+      - name: Verify v8.3.304 daily study hub
         run: |
           set -euo pipefail
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
-          grep -q 'versionName = "8.3.303"' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -q 'versionCode = 397' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'versionName = "8.3.304"' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'versionCode = 398' "$PROJECT_DIR/app/build.gradle.kts"
           grep -q 'ThemeManager.PASTEL' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
           grep -q 'ThemeManager.MINT' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
           grep -q 'ThemeManager.SUNSET' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
@@ -72,16 +74,21 @@ jobs:
           grep -q 'RovexHomeRevolution.apply(this)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
           grep -q 'RovexLiveBackdrop' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
           grep -q 'ImageView->image' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
+          grep -q 'ROVEX_PHASE_304_DAILY_STUDY_HUB' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexRoadmapMarker.kt"
+          grep -q 'RovexDailyStudyHub.install(a, content, pF)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+          grep -q 'ACTION_INSERT' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+          grep -q 'Daily Progress Heatmap' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+          grep -q 'Daily Schedule Planner' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
       - name: Package source under 25MB
         run: |
           set -euo pipefail
           cd "$PROJECT_DIR"
-          zip -qr "$RUNNER_TEMP/Rovex_v8.3.303_Final_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*'
-          test "$(stat -c%s "$RUNNER_TEMP/Rovex_v8.3.303_Final_Source.zip")" -lt 25000000
+          zip -qr "$RUNNER_TEMP/Rovex_v8.3.304_Final_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*'
+          test "$(stat -c%s "$RUNNER_TEMP/Rovex_v8.3.304_Final_Source.zip")" -lt 25000000
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.303-source-under25mb
-          path: ${{ runner.temp }}/Rovex_v8.3.303_Final_Source.zip
+          name: Rovex-v8.3.304-source-under25mb
+          path: ${{ runner.temp }}/Rovex_v8.3.304_Final_Source.zip
           if-no-files-found: error
           retention-days: 30
       - name: Prepare Gradle compatibility init
@@ -123,7 +130,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$out/app-release.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.303-release
+          name: Rovex-v8.3.304-release
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
