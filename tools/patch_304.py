@@ -257,6 +257,9 @@ s=p.read_text()
 needle='  content.addView(tv(a,"Quick Tools",19f,Color.WHITE,true),'
 if needle not in s: raise SystemExit("Quick Tools anchor missing")
 s=s.replace(needle, '  RovexDailyStudyHub.install(a, content, pF)\n\n'+needle, 1)
+# Defensive postcondition: the daily hub must actually be wired into the runtime home.
+if 'RovexDailyStudyHub.install(' not in s:
+    raise SystemExit("DAILY_HUB_WIRING_INSERT_FAILED")
 # The hub must be placed before Quick Tools; no anchor needed.
 g=R/'app/build.gradle.kts'
 s=g.read_text().replace('versionCode = 397','versionCode = 398',1).replace('versionName = "8.3.303"','versionName = "8.3.304"',1)
