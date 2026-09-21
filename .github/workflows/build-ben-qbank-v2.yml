@@ -37,6 +37,8 @@ jobs:
           (cd "$d" && python3 patch_296.py && rm -f patch_296.py)
           cp "$GITHUB_WORKSPACE/tools/patch_297.py" "$d/patch_297.py"
           (cd "$d" && python3 patch_297.py && rm -f patch_297.py)
+          cp "$GITHUB_WORKSPACE/tools/patch_298.py" "$d/patch_298.py"
+          (cd "$d" && python3 patch_298.py && rm -f patch_298.py)
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 36/g' "$d/app/build.gradle.kts"
           sed -i 's/fun read(match:String):List<SearchHit>=/fun read(match:String):List<SearchHit> =/' "$d/app/src/main/java/com/localqbank/library/QBankDb.kt"
           r="$d/app/src/main/java/com/localqbank/library/RenActivity.kt"
@@ -44,13 +46,21 @@ jobs:
           q="$d/app/src/main/java/com/localqbank/library/QuizActivity.kt"
           sed -i 's/apply { tag=/apply { this.tag=/' "$q"
           sed -i 's/^                    tag = "quiz:" + role$/                    this.tag = "quiz:" + role/' "$q"
-      - name: Verify v8.3.297 source
+      - name: Verify v8.3.298 source
         run: |
           set -euo pipefail
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/BenChatWebView.kt"
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/QuizRichTextRenderer.kt"
-          grep -q 'versionName = "8.3.297"' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -q 'versionCode = 391' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'versionName = "8.3.298"' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'versionCode = 392' "$PROJECT_DIR/app/build.gradle.kts"
+          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RenChatViewModel.kt"
+          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexAdaptiveUi.kt"
+          grep -q 'chatState.webScrollY' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RenActivity.kt"
+          grep -q 'width:auto;min-width:100%' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RenActivity.kt"
+          grep -q 'ORIENTATION_LANDSCAPE' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
+          grep -q 'android:resizeableActivity="true"' "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
+          grep -q 'if(isLandscape())d(44)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexSectionDashboardActivity.kt"
+          grep -q 'RovexAdaptiveUi.apply(activity)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ResilienceManager.kt"
           grep -q 'OBSIDIAN_NIGHT' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ThemeManager.kt"
           ! grep -q 'AMOLED_DARK' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ThemeManager.kt"
           ! grep -q 'AMOLED Dark' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
@@ -63,17 +73,17 @@ jobs:
           grep -q 'RovexAtomicFile.replace(temp, file)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ApkgImporter.kt"
           grep -q 'frankensteinWorkspaceStartup' "$PROJECT_DIR/benchmark/src/main/kotlin/com/localqbank/library/benchmark/ColdStartupBenchmark.kt"
           ! grep -R -q 'catch (t: Throwable)' "$PROJECT_DIR/app/src/main/java"
-      - name: Package v8.3.297 source under 25MB
+      - name: Package v8.3.298 source under 25MB
         run: |
           set -euo pipefail
           cd "$PROJECT_DIR"
-          zip -qr "$RUNNER_TEMP/Rovex_v8.3.297_Final_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*'
+          zip -qr "$RUNNER_TEMP/Rovex_v8.3.298_Final_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*'
           size=$(stat -c%s "$RUNNER_TEMP/Rovex_v8.3.297_Final_Source.zip")
           test "$size" -lt 25000000
-      - name: Upload v8.3.297 source
+      - name: Upload v8.3.298 source
         uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.297-source-under25mb
+          name: Rovex-v8.3.298-source-under25mb
           path: ${{ runner.temp }}/Rovex_v8.3.297_Final_Source.zip
           if-no-files-found: error
           retention-days: 30
@@ -128,6 +138,6 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.297-release
+          name: Rovex-v8.3.298-release
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
