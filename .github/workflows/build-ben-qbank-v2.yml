@@ -27,7 +27,7 @@ jobs:
           set -euo pipefail
           rm -rf "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/rovex"
-          unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.295_Radical_AMOLED_Search_Footer_Offline_Final.zip" -d "$RUNNER_TEMP/rovex"
+          unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.295_Ben_Fast_Table_Durability_Final.zip" -d "$RUNNER_TEMP/rovex"
           p="$(find "$RUNNER_TEMP/rovex" -name settings.gradle.kts -type f -print -quit)"
           test -n "$p"
           d="$(dirname "$p")"
