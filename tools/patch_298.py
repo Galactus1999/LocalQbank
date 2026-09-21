@@ -15,7 +15,9 @@ class RenChatViewModel:ViewModel(){
 rw('app/src/main/java/com/localqbank/library/RenActivity.kt',lambda s:s
 .replace('import androidx.core.view.WindowInsetsCompat\n','import androidx.core.view.WindowInsetsCompat\nimport androidx.appcompat.app.AppCompatActivity\nimport androidx.activity.viewModels\n')
 .replace('private val chatTurns = mutableListOf<Pair<String,String>>()','private val chatState:RenChatViewModel by viewModels()\n    private val chatTurns:MutableList<Pair<String,String>> get()=chatState.turns')
-.replace('private var lastBenReply: String = ""','private var lastBenReply:String get()=chatState.lastBenReply set(v){chatState.lastBenReply=v}')
+.replace('private var lastBenReply: String = ""','''private var lastBenReply: String
+        get() = chatState.lastBenReply
+        set(value) { chatState.lastBenReply = value }''')
 .replace('setContentView(build())','setContentView(build())\n        promptInput?.setText(chatState.prompt)\n        promptInput?.setSelection(promptInput?.text?.length?:0)',1)
 .replace('private fun build(): View {','private fun isLandscape()=resources.configuration.orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE\n    private fun build(): View {',1)
 .replace('root.addView(header)','root.addView(header,LinearLayout.LayoutParams(-1,if(isLandscape())dp(34) else dp(42)))',1)
