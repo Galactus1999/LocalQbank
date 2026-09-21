@@ -4,7 +4,7 @@ on:
   # Release is downstream of the staging/source workflow. This prevents the
   # final APK from silently rebuilding an older repository snapshot.
   workflow_run:
-    workflows: ["Build Ben QBank v3 - Rovex UI Revolution"]
+    workflows: ["Rovex Build"]
     types: [completed]
   workflow_dispatch:
 
@@ -35,7 +35,7 @@ jobs:
           set -euo pipefail
           sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$sdkmanager" --licenses >/dev/null || true
-          "$sdkmanager" 'platforms;android-36' 'platform-tools' 'build-tools;35.0.0'
+          "$sdkmanager" 'platforms;android-37' 'platform-tools' 'build-tools;36.0.0'
 
       - name: Materialize latest source ZIP
         env:
@@ -54,10 +54,10 @@ jobs:
 
           gh run download "$source_run" \
             --repo "${{ github.repository }}" \
-            --name Rovex-v8.3.304-source-under25mb \
+            --name Rovex-8.3.304-release \
             --dir "$RUNNER_TEMP/source-artifact"
 
-          src_zip="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_v8.3.304_Final_Source.zip' -print -quit)"
+          src_zip="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_v8.3.304_Corrected_Source.zip' -print -quit)"
           test -n "$src_zip"
           unzip -q "$src_zip" -d "$RUNNER_TEMP/rovex"
 
@@ -121,7 +121,7 @@ jobs:
           test -n "$KEYSTORE_B64"; test -n "$STORE_PASSWORD"; test -n "$KEY_ALIAS"; test -n "$KEY_PASSWORD"
           ks="$RUNNER_TEMP/rovex-release.jks"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$out/app-release.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$out/app-release.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$out/app-release.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$out/app-release.apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
           grep -q 'Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/rovex-signing.txt"
