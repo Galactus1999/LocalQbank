@@ -67,9 +67,9 @@ jobs:
             mkdir -p "$RUNNER_TEMP/source-artifact"
             gh run download "$source_run" \
               --repo "${{ github.repository }}" \
-              --name Rovex-v8.3.303-source-under25mb \
+              --name Rovex-v8.3.304-source-under25mb \
               --dir "$RUNNER_TEMP/source-artifact"
-            src_zip="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_v8.3.303_Final_Source.zip' -print -quit)"
+            src_zip="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_v8.3.304_Final_Source.zip' -print -quit)"
             test -n "$src_zip"
             unzip -q "$src_zip" -d "$RUNNER_TEMP/rovex"
           fi
@@ -80,14 +80,16 @@ jobs:
           chmod +x "$d/gradlew"
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
 
-      - name: Verify canonical v8.3.303 source
+      - name: Verify canonical v8.3.304 source
         run: |
           set -euo pipefail
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
           grep -q 'versionName = "8.3.303"' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -q 'versionCode = 397' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'versionCode = 398' "$PROJECT_DIR/app/build.gradle.kts"
           grep -q 'RovexHomeRevolution.apply(this)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
           grep -q 'RovexLiveBackdrop' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+          grep -q 'ROVEX_PHASE_304_DAILY_STUDY_HUB' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexRoadmapMarker.kt"
+          grep -q 'RovexDailyStudyHub.install(a, content, pF)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
           ! grep -R -E -q 'ThemeManager\\.(DARK|SEPIA|OBSIDIAN_NIGHT|MIDNIGHT|COSMOS|AVATAR)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library"
 
       - name: Prepare Gradle compatibility init
@@ -138,31 +140,31 @@ jobs:
         run: |
           set -euo pipefail
           cd "$PROJECT_DIR"
-          zip -qr "$RUNNER_TEMP/Rovex_v8.3.303_Canonical_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*'
-          test "$(stat -c%s "$RUNNER_TEMP/Rovex_v8.3.303_Canonical_Source.zip")" -lt 25000000
+          zip -qr "$RUNNER_TEMP/Rovex_v8.3.304_Canonical_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*'
+          test "$(stat -c%s "$RUNNER_TEMP/Rovex_v8.3.304_Canonical_Source.zip")" -lt 25000000
 
       - name: Promote canonical source into repository
         if: ${{ !hashFiles('ROVEX_CANONICAL_SOURCE.txt') }}
         run: |
           set -euo pipefail
           rsync -a             --exclude='.git/'             --exclude='.gradle/'             --exclude='build/'             --exclude='app/build/'             "$PROJECT_DIR/" "$GITHUB_WORKSPACE/"
-          printf '%s\n' 'Rovex v8.3.303 canonical source. Future automatic builds use this source directly; patch-chain builds are retired.' > "$GITHUB_WORKSPACE/ROVEX_CANONICAL_SOURCE.txt"
+          printf '%s\n' 'Rovex v8.3.304 canonical source. Future automatic builds use this source directly; patch-chain builds are retired.' > "$GITHUB_WORKSPACE/ROVEX_CANONICAL_SOURCE.txt"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Promote Rovex v8.3.303 canonical source [skip ci]"
+          git commit -m "Promote Rovex v8.3.304 canonical source [skip ci]"
           git push
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.303-CANONICAL-SOURCE
-          path: ${{ runner.temp }}/Rovex_v8.3.303_Canonical_Source.zip
+          name: Rovex-v8.3.304-CANONICAL-SOURCE
+          path: ${{ runner.temp }}/Rovex_v8.3.304_Canonical_Source.zip
           if-no-files-found: error
           retention-days: 90
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.303-FINAL-RELEASE
+          name: Rovex-v8.3.304-FINAL-RELEASE
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 90
