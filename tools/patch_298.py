@@ -12,7 +12,7 @@ class RenChatViewModel:ViewModel(){
  var webScrollY:Int=0
 }''')
 rw('app/src/main/java/com/localqbank/library/RenActivity.kt',lambda s:s
-.replace('import androidx.core.view.WindowInsetsCompat\n','import androidx.core.view.WindowInsetsCompat\nimport androidx.activity.viewModels\n')
+.replace('import androidx.core.view.WindowInsetsCompat\n','import androidx.core.view.WindowInsetsCompat\nimport androidx.appcompat.app.AppCompatActivity\nimport androidx.activity.viewModels\n')
 .replace('private val chatTurns = mutableListOf<Pair<String,String>>()','private val chatState:RenChatViewModel by viewModels()\n    private val chatTurns:MutableList<Pair<String,String>> get()=chatState.turns')
 .replace('private var lastBenReply: String = ""','private var lastBenReply:String get()=chatState.lastBenReply set(v){chatState.lastBenReply=v}')
 .replace('setContentView(build())','setContentView(build())\n        promptInput?.setText(chatState.prompt)\n        promptInput?.setSelection(promptInput?.text?.length?:0)',1)
