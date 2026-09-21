@@ -1,21 +1,12 @@
 name: Rovex Final Release - Canonical Source
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'app/**'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradle/**'
-      - 'gradlew'
-      - 'gradle.properties'
-      - 'gradle/libs.versions.toml'
-      - '.rovex-final-bootstrap'
-  workflow_dispatch:
+  # Release is downstream of the staging/source workflow. This prevents the
+  # final APK from silently rebuilding an older repository snapshot.
   workflow_run:
     workflows: ["Build Ben QBank v3 - Rovex UI Revolution"]
     types: [completed]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -46,33 +37,29 @@ jobs:
           yes | "$sdkmanager" --licenses >/dev/null || true
           "$sdkmanager" 'platforms;android-36' 'platform-tools' 'build-tools;35.0.0'
 
-      - name: Materialize canonical source
+      - name: Materialize latest source ZIP
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          rm -rf "$RUNNER_TEMP/rovex"
-          mkdir -p "$RUNNER_TEMP/rovex"
+          rm -rf "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/source-artifact"
+          mkdir -p "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/source-artifact"
 
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
             source_run="${{ github.event.workflow_run.id }}"
-          elif [ -f "$GITHUB_WORKSPACE/settings.gradle.kts" ]; then
-            source_run=""
-            cp -a "$GITHUB_WORKSPACE/." "$RUNNER_TEMP/rovex/"
           else
-            source_run="35598171983"
+            echo "Manual final-release dispatch is disabled until a successful latest staging run exists." >&2
+            exit 1
           fi
 
-          if [ -n "$source_run" ]; then
-            mkdir -p "$RUNNER_TEMP/source-artifact"
-            gh run download "$source_run" \
-              --repo "${{ github.repository }}" \
-              --name Rovex-v8.3.304-source-under25mb \
-              --dir "$RUNNER_TEMP/source-artifact"
-            src_zip="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_v8.3.304_Final_Source.zip' -print -quit)"
-            test -n "$src_zip"
-            unzip -q "$src_zip" -d "$RUNNER_TEMP/rovex"
-          fi
+          gh run download "$source_run" \
+            --repo "${{ github.repository }}" \
+            --name Rovex-v8.3.304-source-under25mb \
+            --dir "$RUNNER_TEMP/source-artifact"
+
+          src_zip="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_v8.3.304_Final_Source.zip' -print -quit)"
+          test -n "$src_zip"
+          unzip -q "$src_zip" -d "$RUNNER_TEMP/rovex"
 
           p="$(find "$RUNNER_TEMP/rovex" -name settings.gradle.kts -type f -print -quit)"
           test -n "$p"
@@ -84,7 +71,8 @@ jobs:
         run: |
           set -euo pipefail
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
-          grep -q 'versionName = "8.3.303"' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'versionName = "8.3.304"' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'applicationId = "com.localqbank.library"' "$PROJECT_DIR/app/build.gradle.kts"
           grep -q 'versionCode = 398' "$PROJECT_DIR/app/build.gradle.kts"
           grep -q 'RovexHomeRevolution.apply(this)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
           grep -q 'RovexLiveBackdrop' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
@@ -135,6 +123,8 @@ jobs:
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$out/app-release.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$out/app-release.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$out/app-release.apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
+          grep -q 'Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/rovex-signing.txt"
 
       - name: Package canonical source
         run: |
