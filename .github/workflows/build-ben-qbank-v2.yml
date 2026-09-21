@@ -35,13 +35,25 @@ jobs:
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 36/g' "$d/app/build.gradle.kts"
           sed -i 's/fun read(match:String):List<SearchHit>=/fun read(match:String):List<SearchHit> =/' "$d/app/src/main/java/com/localqbank/library/QBankDb.kt"
-      - name: Upload prepared source for forensic audit
+      - name: Apply v8.3.294 radical UI/search repairs
+        run: |
+          set -euo pipefail
+          python3 "$GITHUB_WORKSPACE/tools/repair_294_amoled_search_footer.py" "$PROJECT_DIR"
+      - name: Package v8.3.294 source under 25MB
+        run: |
+          set -euo pipefail
+          cd "$PROJECT_DIR"
+          zip -qr "$RUNNER_TEMP/Rovex_v8.3.294_Final_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*'
+          size=$(stat -c%s "$RUNNER_TEMP/Rovex_v8.3.294_Final_Source.zip")
+          echo "Final source ZIP bytes: $size"
+          test "$size" -lt 25000000
+      - name: Upload v8.3.294 source
         uses: actions/upload-artifact@v4
         with:
-          name: Rovex-293-prepared-source
-          path: ${{ env.PROJECT_DIR }}
+          name: Rovex-v8.3.294-source-under25mb
+          path: ${{ runner.temp }}/Rovex_v8.3.294_Final_Source.zip
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 30
 
       - name: Prepare Gradle compatibility init
         run: |
@@ -101,6 +113,6 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.293-release
+          name: Rovex-v8.3.294-release
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
