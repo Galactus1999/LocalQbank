@@ -9,18 +9,22 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v4
-      - name: SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+      - name: Install Android build tools
         run: |
+          set -euo pipefail
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager 'platforms;android-37' 'platform-tools' 'build-tools;35.0.0'
-      - name: Extract
+          sdkmanager 'platforms;android-35' 'platform-tools' 'build-tools;35.0.0'
+      - name: Extract source
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           rm -rf "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/rovex"
           unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.293_AMOLED_Multiword_RootFix_Offline_Source.zip" -d "$RUNNER_TEMP/rovex"
@@ -30,26 +34,34 @@ jobs:
           test -f "$d/gradlew"
           chmod +x "$d/gradlew"
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
-      - name: Native payload
+      - name: Normalize compile SDK for current runner
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           cd "$PROJECT_DIR"
-          test -s app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so || {
-            rm -rf "$RUNNER_TEMP/qnn"; mkdir -p "$RUNNER_TEMP/qnn";
-            unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.278_Final_Stability_Verified_Source.zip" 'app/src/main/jniLibs/*' -d "$RUNNER_TEMP/qnn";
-            rm -rf app/src/main/jniLibs;
-            cp -a "$RUNNER_TEMP/qnn/app/src/main/jniLibs" app/src/main/;
-          }
-          test -s app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so
+          if grep -Eq 'compileSdk[[:space:]]*=[[:space:]]*37' app/build.gradle.kts; then
+            sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*37/compileSdk = 35/' app/build.gradle.kts
+          fi
+      - name: Restore native payload
+        run: |
+          set -euo pipefail
+          cd "$PROJECT_DIR"
+          target=app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so
+          if [ ! -s "$target" ]; then
+            rm -rf "$RUNNER_TEMP/qnn"; mkdir -p "$RUNNER_TEMP/qnn"
+            unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.278_Final_Stability_Verified_Source.zip" 'app/src/main/jniLibs/*' -d "$RUNNER_TEMP/qnn"
+            rm -rf app/src/main/jniLibs
+            cp -a "$RUNNER_TEMP/qnn/app/src/main/jniLibs" app/src/main/
+          fi
+          test -s "$target"
       - name: Unit tests
         run: |
           cd "$PROJECT_DIR"
           ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
-      - name: Release
+      - name: Release build
         run: |
           cd "$PROJECT_DIR"
           ./gradlew :app:assembleRelease --no-daemon --stacktrace
-      - name: Verify
+      - name: Verify APK
         run: |
           apk="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
           test -s "$apk"
