@@ -160,7 +160,25 @@ jobs:
           echo "VERSION_CODE=$code"
           echo "SOURCE_SIZE_BYTES=$size"
 
-          python3 -c 'import pathlib,sys,xml.etree.ElementTree as ET; root=pathlib.Path(sys.argv[1]); [(lambda p,ids: (_ for _ in ()).throw(SystemExit(f"duplicate id in one layout: {p}")) if len(ids)!=len(set(ids)) else None)(p,[e.attrib.get("{http://schemas.android.com/apk/res/android}id","")[5:] for e in ET.parse(p).iter() if e.attrib.get("{http://schemas.android.com/apk/res/android}id","").startswith("@+id/")) for p in root.glob("app/src/main/res/layout/*.xml")]; print("XML_LAYOUT_AUDIT=PASS")' "$PROJECT_DIR"
+          python3 - "$PROJECT_DIR" <<'PY'
+import pathlib
+import sys
+import xml.etree.ElementTree as ET
+
+root = pathlib.Path(sys.argv[1])
+android_id = "{http://schemas.android.com/apk/res/android}id"
+
+for path in sorted(root.glob("app/src/main/res/layout/*.xml")):
+    ids = [
+        value[5:]
+        for element in ET.parse(path).iter()
+        if (value := element.attrib.get(android_id, "")).startswith("@+id/")
+    ]
+    if len(ids) != len(set(ids)):
+        raise SystemExit(f"duplicate id in one layout: {path}")
+
+print("XML_LAYOUT_AUDIT=PASS")
+PY
 
       - name: Verify required native payload
         shell: bash
