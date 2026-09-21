@@ -86,37 +86,35 @@ jobs:
           # families. The previous allow-list caused new sources such as
           # Rovex_v8.3.281_Frankenstein_* and Rovex_v8.3.282_AMOLED_* to be ignored,
           # silently falling back to the persisted v8.3.278 source.
-          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f -iname 'Rovex_v*_Source.zip' -print | sort -V)
-          if [ "${#ZIP_FILES[@]}" -eq 0 ]; then
+          mapfile -t ZIP_FILES < <(find . -maxdepth 1 -type f -iname 'Rovex_v*_Source.zip' -print)
+          mapfile -t FINAL_ZIPS < <(find . -maxdepth 1 -type f -iname 'Rovex_v*_Final_Stability_Verified_Source.zip' -print)
+          if [ "${#ZIP_FILES[@]}" -eq 0 ] && [ "${#FINAL_ZIPS[@]}" -eq 0 ]; then
             echo "ERROR: no verified Rovex source ZIP found."
             exit 1
           fi
-          # Older verified source ZIPs may remain persisted in the repository. Always use
-          # the highest-version source instead of failing or accidentally selecting an older one.
-          ZIP_FILE="${ZIP_FILES[${#ZIP_FILES[@]}-1]}"
-          echo "Using latest verified source ZIP: $ZIP_FILE"
-          if [ "${#ZIP_FILES[@]}" -gt 1 ]; then
-            echo "Ignoring older verified source ZIPs:"
-            printf '  %s\n' "${ZIP_FILES[@]:0:${#ZIP_FILES[@]}-1}"
-          fi
-          rm -rf android-project
-          mkdir -p android-project
-          unzip -q "$ZIP_FILE" -d android-project
-          # Compact handoff ZIPs may omit or lag the root Gradle plugin classpath.
-          # The checked-in repository root is authoritative; copy it into the selected
-          # source before Gradle configuration. No fragile text-rewrite is performed.
-          test -s build.gradle.kts || {
-            echo "ERROR: repository root build.gradle.kts is missing or empty."
-            exit 1
-          }
-          cp -f build.gradle.kts android-project/build.gradle.kts
-          test -s android-project/build.gradle.kts
-          echo "Authoritative root Gradle plugin classpath injected."
-          CANDIDATE=$(find android-project -name "settings.gradle.kts" -type f -print -quit)
-          test -n "$CANDIDATE" || { echo "ERROR: settings.gradle.kts not found in source ZIP."; exit 1; }
-          PROJECT_DIR=$(dirname "$CANDIDATE")
-          test -d "$PROJECT_DIR/app"
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          # Select by semantic version first, then by source maturity. A plain sort -V is
+          # insufficient when two ZIPs have the same version (for example v8.3.290 Final
+          # versus v8.3.290 QuizArchitecture): it would pick the latter lexically and
+          # silently discard the complete verified source. Final_Stability_Verified is
+          # authoritative whenever it exists for the highest version.
+          mapfile -t ALL_ZIPS < <(printf '%s\n' "${ZIP_FILES[@]}" "${FINAL_ZIPS[@]}" | awk 'NF' | sort -u)
+          ZIP_FILE=$(python3 - "${ALL_ZIPS[@]}" <<'PY'
+import re, sys
+paths=sys.argv[1:]
+def key(p):
+    m=re.search(r'Rovex_v(\d+)\.(\d+)\.(\d+)',p)
+    if not m:
+        return (-1,-1,-1,0,p)
+    final=1 if 'Final_Stability_Verified_Source.zip' in p else 0
+    return (*map(int,m.groups()),final,p)
+print(max(paths,key=key))
+PY
+)
+          echo "Using authoritative latest source ZIP: $ZIP_FILE"
+          highest_version=$(printf '%s' "$ZIP_FILE" | sed -n 's/.*Rovex_v\([0-9.]*\)_.*/\1/p')
+          test -n "$highest_version"
+          echo "Selected source version: $highest_version"
+          echo "Source-selection policy: highest semantic version; Final_Stability_Verified_Source wins same-version ties."
 
       # Compact source ZIPs intentionally omit large vendor QNN binaries so the source
       # upload stays below the 25 MB handoff limit. Restore the verified native payload
