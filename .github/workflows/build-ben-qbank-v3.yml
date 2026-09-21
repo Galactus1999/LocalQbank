@@ -69,7 +69,13 @@ jobs:
           path: ${{ runner.temp }}/Rovex_v8.3.304_Final_Source.zip
           if-no-files-found: error
           retention-days: 30
-      - name: Prepare Gradle compatibility init
+      - name: Provision Gradle from GitHub Actions cache
+  uses: gradle/actions/setup-gradle@v4
+  with:
+    gradle-version: "9.3.1"
+    cache-read-only: false
+
+- name: Prepare Gradle compatibility init
         run: |
           set -euo pipefail
           printf '%s\n' 'gradle.projectsEvaluated { allprojects { project -> project.tasks.matching { it.name.contains("AarMetadata") }.configureEach { enabled = false } } }' > "$RUNNER_TEMP/disable-aar-metadata.gradle"
