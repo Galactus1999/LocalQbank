@@ -37,8 +37,7 @@ jobs:
           sed -i 's/fun read(match:String):List<SearchHit>=/fun read(match:String):List<SearchHit> =/' "$d/app/src/main/java/com/localqbank/library/QBankDb.kt"
           # v8.3.294 compile correction: the local variable "tag" shadows View.tag.
           q="$d/app/src/main/java/com/localqbank/library/QuizActivity.kt"
-          sed -i 's/(row\\.getChildAt(0) as? TextView)?.apply { tag=/(row.getChildAt(0) as? TextView)?.apply { this.tag=/' "$q"
-          sed -i 's/(row\\.getChildAt(1) as? TextView)?.apply { tag=/(row.getChildAt(1) as? TextView)?.apply { this.tag=/' "$q"
+          sed -i 's/apply { tag=/apply { this.tag=/' "$q"
           sed -i 's/^                    tag = "quiz:" + role$/                    this.tag = "quiz:" + role/' "$q"
       - name: Verify v8.3.294 source
         run: |
