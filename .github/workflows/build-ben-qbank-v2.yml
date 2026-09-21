@@ -37,7 +37,7 @@ jobs:
           sed -i 's/fun read(match:String):List<SearchHit>=/fun read(match:String):List<SearchHit> =/' "$d/app/src/main/java/com/localqbank/library/QBankDb.kt"
       - name: Upload prepared source for forensic audit
         uses: actions/upload-artifact@v4
-        with
+        with:
           name: Rovex-293-prepared-source
           path: ${{ env.PROJECT_DIR }}
           if-no-files-found: error
