@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 R=Path(__file__).resolve().parent; B=R/'app/src/main/java/com/localqbank/library'
 def rw(p,f):
  q=R/p; q.write_text(f(q.read_text()))
@@ -28,6 +29,7 @@ rw('app/src/main/java/com/localqbank/library/RenActivity.kt',lambda s:s
 .replace('input.setOnFocusChangeListener','input.addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,a:Int,c:Int,d:Int)=Unit;override fun onTextChanged(s:CharSequence?,a:Int,b:Int,c:Int){chatState.prompt=s?.toString().orEmpty()};override fun afterTextChanged(e:android.text.Editable?)=Unit})\n        input.setOnFocusChangeListener',1)
 .replace('override fun onDestroy(){\n        liveJob?.cancel()','override fun onDestroy(){\n        chatWeb?.let{chatState.webScrollY=it.scrollY}\n        if(!isChangingConfigurations){liveJob?.cancel();cloudJob?.cancel()}',1)
 .replace('        cloudJob?.cancel()\n        liveScope.cancel()','        liveScope.cancel()',1))
+rw('app/src/main/java/com/localqbank/library/RenActivity.kt',lambda s:re.sub(r'class\\s+RenActivity\\s*:\\s*[^\\{]+\\{','class RenActivity : AppCompatActivity() {',s,count=1))
 rw('app/src/main/java/com/localqbank/library/RenActivity.kt',lambda s:s.replace('width:max-content;min-width:100%;max-width:none;table-layout:auto','width:auto;min-width:100%;max-width:none;table-layout:auto',1).replace('overflow-x:hidden;overflow-wrap:anywhere','overflow-x:auto;overflow-wrap:anywhere',1).replace('.table-wrap{box-sizing:border-box;width:100%;','.table-wrap{touch-action:pan-x pan-y;box-sizing:border-box;width:100%;',1).replace('min-width:96px;max-width:280px;','min-width:108px;max-width:300px;',1))
 (B/'RovexAdaptiveUi.kt').write_text('''package com.localqbank.library
 import android.app.Activity
