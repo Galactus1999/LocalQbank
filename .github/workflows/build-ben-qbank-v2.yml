@@ -91,7 +91,7 @@ jobs:
           apk="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
           test -s "$apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
-      - name: Verify
+      - uses: actions/upload-artifact@v4
         with:
           name: Rovex-v8.3.293-release
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
