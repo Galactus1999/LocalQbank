@@ -10,6 +10,7 @@ on:
     paths:
       - 'Rovex_v8.3.304_VISUAL_REVOLUTION_DEEP_REPAIRED_v2.zip'
       - '.github/workflows/build-ben-qbank-v3.yml'
+      - 'tools/fix_v304_compile_errors.py'
   workflow_dispatch:
 jobs:
   build:
