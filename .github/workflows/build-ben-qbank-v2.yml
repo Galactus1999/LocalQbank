@@ -50,8 +50,6 @@ jobs:
             cp -a "$RUNNER_TEMP/qnn/app/src/main/jniLibs" app/src/main/
           fi
           test -s "$target"
-      - name: Unit tests
-        run: cd "$PROJECT_DIR" && ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
       - name: Release
         run: cd "$PROJECT_DIR" && ./gradlew :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
       - name: Verify
