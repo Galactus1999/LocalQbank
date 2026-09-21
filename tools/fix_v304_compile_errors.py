@@ -79,9 +79,7 @@ p = JAVA / "RovexSectionDashboardActivity.kt"
 s = p.read_text()
 if "import androidx.activity.result.contract.ActivityResultContracts" in s:
     s=s.replace("import androidx.activity.result.contract.ActivityResultContracts\n","")
-if "qbankImportLauncher = registerForActivityResult" in s:
-    import re
-    s=re.sub(r'private val qbankImportLauncher = registerForActivityResult\\(ActivityResultContracts.OpenMultipleDocuments\\)\\{ uris ->.*?\\n\\}\\n','',s,flags=re.S)
+
 if "import android.graphics.drawable.GradientDrawable" not in s:
     s=s.replace("import android.graphics.Color", "import android.graphics.Color\nimport android.graphics.drawable.GradientDrawable")
 if "private val V304_QBANK_IMPORT_REQUEST" not in s:
