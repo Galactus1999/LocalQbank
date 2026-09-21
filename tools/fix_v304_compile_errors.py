@@ -105,6 +105,16 @@ s=s.replace('cornerRadius=d(18).toFloat()','cornerRadius=this@RovexSectionDashbo
 s=s.replace('cornerRadius=d(24).toFloat()','cornerRadius=this@RovexSectionDashboardActivity.d(24).toFloat()')
 s=s.replace('setStroke(d(1),accent)','setStroke(1,accent)')
 s=s.replace('setStroke(d(1),Color.argb(if(dark)120 else 95,Color.red(accent),Color.green(accent),Color.blue(accent)))','setStroke(1,Color.argb(if(dark)120 else 95,Color.red(accent),Color.green(accent),Color.blue(accent)))')
+# Section-dashboard GradientDrawable receiver safety: calls such as d()/resources
+# inside GradientDrawable.apply can bind to the drawable's Context overload instead
+# of the Activity helper. Force the receiver to the Activity explicitly.
+s=s.replace('cornerRadius=d(22).toFloat()', 'cornerRadius=this@RovexSectionDashboardActivity.d(22).toFloat()')
+s=s.replace('cornerRadius=d(30).toFloat()', 'cornerRadius=this@RovexSectionDashboardActivity.d(30).toFloat()')
+s=s.replace('cornerRadius=d(24).toFloat()', 'cornerRadius=this@RovexSectionDashboardActivity.d(24).toFloat()')
+s=s.replace('cornerRadius=d(18).toFloat()', 'cornerRadius=this@RovexSectionDashboardActivity.d(18).toFloat()')
+s=s.replace('cornerRadius=d(17).toFloat()', 'cornerRadius=this@RovexSectionDashboardActivity.d(17).toFloat()')
+s=s.replace('setStroke(d(1),accent)', 'setStroke(1,accent)')
+s=s.replace('setStroke(d(1),Color.argb(if(dark)120 else 95,Color.red(accent),Color.green(accent),Color.blue(accent)))', 'setStroke(1,Color.argb(if(dark)120 else 95,Color.red(accent),Color.green(accent),Color.blue(accent)))')
 p.write_text(s)
 
 # Restore the small compile-safety imports/fixes that predated the navigation work.
