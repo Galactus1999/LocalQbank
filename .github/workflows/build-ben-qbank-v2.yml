@@ -49,7 +49,7 @@ jobs:
           grep -q 'localSearchCommand' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ExperiencePerformanceManager.kt"
           grep -q 'db.search(variant, 80)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RenCognitiveEngine.kt"
           ! grep -q 'out.setSpan(ForegroundColorSpan' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/QuizRichTextRenderer.kt"
-          grep -q 'versionName = "8.3.294"' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -q 'versionName = "8.3.295"' "$PROJECT_DIR/app/build.gradle.kts"
           grep -q 'this.tag=' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/QuizActivity.kt"
           grep -q 'this.tag = "quiz:" + role' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/QuizActivity.kt"
       - name: Package v8.3.295 source under 25MB
