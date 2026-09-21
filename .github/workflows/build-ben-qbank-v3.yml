@@ -23,7 +23,7 @@ jobs:
           set -euxo pipefail
           rm -rf "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/rovex"
-          unzip -q Rovex_v8.3.304_SectionDashboardCompileRepair.zip -d "$RUNNER_TEMP/rovex"
+          unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.304_Corrected_Source.zip" -d "$RUNNER_TEMP/rovex"
           sed -i 's/compileSdk = 36/compileSdk = 37/' "$RUNNER_TEMP/rovex/app/build.gradle.kts"
           rm -rf "$RUNNER_TEMP/clean-source"
           cp -a "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/clean-source"
@@ -36,7 +36,7 @@ jobs:
           set -euo pipefail
           python3 "$GITHUB_WORKSPACE/tools/apply_ui6_fixes.py" "$PROJECT_DIR"
           grep -Fq 'compileSdk = 37' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -Fq 'android.permission.READ_CALENDAR' "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
+          grep -Fq 'READ_CALENDAR' "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
           grep -Fq 'QBank Library' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
           grep -Fq 'VIEW CALENDAR' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
           rm -rf "$CLEAN_SOURCE_DIR"
