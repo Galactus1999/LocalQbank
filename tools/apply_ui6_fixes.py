@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import sys
+import re
 root=Path(sys.argv[1])
 
 def edit(rel,repls):
@@ -188,6 +189,15 @@ if "import android.content.Intent" not in hs:
     hs=hs.replace("import android.content.Context","import android.content.Context\nimport android.content.Intent",1)
 hp.write_text(hs)
 
+# Repair Kotlin nav label escapes if a source variant materialized literal newlines.
+hs=hs.replace('''val names=arrayOf("⌂
+Home","▣
+QBank","▤
+Cards","▥
+Lab","•••
+More")''', r'''val names=arrayOf("⌂\nHome","▣\nQBank","▤\nCards","▥\nLab","•••\nMore")''')
+hp.write_text(hs)
+
 dp=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
 ds=dp.read_text()
 a=ds.find("    private fun showCalendarEvents(c: MainActivity) {")
@@ -195,7 +205,7 @@ b=ds.find("    private fun openPlanner",a)
 if a >= 0 and b > a:
     block=ds[a:b]
     block=block.replace("showCalendarEvents(c: MainActivity)","showCalendarEvents(ctx: MainActivity)",1)
-    block=block.replace("c.","ctx.")
+    block=re.sub(r"\bc\.", "ctx.", block)
     block=block.replace("dp(c,","dp(ctx,")
     block=block.replace("text(c,","text(ctx,")
     block=block.replace("card(c,","card(ctx,")
