@@ -65,7 +65,7 @@ PY
         uses: actions/upload-artifact@v4
         with:
           name: Rovex-LATEST-source-under25mb
-          path: \${{ github.workspace }}/Rovex_LATEST_UPLOAD.zip
+          path: ${{ github.workspace }}/Rovex_LATEST_UPLOAD.zip
           if-no-files-found: error
           retention-days: 30
       - name: Provision Gradle
@@ -95,11 +95,11 @@ PY
           gradle :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
       - name: Sign and verify release
         env:
-          KEYSTORE_B64: \${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
-          KEYSTORE_B64_LEGACY: \${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
-          STORE_PASSWORD: \${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
-          KEY_ALIAS: \${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
-          KEY_PASSWORD: \${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
+          KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
+          KEYSTORE_B64_LEGACY: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           out="$PROJECT_DIR/app/build/outputs/apk/release"
@@ -117,6 +117,6 @@ PY
       - uses: actions/upload-artifact@v4
         with:
           name: Rovex-LATEST-release
-          path: \${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
