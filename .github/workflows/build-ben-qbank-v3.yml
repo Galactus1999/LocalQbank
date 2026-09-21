@@ -1,16 +1,10 @@
-name: Build Ben QBank v3 - Rovex UI Revolution
-# V304 COMPILE REPAIR GATE
-# repair-script revision 55846271 / QBank drawable receiver fix; resilient Gradle bootstrap
-# ARCHIVED PATCH-CHAIN BUILDER
-# Intentionally manual-only. All automatic release builds now use the canonical
-# source produced by the final-release workflow.
+name: OFFLINE UPLOAD BUILD - Rovex
 on:
   push:
     branches: [main]
     paths:
-      - 'Rovex_v8.3.304_VISUAL_REVOLUTION_DEEP_REPAIRED_v2.zip'
+      - 'Rovex_LATEST_UPLOAD.zip'
       - '.github/workflows/build-ben-qbank-v3.yml'
-      - 'tools/fix_v304_compile_errors.py'
   workflow_dispatch:
 jobs:
   build:
@@ -29,12 +23,12 @@ jobs:
           sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$sdkmanager" --licenses >/dev/null || true
           "$sdkmanager" 'platforms;android-36' 'platform-tools' 'build-tools;35.0.0'
-      - name: Prepare exact uploaded v8.3.304 source
+      - name: Prepare exact uploaded source
         run: |
           set -euo pipefail
           rm -rf "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/rovex"
-          src="$GITHUB_WORKSPACE/Rovex_v8.3.304_VISUAL_REVOLUTION_DEEP_REPAIRED_v2.zip"
+          src="$GITHUB_WORKSPACE/Rovex_LATEST_UPLOAD.zip"
           test -s "$src"
           unzip -q "$src" -d "$RUNNER_TEMP/rovex"
           p="$(find "$RUNNER_TEMP/rovex" -name settings.gradle.kts -type f -print -quit)"
@@ -42,32 +36,37 @@ jobs:
           d="$(dirname "$p")"
           chmod +x "$d/gradlew"
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
-          python3 "$GITHUB_WORKSPACE/tools/fix_v304_compile_errors.py" "$d"
-          grep -q 'versionName = "8.3.304"' "$d/app/build.gradle.kts"
-          grep -q 'versionCode = 398' "$d/app/build.gradle.kts"
-          grep -q 'RovexPopupTheme' "$d/app/src/main/java/com/localqbank/library/RovexPopupTheme.kt"
-          grep -q 'RovexDialogTheme' "$d/app/src/main/java/com/localqbank/library/RovexDialogTheme.kt"
-          test -f "$d/app/src/main/java/com/localqbank/library/RovexVisualRevolution304DeepAudit.kt"
-      - name: Verify v8.3.304 daily study hub
+          echo "SOURCE_SHA256=$(sha256sum "$src" | awk '{print $1}')" >> "$GITHUB_ENV"
+      - name: Audit uploaded source
         run: |
           set -euo pipefail
-          echo "ROVEX_V304_SOURCE_SCAN"
+          test -f "$PROJECT_DIR/app/build.gradle.kts"
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
-          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/ThemeAtmosphereDrawable.kt"
-          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
-          grep -Fq 'RovexDailyStudyHub' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
-          grep -Fq 'RovexPopupTheme' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/QuizActivity.kt"
-          echo "ROVEX_V304_SOURCE_AUDIT=PASS"
-      - name: Package source under 25MB
-        run: |
-          set -euo pipefail
-          cd "$PROJECT_DIR"
-          zip -qr "$RUNNER_TEMP/Rovex_v8.3.304_Final_Source.zip" . -x '.gradle/*' 'build/*' 'app/build/*'
-          test "$(stat -c%s "$RUNNER_TEMP/Rovex_v8.3.304_Final_Source.zip")" -lt 25000000
-      - uses: actions/upload-artifact@v4
+          grep -q 'applicationId = "com.localqbank.library"' "$PROJECT_DIR/app/build.gradle.kts"
+          version="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' "$PROJECT_DIR/app/build.gradle.kts" | head -1)"
+          code="$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' "$PROJECT_DIR/app/build.gradle.kts" | head -1)"
+          test -n "$version"; test -n "$code"
+          echo "Uploaded source: v$version ($code)"
+          echo "SHA-256: $SOURCE_SHA256"
+          python3 - "$PROJECT_DIR" <<'PY'
+import pathlib,sys,xml.etree.ElementTree as ET
+root=pathlib.Path(sys.argv[1])
+for p in root.glob("app/src/main/res/layout/*.xml"):
+    tree=ET.parse(p)
+    ids=[]
+    for e in tree.iter():
+        v=e.attrib.get("{http://schemas.android.com/apk/res/android}id","")
+        if v.startswith("@+id/"): ids.append(v[5:])
+    if len(ids)!=len(set(ids)): raise SystemExit(f"duplicate id in one layout: {p}")
+print("XML_LAYOUT_AUDIT=PASS")
+PY
+      - name: Verify source ZIP size
+        run: test "$(stat -c%s "$GITHUB_WORKSPACE/Rovex_LATEST_UPLOAD.zip")" -lt 25000000
+      - name: Upload exact source used
+        uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.304-source-under25mb
-          path: ${{ runner.temp }}/Rovex_v8.3.304_Final_Source.zip
+          name: Rovex-LATEST-source-under25mb
+          path: \${{ github.workspace }}/Rovex_LATEST_UPLOAD.zip
           if-no-files-found: error
           retention-days: 30
       - name: Provision Gradle
@@ -77,9 +76,8 @@ jobs:
           cache-read-only: false
       - name: Prepare Gradle compatibility init
         run: |
-          set -euo pipefail
           printf '%s\n' 'gradle.projectsEvaluated { allprojects { project -> project.tasks.matching { it.name.contains("AarMetadata") }.configureEach { enabled = false } } }' > "$RUNNER_TEMP/disable-aar-metadata.gradle"
-      - name: Restore native payload
+      - name: Restore native payload if absent
         run: |
           set -euo pipefail
           cd "$PROJECT_DIR"
@@ -92,14 +90,17 @@ jobs:
           fi
           test -s "$target"
       - name: Release build
-        run: cd "$PROJECT_DIR" && gradle :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
-      - name: Normalize and sign release
+        run: |
+          set -euo pipefail
+          cd "$PROJECT_DIR"
+          gradle :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
+      - name: Sign and verify release
         env:
-          KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
-          KEYSTORE_B64_LEGACY: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
+          KEYSTORE_B64: \${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
+          KEYSTORE_B64_LEGACY: \${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
+          STORE_PASSWORD: \${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: \${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: \${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           out="$PROJECT_DIR/app/build/outputs/apk/release"
@@ -116,7 +117,7 @@ jobs:
           grep -Fq '8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153' "$RUNNER_TEMP/rovex-signing.txt"
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.304-release
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
+          name: Rovex-LATEST-release
+          path: \${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
