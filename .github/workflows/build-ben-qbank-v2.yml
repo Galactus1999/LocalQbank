@@ -56,11 +56,13 @@ jobs:
       - name: Sign release APK
         env:
           KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
+          KEYSTORE_B64_LEGACY: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
           STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
         run: |
           set -euo pipefail
+          if [ -z "$KEYSTORE_B64" ]; then KEYSTORE_B64="$KEYSTORE_B64_LEGACY"; fi
           test -n "$KEYSTORE_B64"
           test -n "$STORE_PASSWORD"
           test -n "$KEY_ALIAS"
