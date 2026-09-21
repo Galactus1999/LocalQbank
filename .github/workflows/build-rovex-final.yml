@@ -125,6 +125,8 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$out/app-release.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$out/app-release.apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
           grep -q 'Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/rovex-signing.txt"
+          expected='8D:EC:BE:AC:90:6A:40:54:6B:33:2F:35:62:93:13:EF:6B:A6:86:0D:10:06:AA:D0:7B:76:15:38:22:8C:01:53'
+          grep -Fq "$expected" "$RUNNER_TEMP/rovex-signing.txt"
 
       - name: Package canonical source
         run: |
