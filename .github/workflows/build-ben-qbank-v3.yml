@@ -103,13 +103,13 @@ jobs:
             exit 1
           fi
 
-          src="$GITHUB_WORKSPACE/$selected"
-          test -s "$src"
+          source_sha256="$(sha256sum "$src" | awk '{print $1}')"
+          source_name="$(basename "$src")"
           echo "SOURCE_ZIP=$src" >> "$GITHUB_ENV"
-          echo "SOURCE_NAME=$(basename "$src")" >> "$GITHUB_ENV"
-          echo "SOURCE_SHA256=$(sha256sum "$src" | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "SOURCE_NAME=$source_name" >> "$GITHUB_ENV"
+          echo "SOURCE_SHA256=$source_sha256" >> "$GITHUB_ENV"
           echo "Selected source: $src"
-          echo "SHA-256: $SOURCE_SHA256"
+          echo "SHA-256: $source_sha256"
 
       - name: Extract exact uploaded source
         shell: bash
