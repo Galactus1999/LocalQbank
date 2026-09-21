@@ -8,6 +8,7 @@ import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.*
 import android.view.*
+import android.os.SystemClock
 import android.widget.*
 import android.content.res.ColorStateList
 import kotlin.math.min
