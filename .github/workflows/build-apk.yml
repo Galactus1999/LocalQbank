@@ -116,6 +116,20 @@ PY
           echo "Selected source version: $highest_version"
           echo "Source-selection policy: highest semantic version; Final_Stability_Verified_Source wins same-version ties."
 
+          # The repository contains compact source handoff ZIPs rather than an Android
+          # project at repository root. The previous selector identified the correct ZIP
+          # but never extracted it, leaving PROJECT_DIR unset and causing every subsequent
+          # project step to operate on the wrong directory. Extract the selected source
+          # into a deterministic workspace directory and make that the sole project root.
+          EXTRACT_DIR="$RUNNER_TEMP/rovex-source"
+          rm -rf "$EXTRACT_DIR"
+          mkdir -p "$EXTRACT_DIR"
+          unzip -q "$ZIP_FILE" -d "$EXTRACT_DIR"
+          test -f "$EXTRACT_DIR/settings.gradle.kts"
+          test -d "$EXTRACT_DIR/app"
+          echo "PROJECT_DIR=$EXTRACT_DIR" >> "$GITHUB_ENV"
+          echo "Extracted authoritative Rovex source into: $EXTRACT_DIR"
+
       # Compact source ZIPs intentionally omit large vendor QNN binaries so the source
       # upload stays below the 25 MB handoff limit. Restore the verified native payload
       # from the already-persisted v8.3.278 Final-Stability source before compilation.
