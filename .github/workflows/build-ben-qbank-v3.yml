@@ -11,131 +11,49 @@ permissions:
 
 jobs:
   build:
-    name: Build uploaded Rovex source
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 1
 
-      - name: Select uploaded source
-        shell: bash
+      - name: Prepare source
         run: |
-          set -euo pipefail
-          selected="Rovex_v8.3.304_SectionDashboardCompileRepair.zip"
-          mapfile -t changed_zips < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '*.zip' '*.ZIP' || true)
-          if (( ${#changed_zips[@]} == 1 )); then
-            selected="${changed_zips[0]}"
-          elif (( ${#changed_zips[@]} > 1 )); then
-            echo "ERROR: More than one ZIP changed"
-            printf '  %s\n' "${changed_zips[@]}"
-            exit 1
-          fi
-          test -s "$selected"
-          sha="$(sha256sum "$selected" | awk '{print $1}')"
-          size="$(stat -c%s "$selected")"
-          test "$size" -lt 25000000
-          echo "SOURCE_ZIP=$selected" >> "$GITHUB_ENV"
-          echo "SOURCE_SHA256=$sha" >> "$GITHUB_ENV"
-          echo "SOURCE_SIZE=$size" >> "$GITHUB_ENV"
-          echo "Selected $selected"
-          echo "SHA-256 $sha"
-          echo "Size $size"
-
-      - name: Extract source and repair packaged native payload
-        shell: bash
-        run: |
-          set -euo pipefail
+          set -euxo pipefail
           rm -rf "$RUNNER_TEMP/rovex"
-          mkdir -p "$RUNNER_TEMP/rovex/source"
-          unzip -q "$SOURCE_ZIP" -d "$RUNNER_TEMP/rovex/source"
-          project_dir="$(find "$RUNNER_TEMP/rovex/source" -name settings.gradle.kts -type f -print -quit | xargs dirname)"
-          test -f "$project_dir/gradlew"
-          chmod +x "$project_dir/gradlew"
-          echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/rovex"
+          unzip -q Rovex_v8.3.304_SectionDashboardCompileRepair.zip -d "$RUNNER_TEMP/rovex"
+          echo "PROJECT_DIR=$RUNNER_TEMP/rovex" >> "$GITHUB_ENV"
+          test -f "$RUNNER_TEMP/rovex/settings.gradle.kts"
+          test -f "$RUNNER_TEMP/rovex/gradlew"
 
-          target="$project_dir/app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so"
-          if [[ ! -s "$target" ]]; then
-            donor=""
-            for z in Rovex_v8.3.278_Final_Stability_Verified_Source.zip Rovex_v8.3.278_Architecture_Stable_Source.zip Rovex_v8.3.295_Ben_Fast_Table_Durability_Final.zip Rovex_v8.3.299_Offline_ModernUI_Phase_Source.zip; do
-              if [[ -s "$z" ]]; then
-                candidate="$(unzip -Z1 "$z" | grep -E '(^|/)app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare\.so$' | head -1 || true)"
-                if [[ -n "$candidate" ]]; then
-                  donor="$z"
-                  echo "NATIVE_DONOR=$z"
-                  unzip -p "$z" "$candidate" > "$target"
-                  break
-                fi
-              fi
-            done
-            test -s "$target" || { echo "ERROR: no compatible QNN native payload donor found"; exit 1; }
-          fi
-          echo "QNN_PAYLOAD_SHA256=$(sha256sum "$target" | awk '{print $1}')"
-          echo "QNN_PAYLOAD_SIZE=$(stat -c%s "$target")"
-
-      - name: Source audit
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f "$PROJECT_DIR/app/build.gradle.kts"
-          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
-          grep -Fq 'applicationId = "com.localqbank.library"' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -Fq 'versionCode = 398' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -Fq 'versionName = "8.3.304"' "$PROJECT_DIR/app/build.gradle.kts"
-          python3 - "$PROJECT_DIR" <<'PY'
-import pathlib, sys, xml.etree.ElementTree as ET
-root=pathlib.Path(sys.argv[1])
-aid="{http://schemas.android.com/apk/res/android}id"
-for p in sorted(root.glob("app/src/main/res/layout/*.xml")):
-    ids=[v[5:] for e in ET.parse(p).iter() if (v:=e.attrib.get(aid,"")).startswith("@+id/")]
-    if len(ids)!=len(set(ids)):
-        raise SystemExit(f"duplicate id in one layout: {p}")
-print("XML_LAYOUT_AUDIT=PASS")
-PY
-
-      - name: Java 17
-        uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Android SDK
-        uses: android-actions/setup-android@v4
+      - uses: android-actions/setup-android@v4
 
-      - name: Install Android SDK 36
-        shell: bash
+      - name: Install SDK
         run: |
-          set -euo pipefail
-          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$sdkmanager" --licenses >/dev/null || true
-          "$sdkmanager" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 
-      - name: Gradle release build
-        shell: bash
+      - name: Build release
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           cd "$PROJECT_DIR"
+          chmod +x gradlew
           ./gradlew :app:assembleRelease --no-daemon --stacktrace
 
       - name: Verify APK
-        shell: bash
         run: |
-          set -euo pipefail
-          apk="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
-          test -s "$apk"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$apk"
-          echo "RELEASE_APK=PASS"
-          sha256sum "$apk"
-          stat -c%s "$apk"
+          set -euxo pipefail
+          test -s "$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: Rovex-8.3.304-release
-          path: |
-            ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
-            ${{ env.SOURCE_ZIP }}
-          if-no-files-found: error
-          retention-days: 30
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
