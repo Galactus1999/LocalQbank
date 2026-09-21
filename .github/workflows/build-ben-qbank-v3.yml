@@ -78,6 +78,8 @@ jobs:
       - name: Verify v8.3.304 daily study hub
         run: |
           set -euo pipefail
+          echo "ROVEX_DAILY_HUB_SOURCE_SCAN"
+          grep -n -C 2 'RovexDailyStudyHub' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt" || true
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
           grep -q 'versionName = "8.3.304"' "$PROJECT_DIR/app/build.gradle.kts"
           grep -q 'versionCode = 398' "$PROJECT_DIR/app/build.gradle.kts"
