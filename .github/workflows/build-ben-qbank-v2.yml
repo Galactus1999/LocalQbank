@@ -92,7 +92,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Rovex-v8.3.300-source-under25mb
-          path: ${{ runner.temp }}/Rovex_v8.3.298_Final_Source.zip
+          path: ${{ runner.temp }}/Rovex_v8.3.300_Final_Source.zip
           if-no-files-found: error
           retention-days: 30
       - name: Prepare Gradle compatibility init
