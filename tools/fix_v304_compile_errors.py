@@ -24,11 +24,6 @@ patch("BackupActivity.kt", [
 
 p = JAVA / "MainActivity.kt"
 s = p.read_text()
-old = 'override fun onDraw(c:android.graphics.Canvas){super.onDraw(c);val cx=width/2f;val cy=height/2f;val r=minOf(width,height)*.34f;p.color=ThemeManager.panel(this@MainActivity);c.drawCircle'
-new = 'override fun onDraw(c:android.graphics.Canvas){super.onDraw(c);val cx=width/2f;val cy=height/2f;val r=minOf(width,height)*.34f;p.color=ThemeManager.panel(context);c.drawCircle'
-if old not in s:
-    raise SystemExit("ROVEX_CI_PATCH_MISSING MainActivity PerformanceRing")
-s = s.replace(old,new,1)
 old_line = 'override fun onDraw(c:android.graphics.Canvas){super.onDraw(c);val cx=width/2f;val cy=height/2f;val r=minOf(width,height)*.34f;p.color=ThemeManager.panel(this@MainActivity);c.drawCircle(cx,cy,r,p);p.color=if(accuracy>=80)ThemeManager.accent2(this@MainActivity)else ThemeManager.accent(this@MainActivity);c.drawArc(cx-r,cy-r,cx+r,cy+r,-90f,accuracy*3.6f,false,p);t.color=ThemeManager.text(this@MainActivity);t.textSize=25f*density;c.drawText("$accuracy%",cx,cy+8f*density,t);t.textSize=9.5f*density;t.color=ThemeManager.muted(this@MainActivity);c.drawText("ACCURACY",cx,cy+25f*density,t)}'
 new_line = old_line.replace('this@MainActivity', 'context')
 if old_line not in s: raise SystemExit("ROVEX_CI_PATCH_MISSING MainActivity PerformanceRing")
