@@ -7,6 +7,12 @@ on:
     paths:
       - '**.zip'
   workflow_dispatch:
+    inputs:
+      source_zip:
+        description: 'Exact source ZIP already committed to the repository root'
+        required: true
+        default: 'Rovex_v8.3.304_SectionDashboardCompileRepair.zip'
+        type: string
 
 permissions:
   contents: read
@@ -61,6 +67,22 @@ jobs:
             fi
           fi
 
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            manual_zip="${{ inputs.source_zip }}"
+            if [ -z "$manual_zip" ]; then
+              echo "ERROR: Manual run did not provide source_zip."
+              exit 1
+            fi
+            case "$manual_zip" in
+              *.zip|*.ZIP) ;;
+              *) echo "ERROR: source_zip must be a ZIP filename."; exit 1 ;;
+            esac
+            case "$manual_zip" in
+              */*|*..*) echo "ERROR: source_zip must be a repository-root filename, not a path."; exit 1 ;;
+            esac
+            selected="$manual_zip"
+          fi
+
           if [ -z "$selected" ] && [ -f "$GITHUB_WORKSPACE/Rovex_LATEST_UPLOAD.zip" ]; then
             selected="Rovex_LATEST_UPLOAD.zip"
           fi
@@ -68,7 +90,16 @@ jobs:
           if [ -z "$selected" ]; then
             echo "ERROR: No uploaded ZIP source was found."
             echo "For automatic builds, commit exactly one source ZIP."
-            echo "For manual runs, provide Rovex_LATEST_UPLOAD.zip."
+            echo "For manual runs, select the exact committed ZIP using source_zip."
+            exit 1
+          fi
+
+          src="$GITHUB_WORKSPACE/$selected"
+          if [ ! -s "$src" ]; then
+            echo "ERROR: Selected source ZIP does not exist or is empty:"
+            echo "$selected"
+            echo "Repository-root ZIPs currently visible to the runner:"
+            find "$GITHUB_WORKSPACE" -maxdepth 1 -type f -iname '*.zip' -printf '  %f\n' | sort || true
             exit 1
           fi
 
