@@ -180,4 +180,33 @@ edit("app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt",[
 ('            .setMessage("Create a focused plan. Export any block to your calendar without giving Rovex calendar-account access.")',
  '            .setMessage("Create your study plan, then view today’s synced calendar schedule inside Rovex or export a plan block to your calendar app. Google Calendar events appear when Google Calendar is synced on this device and calendar access is granted.")')
 ])
+
+# Final compile-safety normalization for the newly added calendar/UI code.
+hp=root/"app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+hs=hp.read_text()
+if "import android.content.Intent" not in hs:
+    hs=hs.replace("import android.content.Context","import android.content.Context\nimport android.content.Intent",1)
+hp.write_text(hs)
+
+dp=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+ds=dp.read_text()
+a=ds.find("    private fun showCalendarEvents(c: MainActivity) {")
+b=ds.find("    private fun openPlanner",a)
+if a >= 0 and b > a:
+    block=ds[a:b]
+    block=block.replace("showCalendarEvents(c: MainActivity)","showCalendarEvents(ctx: MainActivity)",1)
+    block=block.replace("c.","ctx.")
+    block=block.replace("dp(c,","dp(ctx,")
+    block=block.replace("text(c,","text(ctx,")
+    block=block.replace("card(c,","card(ctx,")
+    block=block.replace("ThemeManager.text(c)","ThemeManager.text(ctx)")
+    block=block.replace("ThemeManager.accent(c)","ThemeManager.accent(ctx)")
+    block=block.replace("Toast.makeText(c,","Toast.makeText(ctx,")
+    block=block.replace("showCalendarEvents(c)","showCalendarEvents(ctx)")
+    block=block.replace("LinearLayout(ctx)","LinearLayout(ctx)")
+    ds=ds[:a]+block+ds[b:]
+    dp.write_text(ds)
+else:
+    raise SystemExit("UI6 calendar block not found")
+
 print("Rovex UI6 fixes applied")
