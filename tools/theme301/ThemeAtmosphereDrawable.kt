@@ -1,0 +1,17 @@
+package com.localqbank.library
+
+import android.content.Context
+import android.graphics.*
+import android.graphics.drawable.Drawable
+import kotlin.math.sin
+
+/** Lightweight procedural 3D/glow atmosphere; no bitmap assets or I/O. */
+class ThemeAtmosphereDrawable(private val context:Context):Drawable(){
+    private val p=Paint(Paint.ANTI_ALIAS_FLAG)
+    private val stars=Array(86){i->Triple(((i*47)%101)/100f,((i*71+11)%101)/100f,.5f+((i*17)%10)/10f)}
+    override fun draw(c:Canvas){val w=bounds.width().toFloat().coerceAtLeast(1f);val h=bounds.height().toFloat().coerceAtLeast(1f);when(ThemeManager.get(context)){ThemeManager.AMOLED->dark(c,w,h);ThemeManager.MINT->light(c,w,h,Color.rgb(229,255,248),Color.rgb(233,245,255),Color.rgb(91,220,192));ThemeManager.SUNSET->light(c,w,h,Color.rgb(255,242,225),Color.rgb(255,229,239),Color.rgb(255,151,90));ThemeManager.LAVENDER->light(c,w,h,Color.rgb(241,235,255),Color.rgb(225,242,255),Color.rgb(170,125,255));ThemeManager.PASTEL->light(c,w,h,Color.rgb(228,241,255),Color.rgb(249,234,255),Color.rgb(121,169,255));else->light(c,w,h,Color.rgb(239,246,255),Color.rgb(250,244,255),Color.rgb(112,155,255))}}
+    private fun light(c:Canvas,w:Float,h:Float,a:Int,b:Int,g:Int){p.shader=LinearGradient(0f,0f,w,h,a,b,Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);val pts=arrayOf(floatArrayOf(w*.08f,h*.10f),floatArrayOf(w*.92f,h*.16f),floatArrayOf(w*.18f,h*.88f),floatArrayOf(w*.78f,h*.82f));pts.forEachIndexed{i,q->p.shader=RadialGradient(q[0],q[1],minOf(w,h)*.42f,intArrayOf(Color.argb(70-i*8,Color.red(g),Color.green(g),Color.blue(g)),Color.TRANSPARENT),floatArrayOf(0f,1f),Shader.TileMode.CLAMP);c.drawCircle(q[0],q[1],minOf(w,h)*.42f,p)};pts.take(3).forEachIndexed{i,q->orb(c,q[0],q[1],minOf(w,h)*(.018f+i*.006f),g)}}
+    private fun dark(c:Canvas,w:Float,h:Float){p.shader=LinearGradient(0f,0f,w,h,Color.rgb(0,3,9),Color.rgb(4,8,19),Shader.TileMode.CLAMP);c.drawRect(0f,0f,w,h,p);p.shader=RadialGradient(w*.68f,h*.16f,minOf(w,h)*.64f,intArrayOf(Color.argb(92,40,88,255),Color.argb(28,92,31,180),Color.TRANSPARENT),floatArrayOf(0f,.42f,1f),Shader.TileMode.CLAMP);c.drawCircle(w*.68f,h*.16f,minOf(w,h)*.64f,p);p.shader=RadialGradient(w*.14f,h*.78f,minOf(w,h)*.45f,intArrayOf(Color.argb(72,0,205,255),Color.argb(22,95,25,210),Color.TRANSPARENT),floatArrayOf(0f,.45f,1f),Shader.TileMode.CLAMP);c.drawCircle(w*.14f,h*.78f,minOf(w,h)*.45f,p);p.shader=null;p.color=Color.argb(190,185,220,255);stars.forEachIndexed{i,s->c.drawCircle(s.first*w,s.second*h,s.third*(.55f+.25f*sin(i.toFloat())),p)};orb(c,w*.86f,h*.13f,minOf(w,h)*.075f,Color.rgb(55,196,255));orb(c,w*.15f,h*.84f,minOf(w,h)*.04f,Color.rgb(133,75,255))}
+    private fun orb(c:Canvas,x:Float,y:Float,r:Float,color:Int){p.shader=RadialGradient(x-r*.34f,y-r*.42f,r*1.2f,intArrayOf(Color.WHITE,Color.argb(235,Color.red(color),Color.green(color),Color.blue(color)),Color.argb(20,Color.red(color),Color.green(color),Color.blue(color))),floatArrayOf(0f,.22f,1f),Shader.TileMode.CLAMP);c.drawCircle(x,y,r,p);p.shader=null;p.style=Paint.Style.STROKE;p.strokeWidth=r*.06f;p.color=Color.argb(110,255,255,255);c.drawCircle(x,y,r*.94f,p);p.style=Paint.Style.FILL}
+    override fun setAlpha(a:Int){p.alpha=a};override fun setColorFilter(f:ColorFilter?){p.colorFilter=f};override fun getOpacity()=PixelFormat.TRANSLUCENT
+}
