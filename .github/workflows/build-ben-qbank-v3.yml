@@ -39,6 +39,8 @@ jobs:
           grep -Fq 'android.permission.READ_CALENDAR' "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
           grep -Fq 'QBank Library' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
           grep -Fq 'VIEW CALENDAR' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+          rm -rf "$CLEAN_SOURCE_DIR"
+          cp -a "$PROJECT_DIR" "$CLEAN_SOURCE_DIR"
           test -f "$RUNNER_TEMP/rovex/settings.gradle.kts"
           test -f "$RUNNER_TEMP/rovex/gradlew"
 
