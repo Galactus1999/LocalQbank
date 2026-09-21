@@ -5,6 +5,7 @@ B=R/'app/src/main/java/com/localqbank/library'
 p=B/'ThemeManager.kt'
 s=p.read_text()
 s=s.replace('const val DARK="legacy_dark"; const val SEPIA="legacy_sepia"; const val OBSIDIAN_NIGHT="legacy_obsidian"; const val MIDNIGHT="legacy_midnight"; const val COSMOS="legacy_cosmos"; const val AVATAR="legacy_avatar"','')
+s=s.replace('"amoled_dark",DARK,OBSIDIAN_NIGHT,MIDNIGHT,COSMOS,AVATAR->AMOLED; SEPIA->SUNSET;','"amoled_dark"->AMOLED;')
 p.write_text(s)
 legacy={
  'ThemeManager.DARK':'ThemeManager.PASTEL',
