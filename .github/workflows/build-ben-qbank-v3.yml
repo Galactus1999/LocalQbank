@@ -64,7 +64,7 @@ jobs:
           ! grep -q 'Midnight Blue' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
           ! grep -q 'Obsidian Night' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
           ! grep -q 'Pandora • Avatar' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/SettingsScreen.kt"
-          ! grep -R -E -q 'ThemeManager\\.(DARK|SEPIA|OBSIDIAN_NIGHT|MIDNIGHT|COSMOS|AVATAR)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library"
+          ! grep -R -E -q 'ThemeManager\.(DARK|SEPIA|OBSIDIAN_NIGHT|MIDNIGHT|COSMOS|AVATAR)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library"
           grep -q 'ROVEX_UI_302' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeAuditMarker.kt"
           grep -q 'ImageView->image' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
       - name: Package source under 25MB
