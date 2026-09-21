@@ -99,6 +99,8 @@ if "override fun onActivityResult(requestCode:Int" not in s:
     s=s.replace(marker2,callback+marker2,1)
 s=s.replace('qbankImportLauncher.launch(arrayOf("text/html","text/plain","application/xhtml+xml"))','startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply{type="text/html";putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);addCategory(Intent.CATEGORY_OPENABLE)},V304_QBANK_IMPORT_REQUEST)')
 s=s.replace('cornerRadius=d(30).toFloat()','cornerRadius=this@RovexSectionDashboardActivity.d(30).toFloat()')
+s=s.replace('cornerRadius=d(22).toFloat()','cornerRadius=this@RovexSectionDashboardActivity.d(22).toFloat()')
+s=s.replace('setStroke(d(1),accent)','setStroke(1,accent)')
 s=s.replace('setStroke(d(1),Color.argb(if(dark)120 else 95,Color.red(accent),Color.green(accent),Color.blue(accent)))','setStroke(1,Color.argb(if(dark)120 else 95,Color.red(accent),Color.green(accent),Color.blue(accent)))')
 p.write_text(s)
 
@@ -120,6 +122,7 @@ s = p.read_text()
 s=s.replace("ThemeManager.transparentSectionDrawable(this)", "ThemeManager.transparentSectionDrawable(this@SearchActivity)")
 s=s.replace("ThemeManager.text(this);gravity=Gravity.CENTER", "ThemeManager.text(applicationContext);gravity=Gravity.CENTER")
 s=s.replace("ThemeManager.text(this@SearchActivity)", "ThemeManager.text(applicationContext)")
+s=s.replace("ThemeManager.text(this)", "ThemeManager.text(applicationContext)")
 s=s.replace("ThemeManager.text(this))}", "ThemeManager.text(applicationContext))}")
 p.write_text(s)
 
