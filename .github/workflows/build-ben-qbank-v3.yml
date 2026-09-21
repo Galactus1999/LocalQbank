@@ -69,13 +69,12 @@ jobs:
           path: ${{ runner.temp }}/Rovex_v8.3.304_Final_Source.zip
           if-no-files-found: error
           retention-days: 30
-      - name: Provision Gradle from GitHub Actions cache
-  uses: gradle/actions/setup-gradle@v4
-  with:
-    gradle-version: "9.3.1"
-    cache-read-only: false
-
-- name: Prepare Gradle compatibility init
+      - name: Provision Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
+          cache-read-only: false
+      - name: Prepare Gradle compatibility init
         run: |
           set -euo pipefail
           printf '%s\n' 'gradle.projectsEvaluated { allprojects { project -> project.tasks.matching { it.name.contains("AarMetadata") }.configureEach { enabled = false } } }' > "$RUNNER_TEMP/disable-aar-metadata.gradle"
@@ -91,26 +90,8 @@ jobs:
             cp -a "$RUNNER_TEMP/qnn/app/src/main/jniLibs" app/src/main/
           fi
           test -s "$target"
-      - name: Prepare resilient Gradle distribution
-        run: |
-          set -euo pipefail
-          version="$(sed -n 's/.*gradle-\\([0-9][0-9.]*\\)-bin.zip.*/\\1/p' "$PROJECT_DIR/gradle/wrapper/gradle-wrapper.properties" | head -n1)"
-          test -n "$version"
-          zip="$RUNNER_TEMP/gradle-$version-bin.zip"
-          dir="$RUNNER_TEMP/gradle-$version"
-          if [ ! -s "$zip" ]; then
-            curl --fail --location --retry 6 --retry-all-errors --retry-delay 2 --connect-timeout 20 \
-              "https://github.com/gradle/gradle-distributions/releases/download/v$version/gradle-$version-bin.zip" \
-              -o "$zip"
-          fi
-          test -s "$zip"
-          rm -rf "$dir"
-          mkdir -p "$dir"
-          unzip -q "$zip" -d "$dir"
-          echo "GRADLE_BIN=$dir/gradle-$version/bin/gradle" >> "$GITHUB_ENV"
-          test -x "$dir/gradle-$version/bin/gradle"
       - name: Release build
-        run: cd "$PROJECT_DIR" && "$GRADLE_BIN" :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
+        run: cd "$PROJECT_DIR" && gradle :app:assembleRelease --no-daemon --stacktrace --init-script "$RUNNER_TEMP/disable-aar-metadata.gradle"
       - name: Normalize and sign release
         env:
           KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
