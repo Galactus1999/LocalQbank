@@ -188,6 +188,44 @@ jobs:
           s=s.replace('shell.addView(nav,FrameLayout.LayoutParams(-1,d(70,a),Gravity.BOTTOM).apply{leftMargin=d(12,a);rightMargin=d(12,a);bottomMargin=d(10,a)})','nav.tag="ROVEX_FOOTER";shell.addView(nav,FrameLayout.LayoutParams(-1,d(70,a),Gravity.BOTTOM).apply{leftMargin=d(12,a);rightMargin=d(12,a);bottomMargin=d(10,a)})')
           s=s.replace('fun refreshTheme(a:MainActivity){val root=a.findViewById<ViewGroup>(R.id.dashboardRoot)?:return;val shell=root.findViewWithTag<FrameLayout>("ROVEX_HOME_SHELL")?:return;shell.background=ThemeManager.backgroundDrawable(a);shell.invalidate()}','fun refreshTheme(a:MainActivity){val root=a.findViewById<ViewGroup>(R.id.dashboardRoot)?:return;val shell=root.findViewWithTag<FrameLayout>("ROVEX_HOME_SHELL")?:return;shell.background=ThemeManager.backgroundDrawable(a);val nav=shell.findViewWithTag<LinearLayout>("ROVEX_FOOTER");nav?.background=GradientDrawable().apply{shape=GradientDrawable.RECTANGLE;cornerRadius=d(24,a).toFloat();setColor(ThemeManager.elevated(a));val ac=ThemeManager.accent(a);setStroke(d(1,a),Color.argb(if(ThemeManager.isDark(a))150 else 80,Color.red(ac),Color.green(ac),Color.blue(ac)))};nav?.let{for(i in 0 until it.childCount){(it.getChildAt(i) as? TextView)?.setTextColor(if(i==0)ThemeManager.accent(a) else ThemeManager.text(a))}};shell.invalidate()}')
           p.write_text(s)
+          # Imported-main-QBank library: real scrolling plus rename/delete/reorder controls.
+          p=j/"MainQBankLibraryActivity.kt";s=p.read_text()
+          s=s.replace('root.addView(TextView(this).apply{text="Imported main QBanks • tap a bank to open its tests";',
+                      'root.addView(TextView(this).apply{text="Imported main QBanks • rename, delete and reorder them";')
+          s=s.replace('sources.forEachIndexed{i,s->',
+                      'val order=getSharedPreferences("rovex_qbank_library",MODE_PRIVATE).getString("order","").orEmpty().split(",").mapNotNull{it.toLongOrNull()};val byId=sources.associateBy{it.id};val ordered=ArrayList<Source>();order.forEach{byId[it]?.let{v->if(ordered.none{x->x.id==v.id})ordered.add(v)}};sources.forEach{if(ordered.none{x->x.id==it.id})ordered.add(it)};getSharedPreferences("rovex_qbank_library",MODE_PRIVATE).edit().putString("order",ordered.joinToString(","){it.id.toString()}).apply();ordered.forEachIndexed{i,s->')
+          s=s.replace('card.setOnClickListener{startActivity(Intent(this,TestListActivity::class.java).putExtra("sourceId",s.id).putExtra("sourceName",s.fileName))};list.addView(card',
+                      '''val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+              fun act(label:String,click:()->Unit)=TextView(this@MainQBankLibraryActivity).apply{text=label;textSize=10f;typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER;setTextColor(ThemeManager.accent(this@MainQBankLibraryActivity));background=bg(ThemeManager.explanationBg(this@MainQBankLibraryActivity),12f);setOnClickListener{click()}}
+              actions.addView(act("OPEN"){startActivity(Intent(this,TestListActivity::class.java).putExtra("sourceId",s.id).putExtra("sourceName",s.fileName))},LinearLayout.LayoutParams(0,d(38),1f).apply{rightMargin=d(3)})
+              actions.addView(act("EDIT"){editSource(s)},LinearLayout.LayoutParams(0,d(38),1f).apply{leftMargin=d(3);rightMargin=d(3)})
+              actions.addView(act("DELETE"){deleteSource(s)},LinearLayout.LayoutParams(0,d(38),1f).apply{leftMargin=d(3)})
+              actions.addView(act("↑"){reorder(sources,s,-1)},LinearLayout.LayoutParams(d(42),d(38)).apply{leftMargin=d(3)})
+              actions.addView(act("↓"){reorder(sources,s,1)},LinearLayout.LayoutParams(d(42),d(38)).apply{leftMargin=d(3)})
+              card.addView(actions,LinearLayout.LayoutParams(-1,d(38)).apply{topMargin=d(8)})
+              card.setOnClickListener{startActivity(Intent(this,TestListActivity::class.java).putExtra("sourceId",s.id).putExtra("sourceName",s.fileName))};list.addView(card''')
+          insert='''          private fun editSource(s:Source){
+            val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(20),0,d(20),0)}
+            val name=EditText(this).apply{setText(s.fileName);setSingleLine(true);hint="QBank name"}
+            val series=EditText(this).apply{setText(s.seriesNumber);setSingleLine(true);hint="Series number"}
+            box.addView(name,LinearLayout.LayoutParams(-1,d(52)));box.addView(series,LinearLayout.LayoutParams(-1,d(52)))
+            val dialog=android.app.AlertDialog.Builder(this).setTitle("Edit QBank").setView(box).setNegativeButton("Cancel",null).setPositiveButton("Save",null).create()
+            dialog.setOnShowListener{dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setTextColor(ThemeManager.accent(this));dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(ThemeManager.text(this));dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener{
+              val n=name.text.toString().trim();if(n.isBlank()){Toast.makeText(this,"Name cannot be empty",Toast.LENGTH_SHORT).show();return@setOnClickListener}
+              Thread{val ok=runCatching{MainRepository(this).use{it.updateSourceMetadata(s.id,n,series.text.toString().trim())}}.getOrDefault(false);runOnUiThread{if(ok){AppManagers.qbankLoading.invalidate(s.id);dialog.dismiss();load()}else Toast.makeText(this,"Could not save",Toast.LENGTH_SHORT).show()}}.start()
+            }};dialog.show()
+          }
+          private fun deleteSource(s:Source){
+            android.app.AlertDialog.Builder(this).setTitle("Delete imported QBank?").setMessage("This removes this imported bank and its questions.").setNegativeButton("Cancel",null).setPositiveButton("Delete"){_,_->Thread{runCatching{MainRepository(this).use{it.deleteSource(s.id)}};runOnUiThread{AppManagers.qbankLoading.invalidate(s.id);load()}}.start()}.show()
+          }
+          private fun reorder(all:List<Source>,s:Source,delta:Int){
+            val ids=all.map{it.id}.toMutableList();val i=ids.indexOf(s.id);val j=i+delta;if(i<0||j !in ids.indices)return
+            val x=ids.removeAt(i);ids.add(j,x);getSharedPreferences("rovex_qbank_library",MODE_PRIVATE).edit().putString("order",ids.joinToString(",")).apply();load()
+          }
+''';
+          s=s.replace('   override fun onResume(){',insert+'\n   override fun onResume(){')
+          p.write_text(s)
+          print("MAIN_QBANK_LIBRARY_PATCH_APPLIED")
           print("HOME_UX_PATCH_APPLIED")
           print("STABILITY_UI_REPAIR_APPLIED")
           PY
