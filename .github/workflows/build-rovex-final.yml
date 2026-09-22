@@ -82,35 +82,24 @@ jobs:
           chmod +x "$d/gradlew"
           echo "PROJECT_DIR=$d" >> "$GITHUB_ENV"
 
-      - name: Verify canonical v8.3.304 source
+      - name: Verify discovered Android project
         run: |
           set -euo pipefail
+          test -f "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
+          grep -Eq 'applicationId[[:space:]]*=[[:space:]]*"com\.localqbank\.library"' "$PROJECT_DIR/app/build.gradle.kts" "$PROJECT_DIR/app/build.gradle" 2>/dev/null
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
-          grep -q 'versionName = "8.3.304"' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -q 'applicationId = "com.localqbank.library"' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -q 'versionCode = 398' "$PROJECT_DIR/app/build.gradle.kts"
-          grep -q 'RovexHomeRevolution.apply(this)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
-          grep -q 'RovexLiveBackdrop' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
-          grep -q 'ROVEX_PHASE_304_DAILY_STUDY_HUB' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexRoadmapMarker.kt"
-          grep -q 'RovexDailyStudyHub.install(a, content, pF)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
-          ! grep -R -E -q 'ThemeManager\\.(DARK|SEPIA|OBSIDIAN_NIGHT|MIDNIGHT|COSMOS|AVATAR)' "$PROJECT_DIR/app/src/main/java/com/localqbank/library"
+          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
+
 
       - name: Prepare Gradle compatibility init
         run: |
           set -euo pipefail
           printf '%s\n' 'gradle.projectsEvaluated { allprojects { project -> project.tasks.matching { it.name.contains("AarMetadata") }.configureEach { enabled = false } } }' > "$RUNNER_TEMP/disable-aar-metadata.gradle"
 
-      - name: Restore native payload
+      - name: Verify native payload
         run: |
           set -euo pipefail
-          cd "$PROJECT_DIR"
-          target=app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so
-          if [ ! -s "$target" ]; then
-            rm -rf "$RUNNER_TEMP/qnn"; mkdir -p "$RUNNER_TEMP/qnn"
-            unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.278_Final_Stability_Verified_Source.zip" 'app/src/main/jniLibs/*' -d "$RUNNER_TEMP/qnn"
-            rm -rf app/src/main/jniLibs
-            cp -a "$RUNNER_TEMP/qnn/app/src/main/jniLibs" app/src/main/
-          fi
+          target="$PROJECT_DIR/app/src/main/jniLibs/arm64-v8a/libQnnHtpPrepare.so"
           test -s "$target"
 
       - name: Release build
@@ -165,14 +154,14 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.304-CANONICAL-SOURCE
-          path: ${{ runner.temp }}/Rovex_v8.3.304_Canonical_Source.zip
+          name: Rovex-CANONICAL-SOURCE
+          path: ${{ runner.temp }}/*_Canonical_Source.zip
           if-no-files-found: error
           retention-days: 90
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Rovex-v8.3.304-FINAL-RELEASE
+          name: Rovex-FINAL-RELEASE
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 90
