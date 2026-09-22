@@ -114,8 +114,10 @@ private fun reorder(all:List<Source>,s:Source,delta:Int){
   val x=ids.removeAt(i);ids.add(j,x);getSharedPreferences("rovex_qbank_library",MODE_PRIVATE).edit().putString("order",ids.joinToString(",")).apply();load()
 }
 ''';
-s=s.replace('   override fun onResume(){',insert+'\n   override fun onResume(){')
+s=s.replace('\n override fun onResume(){',insert+'\n\n override fun onResume(){')
 p.write_text(s)
+if "private fun editSource(s:Source)" not in s or "private fun deleteSource(s:Source)" not in s or "private fun reorder(all:List<Source>" not in s:
+    raise SystemExit("MAIN_QBANK_LIBRARY_CONTROLS_NOT_INSERTED")
 # Theme-adaptive Today Mission dialogs/panel and less intrusive calendar/planner surfaces.
 p=j/"RovexDailyStudyHub.kt";s=p.read_text()
 s=s.replace('color: Int = Color.WHITE','color: Int = ThemeManager.text(c)')
