@@ -28,45 +28,65 @@ jobs:
           mkdir -p "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
 
           latest_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId' || true)"
+          artifact_id=""
           if [ -n "$latest_run" ] && [ "$latest_run" != "$GITHUB_RUN_ID" ]; then
-            artifact_id="$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$latest_run/artifacts" --jq '.artifacts[] | select(.expired == false) | .id' | head -n1)"
-          else
-            artifact_id=""
+            artifact_id="$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$latest_run/artifacts" --jq '.artifacts[] | select(.expired == false) | .id' | head -n1 || true)"
           fi
 
           if [ -n "$artifact_id" ]; then
-            echo "Using latest successful build artifact id: $artifact_id"
+            echo "Using latest successful build artifact: $artifact_id"
             gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/source-artifact/build-artifact.zip"
             unzip -q "$RUNNER_TEMP/source-artifact/build-artifact.zip" -d "$RUNNER_TEMP/source-artifact/unpacked"
           fi
 
-          archive=""
-          while IFS= read -r candidate; do
-            if unzip -t "$candidate" >/dev/null 2>&1 &&
-               unzip -l "$candidate" | grep -Eq '(^|/)settings[.]gradle([.]kts)?$' &&
-               unzip -l "$candidate" | grep -Eq '(^|/)app/build[.]gradle([.]kts)?$' &&
-               unzip -l "$candidate" | grep -Eq '(^|/)gradlew$'; then
-              archive="$candidate"
-              break
-            fi
-          done < <(find "$RUNNER_TEMP/source-artifact" -type f -iname '*.zip' -not -name 'build-artifact.zip' -print | sort -r)
+          python3 - "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex" <<'PY'
+import io, os, sys, zipfile
+root, out = sys.argv[1], sys.argv[2]
+seen=set()
 
-          if [ -z "$archive" ]; then
-            echo "No source archive in latest successful build artifact; discovering repository ZIPs structurally."
-            while IFS= read -r candidate; do
-              if unzip -t "$candidate" >/dev/null 2>&1 &&
-                 unzip -l "$candidate" | grep -Eq '(^|/)settings[.]gradle([.]kts)?$' &&
-                 unzip -l "$candidate" | grep -Eq '(^|/)app/build[.]gradle([.]kts)?$' &&
-                 unzip -l "$candidate" | grep -Eq '(^|/)gradlew$'; then
-                archive="$candidate"
-                break
-              fi
-            done < <(find "$GITHUB_WORKSPACE" -type f -iname '*.zip' -not -path '*/.git/*' -print | sort -r)
-          fi
+def valid(names):
+    n={x.rstrip('/') for x in names}
+    return any(x.endswith('/settings.gradle.kts') or x=='settings.gradle.kts' or x.endswith('/settings.gradle') or x=='settings.gradle' for x in n) and            any(x.endswith('/app/build.gradle.kts') or x=='app/build.gradle.kts' or x.endswith('/app/build.gradle') or x=='app/build.gradle' for x in n) and            any(x.endswith('/gradlew') or x=='gradlew' for x in n)
 
-          test -n "$archive"
-          echo "Selected source: $archive"
-          unzip -q "$archive" -d "$RUNNER_TEMP/rovex"
+def scan_zip(path, depth=0):
+    if path in seen or depth > 3:
+        return False
+    seen.add(path)
+    try:
+        with zipfile.ZipFile(path) as z:
+            if valid(z.namelist()):
+                z.extractall(out)
+                return True
+            nested=[n for n in z.namelist() if n.lower().endswith('.zip') and not n.endswith('/')]
+            for n in nested:
+                data=z.read(n)
+                try:
+                    with zipfile.ZipFile(io.BytesIO(data)) as nz:
+                        if valid(nz.namelist()):
+                            nz.extractall(out)
+                            return True
+                        tmp=os.path.join(root, f"_nested_{len(seen)}.zip")
+                        open(tmp,'wb').write(data)
+                        if scan_zip(tmp, depth+1):
+                            return True
+                except zipfile.BadZipFile:
+                    continue
+    except zipfile.BadZipFile:
+        return False
+    return False
+
+candidates=[]
+for dp,_,fs in os.walk(root):
+    for f in fs:
+        if f.lower().endswith('.zip') and f != 'build-artifact.zip':
+            candidates.append(os.path.join(dp,f))
+for p in sorted(candidates, key=lambda x:(os.path.getmtime(x),x), reverse=True):
+    if scan_zip(p):
+        print("SOURCE_FOUND="+p)
+        break
+else:
+    raise SystemExit("No Android project source archive found in latest successful build artifact")
+PY
 
           settings_file="$(find "$RUNNER_TEMP/rovex" -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)"
           test -n "$settings_file"
