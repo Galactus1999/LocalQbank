@@ -78,12 +78,62 @@ edit("app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt",[
   qbankButtons.addView(import,LinearLayout.LayoutParams(0,d(46,a),1f).apply{leftMargin=d(5,a)})
   qbankActions.addView(qbankButtons,LinearLayout.LayoutParams(-1,d(48,a)).apply{topMargin=d(9,a)})
   content.addView(qbankActions,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=d(14,a)})'''),
-('''  val nav=LinearLayout(a);nav.gravity=Gravity.CENTER;nav.setPadding(d(8,a),d(6,a),d(8,a),d(6,a));nav.background=surface(a,Color.argb(220,7,19,48),Color.argb(225,21,10,55));nav.elevation=d(14,a).toFloat()
-  val names=arrayOf("⌂ Home","▣ QBank","▤ Cards","▥ Lab","••• More");names.indices.forEach{i->val n=tv(a,names[i],12f,if(i==0)Color.WHITE else Color.rgb(190,215,255),true);n.gravity=Gravity.CENTER;if(i==0)n.background=GradientDrawable().apply{cornerRadius=d(22,a).toFloat();setColor(Color.argb(85,35,150,255));setStroke(d(1,a),Color.argb(180,60,205,255))};n.setOnClickListener{when(i){1->pQ?.performClick();2->pF?.performClick();3->pL?.performClick();4->pA?.performClick()}};nav.addView(n,LinearLayout.LayoutParams(0,d(58,a),1f))}''',
-'''  val dark=ThemeManager.isDark(a)
-  val nav=LinearLayout(a);nav.gravity=Gravity.CENTER;nav.setPadding(d(8,a),d(6,a),d(8,a),d(6,a));nav.background=if(dark)surface(a,Color.argb(220,7,19,48),Color.argb(225,21,10,55)) else surface(a,Color.WHITE,Color.rgb(246,241,255));nav.elevation=d(14,a).toFloat()
-  val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","▥\\nLab","•••\\nMore");names.indices.forEach{i->val n=tv(a,names[i],12f,if(i==0)ThemeManager.text(a) else ThemeManager.muted(a),true);n.gravity=Gravity.CENTER;if(i==0)n.background=GradientDrawable().apply{cornerRadius=d(22,a).toFloat();setColor(if(dark)Color.argb(85,35,150,255) else Color.argb(125,55,165,255));setStroke(d(1,a),Color.argb(180,60,205,255))};n.setOnClickListener{when(i){1->a.startActivity(Intent(a,RovexSectionDashboardActivity::class.java).putExtra("section","qbank").addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP));2->pF?.performClick();3->pL?.performClick();4->a.startActivity(Intent(a,StudyToolsActivity::class.java))}};nav.addView(n,LinearLayout.LayoutParams(0,d(58,a),1f))}''')
+('''  val dark=ThemeManager.isDark(a)
+  val nav=LinearLayout(a).apply{
+    gravity=Gravity.CENTER
+    setPadding(d(8,a),d(6,a),d(8,a),d(6,a))
+    background=GradientDrawable().apply{
+      shape=GradientDrawable.RECTANGLE
+      cornerRadius=d(24,a).toFloat()
+      setColor(if(dark)Color.rgb(15,20,28) else Color.WHITE)
+      val ac=ThemeManager.accent(a)
+      setStroke(d(1,a),Color.argb(if(dark)120 else 80,Color.red(ac),Color.green(ac),Color.blue(ac)))
+    }
+    elevation=d(14,a).toFloat()
+  }
+  val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","•••\\nMore")
+  names.indices.forEach{i->
+    val active=i==0
+    val n=tv(a,names[i],12f,if(active)ThemeManager.accent(a) else ThemeManager.text(a),true).apply{
+      gravity=Gravity.CENTER
+      setPadding(0,d(3,a),0,d(3,a))
+      if(active)background=GradientDrawable().apply{
+        cornerRadius=d(20,a).toFloat()
+        val ac=ThemeManager.accent(a)
+        setColor(Color.argb(if(dark)70 else 45,Color.red(ac),Color.green(ac),Color.blue(ac)))
+        setStroke(d(1,a),Color.argb(if(dark)150 else 90,Color.red(ac),Color.green(ac),Color.blue(ac)))
+      }
+      setOnClickListener{
+        when(i){
+          0->a.startActivity(Intent(a,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+          1->a.openImportedQBankLibraryFromNav()
+          2->pF?.performClick()
+          3->a.startActivity(Intent(a,StudyToolsActivity::class.java))
+        }
+      }
+    }
+    nav.addView(n,LinearLayout.LayoutParams(0,d(58,a),1f))
+  }''')
 ])
+
+edit("app/src/main/java/com/localqbank/library/MainActivity.kt",[(
+'''    private fun scrollHomeTop(){
+        findViewById<ScrollView>(R.id.dashboardScroll)?.smoothScrollTo(0,0)
+    }''',
+'''    private fun scrollHomeTop(){
+        findViewById<ScrollView>(R.id.dashboardScroll)?.smoothScrollTo(0,0)
+    }
+
+    fun openImportedQBankLibraryFromNav(){
+        val scroll=findViewById<ScrollView>(R.id.dashboardScroll) ?: return
+        val section=findViewById<View>(R.id.qbankSection) ?: return
+        section.post {
+            if(isFinishing || isDestroyed) return@post
+            scroll.smoothScrollTo(0, section.top)
+            findViewById<View>(R.id.libraryList)?.requestFocus()
+        }
+    }'''
+)])
 
 edit("app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt",[
 ('    private const val SLOT_COUNT = 4','    private const val SLOT_COUNT = 4\n    const val CALENDAR_PERMISSION_REQUEST = 3401'),
