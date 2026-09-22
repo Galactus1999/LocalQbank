@@ -41,18 +41,30 @@ def valid(names):
     return (any(x.endswith('/settings.gradle.kts') or x=='settings.gradle.kts' or x.endswith('/settings.gradle') or x=='settings.gradle' for x in n)
             and any(x.endswith('/app/build.gradle.kts') or x=='app/build.gradle.kts' or x.endswith('/app/build.gradle') or x=='app/build.gradle' for x in n)
             and any(x.endswith('/gradlew') or x=='gradlew' for x in n))
+candidates=[]
 for dp,_,fs in os.walk(root):
     if '/.git' in dp: continue
-    for f in sorted(fs):
+    for f in fs:
         if not f.lower().endswith('.zip'): continue
         p=os.path.join(dp,f)
         try:
             with zipfile.ZipFile(p) as z:
                 if valid(z.namelist()):
-                    print(p); raise SystemExit(0)
-        except zipfile.BadZipFile:
+                    # Git checkout gives ZIPs similar filesystem mtimes, so use the most recent
+                    # Git commit that touched each archive; tie-break by version-like filename.
+                    import subprocess, re
+                    ts=int(subprocess.check_output(['git','log','-1','--format=%ct','--',os.path.relpath(p,root)], text=True).strip() or '0')
+                    versions=[int(x) for x in re.findall(r'v(\\d+)\\.(\\d+)\\.(\\d+)', f, re.I)]
+                    version=versions[-1] if versions else (0,0,0)
+                    candidates.append((ts,version,f,p))
+        except (zipfile.BadZipFile, subprocess.CalledProcessError):
             pass
-raise SystemExit(1)
+if not candidates:
+    raise SystemExit(1)
+candidates.sort(key=lambda x:(x[0],x[1],x[2]), reverse=True)
+p=candidates[0][3]
+print("Using latest Git-touched source archive:",p)
+raise SystemExit(0)
 PY
           )" || true
 
