@@ -108,6 +108,78 @@ jobs:
           fi
           echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
 
+      - name: Apply stability and UI repair pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$PROJECT_DIR" <<'PY'
+          from pathlib import Path
+          import sys
+          root=Path(sys.argv[1]); j=root/"app/src/main/java/com/localqbank/library"; m=root/"app/src/main/AndroidManifest.xml"
+          (j/"MainQBankLibraryActivity.kt").write_text(r'''package com.localqbank.library
+          import android.app.Activity
+          import android.content.Intent
+          import android.graphics.Color
+          import android.graphics.Typeface
+          import android.graphics.drawable.GradientDrawable
+          import android.os.Bundle
+          import android.view.Gravity
+          import android.view.View
+          import android.widget.*
+          class MainQBankLibraryActivity:Activity(){
+           private lateinit var list:LinearLayout
+           private fun d(v:Int)=(v*resources.displayMetrics.density).toInt()
+           private fun bg(c:Int,r:Float=18f)=GradientDrawable().apply{setColor(c);cornerRadius=r*resources.displayMetrics.density}
+           override fun onCreate(b:Bundle?){super.onCreate(b);SystemUi.immersive(this);shell();load()}
+           private fun shell(){
+            val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(14),d(12),d(14),d(12));background=ThemeManager.backgroundDrawable(this@MainQBankLibraryActivity)}
+            val h=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+            h.addView(TextView(this).apply{text="Imported QBanks";textSize=24f;typeface=Typeface.DEFAULT_BOLD;setTextColor(ThemeManager.text(this@MainQBankLibraryActivity))},LinearLayout.LayoutParams(0,d(52),1f))
+            h.addView(TextView(this).apply{text="＋ IMPORT";textSize=11f;typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=bg(ThemeManager.accent(this@MainQBankLibraryActivity),14f);setPadding(d(12),0,d(12),0);setOnClickListener{startActivity(Intent(this@MainQBankLibraryActivity,HtmlImportActivity::class.java))}},LinearLayout.LayoutParams(d(100),d(44)))
+            root.addView(h)
+            root.addView(TextView(this).apply{text="Imported main QBanks • tap a bank to open its tests";textSize=12.5f;setTextColor(ThemeManager.muted(this@MainQBankLibraryActivity));setPadding(0,0,0,d(12))})
+            val scroll=ScrollView(this).apply{overScrollMode=View.OVER_SCROLL_NEVER};list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};scroll.addView(list);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
+            root.addView(TextView(this).apply{text="← BACK";textSize=12f;typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER;setTextColor(ThemeManager.text(this@MainQBankLibraryActivity));background=bg(ThemeManager.elevated(this@MainQBankLibraryActivity),14f);setOnClickListener{finish()}},LinearLayout.LayoutParams(-1,d(46)).apply{topMargin=d(10)})
+            setContentView(root)
+           }
+           private fun load(){
+            list.removeAllViews();list.addView(TextView(this).apply{text="Loading imported QBanks…";textSize=14f;gravity=Gravity.CENTER;setTextColor(ThemeManager.muted(this@MainQBankLibraryActivity));setPadding(0,d(24),0,d(24))})
+            AppManagers.qbankLoading.loadSources{sources->runOnUiThread{
+             if(isFinishing||isDestroyed)return@runOnUiThread;list.removeAllViews()
+             if(sources.isEmpty()){list.addView(TextView(this).apply{text="No imported QBank yet.\\nUse IMPORT to add one.";textSize=16f;gravity=Gravity.CENTER;setTextColor(ThemeManager.muted(this@MainQBankLibraryActivity));setPadding(d(20),d(50),d(20),d(50))});return@runOnUiThread}
+             sources.forEachIndexed{i,s->
+              val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(d(16),d(14),d(16),d(14));background=bg(if(ThemeManager.isDark(this@MainQBankLibraryActivity))ThemeManager.elevated(this@MainQBankLibraryActivity) else ThemeManager.pastelBlueFill(this@MainQBankLibraryActivity));isClickable=true;isFocusable=true}
+              card.addView(TextView(this).apply{text=(i+1).toString()+". "+s.fileName;textSize=17f;typeface=Typeface.DEFAULT_BOLD;setTextColor(ThemeManager.text(this@MainQBankLibraryActivity));maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END})
+              card.addView(TextView(this).apply{text=if(s.seriesNumber.isBlank())s.provider.ifBlank{"Imported QBank"} else s.provider.ifBlank{"Imported QBank"}+" • Series "+s.seriesNumber;textSize=12f;setTextColor(ThemeManager.muted(this@MainQBankLibraryActivity));setPadding(0,d(5),0,0)})
+              card.addView(TextView(this).apply{text="OPEN QBANK  ›";textSize=11f;typeface=Typeface.DEFAULT_BOLD;setTextColor(ThemeManager.accent(this@MainQBankLibraryActivity));setPadding(0,d(10),0,0)})
+              card.setOnClickListener{startActivity(Intent(this,TestListActivity::class.java).putExtra("sourceId",s.id).putExtra("sourceName",s.fileName))};list.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=d(9)})
+             }
+            }}
+           }
+           override fun onResume(){super.onResume();if(::list.isInitialized&&!isFinishing&&!isDestroyed)load()}
+          }
+          ''')
+
+          if ".MainQBankLibraryActivity" not in m.read_text():
+              m.write_text(m.read_text().replace('<activity android:name=".RovexSectionDashboardActivity" android:exported="false" />','<activity android:name=".RovexSectionDashboardActivity" android:exported="false" />\n<activity android:name=".MainQBankLibraryActivity" android:exported="false" />'))
+
+          p=j/"RovexHomeRevolution.kt";s=p.read_text()
+          s=s.replace("1->a.openImportedQBankLibraryFromNav()","1->a.startActivity(Intent(a,MainQBankLibraryActivity::class.java))")
+          s=s.replace("val shell=FrameLayout(a);shell.background=RovexLiveBackdrop(a)","val shell=FrameLayout(a);shell.tag=\"ROVEX_HOME_SHELL\";shell.background=ThemeManager.backgroundDrawable(a)")
+          s=s.replace('val menu=tv(a,"☰",27f,Color.WHITE).apply{gravity=Gravity.CENTER;background=GradientDrawable().apply{shape=1;setColor(Color.argb(60,255,255,255))}}\n  top.addView(menu,LinearLayout.LayoutParams(d(48,a),d(48,a)))\n  top.addView(tv(a,"Rovex",30f,Color.WHITE,true),LinearLayout.LayoutParams(0,d(48,a),1f).apply{leftMargin=d(10,a)})','top.addView(RovexHeaderCosmicView(a),LinearLayout.LayoutParams(d(54,a),d(44,a)).apply{rightMargin=d(6,a)})\n  top.addView(RovexWaveTextView(a).apply{text="Rovex";textSize=30f;typeface=Typeface.DEFAULT_BOLD;setTextColor(ThemeManager.text(a));gravity=Gravity.CENTER_VERTICAL},LinearLayout.LayoutParams(0,d(48,a),1f).apply{leftMargin=d(4,a)})')
+          s=s.replace('g.addView(tv(a,"Good Evening,",16f,Color.argb(225,255,255,255),false))','g.addView(tv(a,"Good Evening,",16f,ThemeManager.muted(a),false))').replace('g.addView(tv(a,"Future Doctor 👋",31f,Color.WHITE,true)','g.addView(tv(a,"Future Doctor 👋",31f,ThemeManager.text(a),true)').replace('g.addView(tv(a,"Small steps. Big Doctor.",14f,Color.argb(220,255,255,255),false)','g.addView(tv(a,"Small steps. Big Doctor.",14f,ThemeManager.muted(a),false)').replace('val search=tv(a,"⌕   Search questions, topics, anything…     ✦",15f,Color.WHITE,false)','val search=tv(a,"⌕   Search questions, topics, anything…     ✦",15f,ThemeManager.text(a),false)')
+          if "fun refreshTheme(a:MainActivity)" not in s:s=s.replace("\n fun apply(a:MainActivity){","\n fun refreshTheme(a:MainActivity){val root=a.findViewById<ViewGroup>(R.id.dashboardRoot)?:return;val shell=root.findViewWithTag<FrameLayout>(\"ROVEX_HOME_SHELL\")?:return;shell.background=ThemeManager.backgroundDrawable(a);shell.invalidate()}\n\n fun apply(a:MainActivity){",1)
+          s=s.replace("scheduleSelf({invalidateSelf()},SystemClock.uptimeMillis()+55)","scheduleSelf({invalidateSelf()},SystemClock.uptimeMillis()+110");p.write_text(s)
+
+          p=j/"MainActivity.kt";s=p.read_text().replace("        applyDashboardTheme()\n        setupRovexBottomNav()","        applyDashboardTheme()\n        RovexHomeRevolution.refreshTheme(this)\n        setupRovexBottomNav()",1);p.write_text(s)
+
+          p=j/"QuizViewModel.kt";s=p.read_text().replace("fun applyResolution(resolution: QuizNavigationUseCase.SessionResolution) {","fun applyResolution(resolution: QuizNavigationUseCase.SessionResolution, preferResolutionPosition: Boolean = false) {").replace("state.position = if (restoredPosition != null && savedState?.get<String>(SavedKeys.TEST_ID) == resolution.testId) {","state.position = if (!preferResolutionPosition && restoredPosition != null && savedState?.get<String>(SavedKeys.TEST_ID) == resolution.testId) {");p.write_text(s)
+          p=j/"QuizActivity.kt";s=p.read_text().replace("quizViewModel.applyResolution(resolution)","quizViewModel.applyResolution(resolution, preferResolutionPosition = exactQuestionId > 0L)",1);p.write_text(s)
+
+          p=j/"BenQuestionAiContextDialog.kt";s=p.read_text().replace(".table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;",".table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;touch-action:pan-x pan-y;").replace(".table-wrap table{width:auto;min-width:100%;max-width:none;",".table-wrap table{width:max-content;min-width:100%;max-width:none;");p.write_text(s)
+          print("STABILITY_UI_REPAIR_APPLIED")
+          PY
+
       - name: Source integrity audit
         shell: bash
         run: |
