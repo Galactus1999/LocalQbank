@@ -36,18 +36,25 @@ jobs:
           # Download every artifact from the latest successful build. Never depend on
           # artifact names or source ZIP filenames; discover the newest valid Android
           # project payload by structure.
-          gh run download "$previous_run" \
-            --repo "$GITHUB_REPOSITORY" \
-            --dir "$RUNNER_TEMP/previous-artifact"
-
-          project_root=""
+          gh run download "$previous_run" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/previous-artifact"
+          archive=""
           while IFS= read -r candidate; do
-            if unzip -l "$candidate" | grep -Eq '(^|/)settings\.gradle(\.kts)?
-          rm -rf "$RUNNER_TEMP/clean-source"
-          cp -a "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/clean-source"
-          echo "PROJECT_DIR=$PROJECT_DISCOVERED_DIR" >> "$GITHUB_ENV"
+            if unzip -l "$candidate" | grep -Eq "(^|/)settings[.]gradle([.]kts)?$" && unzip -l "$candidate" | grep -Eq "(^|/)app/build[.]gradle([.]kts)?$" && unzip -l "$candidate" | grep -Eq "(^|/)gradlew$"; then
+              archive="$candidate"
+              break
+            fi
+          done < <(find "$RUNNER_TEMP/previous-artifact" -type f -iname "*.zip" -print | sort -r)
+          test -n "$archive"
+          unzip -q "$archive" -d "$RUNNER_TEMP/rovex"
+          settings="$(find "$RUNNER_TEMP/rovex" -type f -name settings.gradle.kts -o -name settings.gradle | head -1)"
+          test -n "$settings"
+          project_dir="$(dirname "$settings")"
+          test -f "$project_dir/gradlew"
+          test -f "$project_dir/app/build.gradle.kts" -o -f "$project_dir/app/build.gradle"
+          if [ -f "$project_dir/app/build.gradle.kts" ]; then sed -i "s/compileSdk = 36/compileSdk = 37/" "$project_dir/app/build.gradle.kts"; fi
+          cp -a "$project_dir" "$RUNNER_TEMP/clean-source"
+          echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
           echo "CLEAN_SOURCE_DIR=$RUNNER_TEMP/clean-source" >> "$GITHUB_ENV"
-
       - name: Apply Rovex UI6 corrections
         shell: bash
         run: |
