@@ -139,7 +139,11 @@ jobs:
           set -euxo pipefail
           cd "$PROJECT_DIR"
           chmod +x gradlew
-          ./gradlew :app:testReleaseUnitTest --no-daemon --stacktrace
+          # AGP 9.x does not guarantee a testReleaseUnitTest task for every
+          # application build configuration. The source contains ordinary JVM
+          # tests under app/src/test, so use the generated debug unit-test task,
+          # which is the stable variant for these tests.
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Build release
         shell: bash
