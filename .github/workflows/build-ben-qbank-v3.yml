@@ -13,54 +13,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
-      - name: Acquire source
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf "$RUNNER_TEMP/rovex"
-          mkdir -p "$RUNNER_TEMP/rovex"
-          repo_source="$(python3 - "$GITHUB_WORKSPACE" <<'PY'
-import os, re, sys, zipfile
-root=sys.argv[1]
-def valid(names):
-    n={x.rstrip("/") for x in names}
-    return (
-        any(x=="settings.gradle" or x=="settings.gradle.kts" or x.endswith("/settings.gradle") or x.endswith("/settings.gradle.kts") for x in n)
-        and any(x=="app/build.gradle" or x=="app/build.gradle.kts" or x.endswith("/app/build.gradle") or x.endswith("/app/build.gradle.kts") for x in n)
-        and any(x=="gradlew" or x.endswith("/gradlew") for x in n)
-    )
-candidates=[]
-for dp,_,fs in os.walk(root):
-    if "/.git" in dp: continue
-    for f in fs:
-        if not f.lower().endswith(".zip"): continue
-        p=os.path.join(dp,f)
-        try:
-            with zipfile.ZipFile(p) as z:
-                if not valid(z.namelist()): continue
-            m=re.search(r"v(\d+)\.(\d+)\.(\d+)",f,re.I)
-            version=tuple(map(int,m.groups())) if m else (0,0,0)
-            candidates.append((version,f.lower(),p))
-        except zipfile.BadZipFile:
-            continue
-if not candidates:
-    raise SystemExit("No valid Rovex source ZIP found")
-candidates.sort(key=lambda x:(x[0],x[1]),reverse=True)
-print(candidates[0][2])
-PY
-          )"
-          unzip -q "$repo_source" -d "$RUNNER_TEMP/rovex"
-          settings_file="$(find "$RUNNER_TEMP/rovex" -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)"
-          test -n "$settings_file"
-          project_dir="$(dirname "$settings_file")"
-          test -f "$project_dir/gradlew"
-          echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
