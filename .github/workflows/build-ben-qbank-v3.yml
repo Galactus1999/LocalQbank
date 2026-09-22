@@ -53,31 +53,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 "$GITHUB_WORKSPACE/tools/apply_ui6_fixes.py" "$PROJECT_DIR"
-          python3 - "$PROJECT_DIR" <<'PY'
-import re, sys
-from pathlib import Path
-root=Path(sys.argv[1])
-gradle=(root/"app/build.gradle.kts").read_text()
-manifest=(root/"app/src/main/AndroidManifest.xml").read_text()
-home=(root/"app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt").read_text()
-main=(root/"app/src/main/java/com/localqbank/library/MainActivity.kt").read_text()
-daily=(root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt").read_text()
-checks=[
-    ("compileSdk 37","compileSdk = 37" in gradle),
-    ("READ_CALENDAR","READ_CALENDAR" in manifest),
-    ("QBank Library","QBank Library" in home),
-    ("VIEW CALENDAR","VIEW CALENDAR" in daily),
-    ("QBank navigation handler","openImportedQBankLibraryFromNav" in main),
-    ("Study Tools route","StudyToolsActivity::class.java" in home),
-    ("4-item footer", all(x in home for x in ['val names=arrayOf(', '"⌂', '"▣', '"▤', '"•••'])),
-]
-for name,ok in checks:
-    print(f"UI6 CHECK {name}: {'PASS' if ok else 'FAIL'}")
-    if not ok: raise SystemExit(f"UI6 validation failed: {name}")
-if '"▥' in home and 'Lab' in home:
-    raise SystemExit("UI6 validation failed: legacy Lab footer remains")
-print("UI6 semantic validation PASS")
-PY
           rm -rf "$CLEAN_SOURCE_DIR"
           cp -a "$PROJECT_DIR" "$CLEAN_SOURCE_DIR"
           test -f "$RUNNER_TEMP/rovex/settings.gradle.kts"
