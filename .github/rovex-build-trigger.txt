@@ -2,3 +2,4 @@ Trigger full Rovex build after workflow repair.
 workflow-test-1
 checkout-test
 source-test-2
+final-trigger
