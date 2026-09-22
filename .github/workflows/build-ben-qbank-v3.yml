@@ -58,8 +58,25 @@ jobs:
           grep -Fq 'VIEW CALENDAR' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
           grep -Fq 'openImportedQBankLibraryFromNav' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
           grep -Fq 'StudyToolsActivity::class.java' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
-          grep -Fq 'val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","•••\\nMore")' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
-          ! grep -Fq '▥\\nLab' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+          python3 - "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt" <<'PY'
+import sys
+from pathlib import Path
+p=Path(sys.argv[1])
+s=p.read_text()
+required=[
+    'val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","•••\\nMore")',
+    'StudyToolsActivity::class.java',
+    'openImportedQBankLibraryFromNav',
+]
+for needle in required:
+    if needle not in s:
+        raise SystemExit(f"UI6 validation failed: missing {needle!r}")
+if '▥\\nLab' in s:
+    raise SystemExit("UI6 validation failed: legacy Lab footer item remains")
+if 'setColor(if(dark)Color.rgb(15,20,28) else Color.WHITE)' not in s:
+    raise SystemExit("UI6 validation failed: theme-adaptive footer background missing")
+print("UI6 footer semantic validation PASS")
+PY
           rm -rf "$CLEAN_SOURCE_DIR"
           cp -a "$PROJECT_DIR" "$CLEAN_SOURCE_DIR"
           test -f "$RUNNER_TEMP/rovex/settings.gradle.kts"
