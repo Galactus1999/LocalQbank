@@ -201,7 +201,11 @@ hp.write_text(hs)
 # The project defines dp as an Int extension (e.g. 18.dp(ctx)), not dp(ctx, 18).
 cp=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
 cs=cp.read_text()
-cs=re.sub(r"\bdp\s*\(\s*ctx\s*,\s*(\d+)\s*\)", lambda m: f"{m.group(1)}.dp(ctx)", cs)
+# Normalize every shorthand dp form introduced by this patcher to the
+# existing project helper: dp(ctx, value). Never emit dp(value) or a
+# non-existent extension call.
+cs=re.sub(r"\bdp\s*\(\s*ctx\s*,\s*(\d+)\s*\)", lambda m: f"dp(ctx, {m.group(1)})", cs)
+cs=re.sub(r"\bdp\s*\(\s*(\d+)\s*\)", lambda m: f"dp(ctx, {m.group(1)})", cs)
 cp.write_text(cs)
 
 print("Rovex UI6 fixes applied")
