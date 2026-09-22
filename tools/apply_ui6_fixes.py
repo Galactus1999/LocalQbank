@@ -79,7 +79,7 @@ edit("app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt",[
   qbankActions.addView(qbankButtons,LinearLayout.LayoutParams(-1,d(48,a)).apply{topMargin=d(9,a)})
   content.addView(qbankActions,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=d(14,a)})'''),
 ('''  val nav=LinearLayout(a);nav.gravity=Gravity.CENTER;nav.setPadding(d(8,a),d(6,a),d(8,a),d(6,a));nav.background=surface(a,Color.argb(220,7,19,48),Color.argb(225,21,10,55));nav.elevation=d(14,a).toFloat()
-  val names=arrayOf("⌂ Home","▣ QBank","▤ Cards","▥ Lab","••• More");names.indices.forEach{i->val n=tv(a,names[i],12f,if(i==0)Color.WHITE else Color.rgb(190,215,255),true);n.gravity=Gravity.CENTER;if(i==0)n.background=GradientDrawable().apply{cornerRadius=d(22,a).toFloat();setColor(Color.argb(85,35,150,255));setStroke(d(1,a),Color.argb(180,60,205,255))};n.setOnClickListener{when(i){1->pQ?.performClick();2->pF?.performClick();3->pL?.performClick();4->pA?.performClick()}};nav.addView(n,LinearLayout.LayoutParams(0,d(58,a),1f))}''',,
+  val names=arrayOf("⌂ Home","▣ QBank","▤ Cards","▥ Lab","••• More");names.indices.forEach{i->val n=tv(a,names[i],12f,if(i==0)Color.WHITE else Color.rgb(190,215,255),true);n.gravity=Gravity.CENTER;if(i==0)n.background=GradientDrawable().apply{cornerRadius=d(22,a).toFloat();setColor(Color.argb(85,35,150,255));setStroke(d(1,a),Color.argb(180,60,205,255))};n.setOnClickListener{when(i){1->pQ?.performClick();2->pF?.performClick();3->pL?.performClick();4->pA?.performClick()}};nav.addView(n,LinearLayout.LayoutParams(0,d(58,a),1f))}''',
 '''  val dark=ThemeManager.isDark(a)
   val nav=LinearLayout(a).apply{
     gravity=Gravity.CENTER
