@@ -225,6 +225,18 @@ jobs:
 ''';
           s=s.replace('   override fun onResume(){',insert+'\n   override fun onResume(){')
           p.write_text(s)
+          # Theme-adaptive Today Mission dialogs/panel and less intrusive calendar/planner surfaces.
+          p=j/"RovexDailyStudyHub.kt";s=p.read_text()
+          s=s.replace('color: Int = Color.WHITE','color: Int = ThemeManager.text(c)')
+          s=s.replace('box.background = card(c, Color.argb(120, 255, 65, 170), Color.argb(105, 70, 75, 235))','box.background = card(c, ThemeManager.peacockFill(c), ThemeManager.elevated(c))')
+          s=s.replace('background = card(c, Color.argb(100, 255, 255, 255), Color.argb(55, 110, 100, 255))','background = card(c, ThemeManager.elevated(c), ThemeManager.explanationBg(c))')
+          s=s.replace('background = card(c, Color.argb(100, 55, 210, 255), Color.argb(70, 145, 55, 235))','background = card(c, ThemeManager.pastelBlueFill(c), ThemeManager.elevated(c))')
+          s=s.replace('background = card(c, Color.argb(90, 0, 225, 185), Color.argb(65, 0, 100, 210))','background = card(c, ThemeManager.peacockFill(c), ThemeManager.elevated(c))')
+          s=s.replace('dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { dialog.dismiss(); showCalendarEvents(ctx) } }','dialog.setOnShowListener { themeDialog(dialog,ctx); dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { dialog.dismiss(); showCalendarEvents(ctx) } }')
+          s=s.replace('dialog.setOnShowListener {\n            val sync = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)','dialog.setOnShowListener {\n            themeDialog(dialog,c)\n            val sync = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)')
+          s=s.replace('\n    private fun exportFirstCalendarBlock','\n    private fun themeDialog(dialog:AlertDialog,c:Context){dialog.window?.setBackgroundDrawable(GradientDrawable().apply{setColor(ThemeManager.dialogBg(c));cornerRadius=dp(c,22).toFloat()});dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(ThemeManager.accent(c));dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(ThemeManager.text(c));dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(ThemeManager.accent(c))}\n\n    private fun exportFirstCalendarBlock')
+          p.write_text(s)
+          print("MISSION_THEME_PATCH_APPLIED")
           print("MAIN_QBANK_LIBRARY_PATCH_APPLIED")
           print("HOME_UX_PATCH_APPLIED")
           print("STABILITY_UI_REPAIR_APPLIED")
