@@ -1,4 +1,5 @@
 name: Rovex Build
+# Trigger fresh staging after canonical release-workflow verification repair.
 
 on:
   push:
