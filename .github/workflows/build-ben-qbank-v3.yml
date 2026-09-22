@@ -21,6 +21,8 @@ jobs:
           fetch-depth: 1
 
       - name: Acquire latest corrected source
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -68,13 +70,15 @@ jobs:
           echo "Using repository source: $repo_source"
           unzip -q "$repo_source" -d "$RUNNER_TEMP/rovex"
 
-          runtime_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId' || true)"
+          runtime_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId')"
+          test -n "$runtime_run" || { echo "No successful Qualcomm-runtime-producing workflow run is available"; exit 1; }
           if [ -n "$runtime_run" ] && [ "$runtime_run" != "$GITHUB_RUN_ID" ]; then
             echo "Fetching CI runtime from successful run: $runtime_run"
-            gh run download "$runtime_run" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/source-artifact" || true
+            gh run download "$runtime_run" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/source-artifact"
           fi
 
           runtime_archive="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_Qualcomm_Runtime.zip' -print -quit || true)"
+          test -n "$runtime_archive" || { echo "Successful runtime-producing run did not contain Rovex_Qualcomm_Runtime.zip"; exit 1; }
           if [ -n "$runtime_archive" ]; then
             mkdir -p "$RUNNER_TEMP/qualcomm-runtime"
             unzip -q "$runtime_archive" -d "$RUNNER_TEMP/qualcomm-runtime"
@@ -128,6 +132,14 @@ jobs:
           set -euo pipefail
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "platform-tools"
+
+      - name: Run JVM unit tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew :app:testReleaseUnitTest --no-daemon --stacktrace
 
       - name: Build release
         shell: bash
