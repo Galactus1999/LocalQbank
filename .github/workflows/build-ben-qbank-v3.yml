@@ -16,5 +16,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+
+      - name: Acquire source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/rovex"
+          mkdir -p "$RUNNER_TEMP/rovex"
+          repo_source="$(python3 - "$GITHUB_WORKSPACE" <<'PY'
+import os, re, sys, zipfile
+root=sys.argv[1]
+def valid(names):
+    n={x.rstrip("/") for x in names}
+    return any(x=="settings.gradle" or x=="settings.gradle.kts" or x.endswith("/settings.gradle") or x.endswith("/settings.gradle.kts") for x in n) and any(x=="gradlew" or x.endswith("/gradlew") for x in n)
+candidates=[]
+for dp,_,fs in os.walk(root):
+    if "/.git" in dp: continue
+    for f in fs:
+        if not f.lower().endswith(".zip"): continue
+        p=os.path.join(dp,f)
+        try:
+            with zipfile.ZipFile(p) as z:
+                if valid(z.namelist()):
+                    candidates.append(p)
+        except zipfile.BadZipFile:
+            pass
+if not candidates:
+    raise SystemExit("No valid source ZIP found")
+print(candidates[0])
+PY
+          )"
+          unzip -q "$repo_source" -d "$RUNNER_TEMP/rovex"
+          test -f "$(find "$RUNNER_TEMP/rovex" -type f -name gradlew -print -quit)"
