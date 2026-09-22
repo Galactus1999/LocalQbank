@@ -63,7 +63,7 @@ if not candidates:
     raise SystemExit(1)
 candidates.sort(key=lambda x:(x[0],x[1],x[2]), reverse=True)
 p=candidates[0][3]
-print("Using latest Git-touched source archive:",p)
+print(p)
 raise SystemExit(0)
 PY
           )" || true
