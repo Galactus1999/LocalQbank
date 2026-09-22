@@ -184,7 +184,15 @@ jobs:
                '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
           size="$(stat -c%s "$RUNNER_TEMP/Rovex_Source.zip")"
           echo "Corrected source ZIP size: $size bytes"
-          test "$size" -lt 25000000
+          if [ "$size" -ge 25000000 ]; then
+            echo "Largest files in source tree:"
+            find . -type f -printf '%s %p\\n' | sort -nr | head -40
+            echo "Largest top-level directories:"
+            du -x -h --max-depth=2 . 2>/dev/null | sort -h | tail -30
+            echo "Archive top entries:"
+            unzip -l "$RUNNER_TEMP/Rovex_Source.zip" | sort -k1,1nr | head -40
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
