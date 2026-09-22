@@ -28,15 +28,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
 
           latest_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId' || true)"
-          artifact_id=""
           if [ -n "$latest_run" ] && [ "$latest_run" != "$GITHUB_RUN_ID" ]; then
-            artifact_id="$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$latest_run/artifacts" --jq '.artifacts[] | select(.expired == false) | .id' | head -n1 || true)"
-          fi
-
-          if [ -n "$artifact_id" ]; then
-            echo "Using latest successful build artifact: $artifact_id"
-            gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/source-artifact/build-artifact.zip"
-            unzip -q "$RUNNER_TEMP/source-artifact/build-artifact.zip" -d "$RUNNER_TEMP/source-artifact/unpacked"
+            echo "Using all artifacts from latest successful build: $latest_run"
+            gh run download "$latest_run" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/source-artifact"
           fi
 
           python3 - "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex" <<'PY'
@@ -273,12 +267,20 @@ jobs:
           test "$runtime_size" -gt 0
 
 
+      # Public release artifact: APK + compact source only.
       - uses: actions/upload-artifact@v4
         with:
           name: Rovex-Release
           path: |
             ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
             ${{ runner.temp }}/Rovex_Source.zip
-            ${{ runner.temp }}/Rovex_Qualcomm_Runtime.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      # CI-only storage for the large Qualcomm native runtime. Never ship it as the app artifact.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-CI-Qualcomm-Runtime
+          path: ${{ runner.temp }}/Rovex_Qualcomm_Runtime.zip
           if-no-files-found: error
           retention-days: 30
