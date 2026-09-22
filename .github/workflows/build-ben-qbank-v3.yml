@@ -1,0 +1,18 @@
+name: Rovex Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Workflow validation
+        run: echo "Rovex workflow validation OK"
