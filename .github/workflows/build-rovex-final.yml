@@ -35,7 +35,7 @@ jobs:
           set -euo pipefail
           sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$sdkmanager" --licenses >/dev/null || true
-          "$sdkmanager" 'platforms;android-37' 'platform-tools' 'build-tools;36.0.0'
+          "$sdkmanager" 'platforms;android-37.0' 'platform-tools' 'build-tools;36.0.0'
 
       - name: Materialize latest source ZIP
         env:
@@ -122,8 +122,8 @@ jobs:
           ks="$RUNNER_TEMP/rovex-release.jks"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$out/app-release.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$out/app-release.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$out/app-release.apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$out/app-release.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$out/app-release.apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
           grep -q 'Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/rovex-signing.txt"
           expected='8D:EC:BE:AC:90:6A:40:54:6B:33:2F:35:62:93:13:EF:6B:A6:86:0D:10:06:AA:D0:7B:76:15:38:22:8C:01:53'
           grep -Fq "$expected" "$RUNNER_TEMP/rovex-signing.txt"
