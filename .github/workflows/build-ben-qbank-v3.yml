@@ -19,12 +19,28 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Prepare source
+      - name: Prepare source from latest successful build
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euxo pipefail
-          rm -rf "$RUNNER_TEMP/rovex"
-          mkdir -p "$RUNNER_TEMP/rovex"
-          unzip -q "$GITHUB_WORKSPACE/Rovex_v8.3.304_Corrected_Source.zip" -d "$RUNNER_TEMP/rovex"
+          rm -rf "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/previous-artifact"
+          mkdir -p "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/previous-artifact"
+
+          previous_run="$(gh run list --workflow "Rovex Build" --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId')"
+          test -n "$previous_run"
+          test "$previous_run" != "$GITHUB_RUN_ID"
+          echo "Using latest successful Rovex Build run: $previous_run"
+
+          gh run download "$previous_run" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name Rovex-8.3.304-release \
+            --dir "$RUNNER_TEMP/previous-artifact"
+
+          src_zip="$(find "$RUNNER_TEMP/previous-artifact" -type f -name 'Rovex_v8.3.304_Corrected_Source.zip' -print -quit)"
+          test -n "$src_zip"
+          unzip -q "$src_zip" -d "$RUNNER_TEMP/rovex"
+
           sed -i 's/compileSdk = 36/compileSdk = 37/' "$RUNNER_TEMP/rovex/app/build.gradle.kts"
           rm -rf "$RUNNER_TEMP/clean-source"
           cp -a "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/clean-source"
@@ -40,6 +56,10 @@ jobs:
           grep -Fq 'READ_CALENDAR' "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
           grep -Fq 'QBank Library' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
           grep -Fq 'VIEW CALENDAR' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+          grep -Fq 'openImportedQBankLibraryFromNav' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
+          grep -Fq 'StudyToolsActivity::class.java' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+          grep -Fq 'val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","•••\\nMore")' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+          ! grep -Fq '▥\\nLab' "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
           rm -rf "$CLEAN_SOURCE_DIR"
           cp -a "$PROJECT_DIR" "$CLEAN_SOURCE_DIR"
           test -f "$RUNNER_TEMP/rovex/settings.gradle.kts"
