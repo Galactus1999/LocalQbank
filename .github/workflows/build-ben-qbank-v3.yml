@@ -18,34 +18,44 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Acquire latest source payload
+      - name: Acquire latest source artifact
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/source-artifacts"
-          mkdir -p "$RUNNER_TEMP/rovex" "$RUNNER_TEMP/source-artifacts"
+          rm -rf "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
+          mkdir -p "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
 
-          archive=""
           latest_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId' || true)"
           if [ -n "$latest_run" ] && [ "$latest_run" != "$GITHUB_RUN_ID" ]; then
-            echo "Latest successful Rovex Build run: $latest_run"
-            gh run download "$latest_run" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/source-artifacts"
-            while IFS= read -r candidate; do
-              if unzip -l "$candidate" | grep -Eq '(^|/)settings[.]gradle([.]kts)?$' &&
-                 unzip -l "$candidate" | grep -Eq '(^|/)app/build[.]gradle([.]kts)?$' &&
-                 unzip -l "$candidate" | grep -Eq '(^|/)gradlew$'; then
-                archive="$candidate"
-                break
-              fi
-            done < <(find "$RUNNER_TEMP/source-artifacts" -type f -iname '*.zip' -print | sort -r)
+            artifact_id="$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$latest_run/artifacts" --jq '.artifacts[] | select(.expired == false) | .id' | head -n1)"
+          else
+            artifact_id=""
           fi
 
+          if [ -n "$artifact_id" ]; then
+            echo "Using latest successful build artifact id: $artifact_id"
+            gh api -H 'Accept: application/vnd.github+json' "/repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/source-artifact/build-artifact.zip"
+            unzip -q "$RUNNER_TEMP/source-artifact/build-artifact.zip" -d "$RUNNER_TEMP/source-artifact/unpacked"
+          fi
+
+          archive=""
+          while IFS= read -r candidate; do
+            if unzip -t "$candidate" >/dev/null 2>&1 &&
+               unzip -l "$candidate" | grep -Eq '(^|/)settings[.]gradle([.]kts)?$' &&
+               unzip -l "$candidate" | grep -Eq '(^|/)app/build[.]gradle([.]kts)?$' &&
+               unzip -l "$candidate" | grep -Eq '(^|/)gradlew$'; then
+              archive="$candidate"
+              break
+            fi
+          done < <(find "$RUNNER_TEMP/source-artifact" -type f -iname '*.zip' -not -name 'build-artifact.zip' -print | sort -r)
+
           if [ -z "$archive" ]; then
-            echo "No usable previous build artifact; discovering source ZIP in repository."
+            echo "No source archive in latest successful build artifact; discovering repository ZIPs structurally."
             while IFS= read -r candidate; do
-              if unzip -l "$candidate" | grep -Eq '(^|/)settings[.]gradle([.]kts)?$' &&
+              if unzip -t "$candidate" >/dev/null 2>&1 &&
+                 unzip -l "$candidate" | grep -Eq '(^|/)settings[.]gradle([.]kts)?$' &&
                  unzip -l "$candidate" | grep -Eq '(^|/)app/build[.]gradle([.]kts)?$' &&
                  unzip -l "$candidate" | grep -Eq '(^|/)gradlew$'; then
                 archive="$candidate"
@@ -55,7 +65,7 @@ jobs:
           fi
 
           test -n "$archive"
-          echo "SOURCE_ARCHIVE=$archive"
+          echo "Selected source: $archive"
           unzip -q "$archive" -d "$RUNNER_TEMP/rovex"
 
           settings_file="$(find "$RUNNER_TEMP/rovex" -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)"
@@ -68,14 +78,15 @@ jobs:
           fi
           echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
 
-      - name: Apply source corrections and audit
+      - name: Source integrity audit
         shell: bash
         run: |
           set -euo pipefail
-          python3 "$GITHUB_WORKSPACE/tools/apply_ui6_fixes.py" "$PROJECT_DIR"
           test -f "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
           test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
+          grep -q 'com.localqbank.library' "$PROJECT_DIR/app/build.gradle.kts" "$PROJECT_DIR/app/build.gradle" 2>/dev/null
 
       - name: Restore Qualcomm runtime cache
         uses: actions/cache@v4
@@ -142,7 +153,7 @@ jobs:
           done
           grep -Eq 'lib/arm64-v8a/libQnnHtpV75[^ ]*[.]so' "$RUNNER_TEMP/apk-list.txt"
 
-      - name: Package latest corrected source
+      - name: Package corrected source
         shell: bash
         run: |
           set -euo pipefail
