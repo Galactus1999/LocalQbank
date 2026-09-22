@@ -243,6 +243,60 @@ edit("app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt",[
  '            .setMessage("Create your study plan, then view today’s synced calendar schedule inside Rovex or export a plan block to your calendar app. Google Calendar events appear when Google Calendar is synced on this device and calendar access is granted.")')
 ])
 
+
+# Deterministic footer normalization for legacy generated-source formatting.
+hp=root/"app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+hs=hp.read_text()
+old_names='val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","▥\\nLab","•••\\nMore")'
+if old_names in hs:
+    lines=hs.splitlines()
+    for idx,line in enumerate(lines):
+        if old_names in line and idx > 0 and "val nav=LinearLayout(a)" in lines[idx-1]:
+            new_footer=r'''  val dark=ThemeManager.isDark(a)
+  val nav=LinearLayout(a).apply{
+    gravity=Gravity.CENTER
+    setPadding(d(8,a),d(6,a),d(8,a),d(6,a))
+    background=GradientDrawable().apply{
+      shape=GradientDrawable.RECTANGLE
+      cornerRadius=d(24,a).toFloat()
+      setColor(if(dark)Color.rgb(15,20,28) else Color.WHITE)
+      val ac=ThemeManager.accent(a)
+      setStroke(d(1,a),Color.argb(if(dark)120 else 80,Color.red(ac),Color.green(ac),Color.blue(ac)))
+    }
+    elevation=d(14,a).toFloat()
+  }
+  val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","•••\\nMore")
+  names.indices.forEach{i->
+    val active=i==0
+    val n=tv(a,names[i],12f,if(active)ThemeManager.accent(a) else ThemeManager.text(a),true).apply{
+      gravity=Gravity.CENTER
+      setPadding(0,d(3,a),0,d(3,a))
+      if(active)background=GradientDrawable().apply{
+        cornerRadius=d(20,a).toFloat()
+        val ac=ThemeManager.accent(a)
+        setColor(Color.argb(if(dark)70 else 45,Color.red(ac),Color.green(ac),Color.blue(ac)))
+        setStroke(d(1,a),Color.argb(if(dark)150 else 90,Color.red(ac),Color.green(ac),Color.blue(ac)))
+      }
+      setOnClickListener{
+        when(i){
+          0->a.startActivity(Intent(a,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+          1->a.openImportedQBankLibraryFromNav()
+          2->pF?.performClick()
+          3->a.startActivity(Intent(a,StudyToolsActivity::class.java))
+        }
+      }
+    }
+    nav.addView(n,LinearLayout.LayoutParams(0,d(58,a),1f))
+  }'''.splitlines()
+            lines[idx-1:idx+1]=new_footer
+            hs="\n".join(lines)+"\n"
+            break
+    else:
+        raise SystemExit("UI6 footer marker found but stable nav anchor missing")
+elif 'val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","•••\\nMore")' not in hs:
+    raise SystemExit("UI6 footer normalization found neither old nor new footer")
+hp.write_text(hs)
+
 # Final compile-safety normalization for the newly added calendar/UI code.
 hp=root/"app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
 hs=hp.read_text()
