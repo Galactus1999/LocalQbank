@@ -181,7 +181,7 @@ jobs:
           rm -f "$RUNNER_TEMP/Rovex_Source.zip"
           zip -9 -qr "$RUNNER_TEMP/Rovex_Source.zip" . \
             -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' \
-               '*.apk' '*.aab' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
+               '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
           size="$(stat -c%s "$RUNNER_TEMP/Rovex_Source.zip")"
           echo "Corrected source ZIP size: $size bytes"
           test "$size" -lt 25000000
