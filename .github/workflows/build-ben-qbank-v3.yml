@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'Optional successful GitHub Actions run ID whose source artifact should be used; leave empty to use an uploaded repository source ZIP, then latest successful build artifact.'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -27,10 +32,43 @@ jobs:
           rm -rf "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
 
-          latest_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId' || true)"
-          if [ -n "$latest_run" ] && [ "$latest_run" != "$GITHUB_RUN_ID" ]; then
-            echo "Using all artifacts from latest successful build: $latest_run"
-            gh run download "$latest_run" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/source-artifact"
+          # Prefer an uploaded repository source archive. Selection is structural, not filename-specific.
+          repo_source="$(python3 - "$GITHUB_WORKSPACE" <<'PY'
+import os, sys, zipfile
+root=sys.argv[1]
+def valid(names):
+    n={x.rstrip('/') for x in names}
+    return (any(x.endswith('/settings.gradle.kts') or x=='settings.gradle.kts' or x.endswith('/settings.gradle') or x=='settings.gradle' for x in n)
+            and any(x.endswith('/app/build.gradle.kts') or x=='app/build.gradle.kts' or x.endswith('/app/build.gradle') or x=='app/build.gradle' for x in n)
+            and any(x.endswith('/gradlew') or x=='gradlew' for x in n))
+for dp,_,fs in os.walk(root):
+    if '/.git' in dp: continue
+    for f in sorted(fs):
+        if not f.lower().endswith('.zip'): continue
+        p=os.path.join(dp,f)
+        try:
+            with zipfile.ZipFile(p) as z:
+                if valid(z.namelist()):
+                    print(p); raise SystemExit(0)
+        except zipfile.BadZipFile:
+            pass
+raise SystemExit(1)
+PY
+          )" || true
+
+          if [ -n "$repo_source" ]; then
+            echo "Using uploaded repository source archive: $repo_source"
+            unzip -q "$repo_source" -d "$RUNNER_TEMP/rovex"
+          else
+            requested_run="${{ inputs.source_run_id }}"
+            latest_run="$requested_run"
+            if [ -z "$latest_run" ]; then
+              latest_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId' || true)"
+            fi
+            if [ -n "$latest_run" ] && [ "$latest_run" != "$GITHUB_RUN_ID" ]; then
+              echo "Using artifacts from successful build: $latest_run"
+              gh run download "$latest_run" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/source-artifact"
+            fi
           fi
 
           python3 - "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex" <<'PY'
@@ -97,17 +135,7 @@ jobs:
           project_dir="$(dirname "$settings_file")"
           test -f "$project_dir/gradlew"
           test -f "$project_dir/app/build.gradle.kts" -o -f "$project_dir/app/build.gradle"
-          if [ -f "$project_dir/app/build.gradle.kts" ]; then
-            sed -i 's/compileSdk = 36/compileSdk = 37/g' "$project_dir/app/build.gradle.kts"
-          fi
           echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
-
-      - name: Apply stability and UI repair pass
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m py_compile "$GITHUB_WORKSPACE/.github/scripts/rovex_ui_repair.py"
-          python3 "$GITHUB_WORKSPACE/.github/scripts/rovex_ui_repair.py" "$PROJECT_DIR"
 
       - name: Source integrity audit
         shell: bash
