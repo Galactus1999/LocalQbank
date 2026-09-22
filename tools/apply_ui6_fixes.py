@@ -247,7 +247,7 @@ edit("app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt",[
 # Deterministic footer normalization for legacy generated-source formatting.
 hp=root/"app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
 hs=hp.read_text()
-old_names='val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","▥\\nLab","•••\\nMore")'
+old_names=r'val names=arrayOf("⌂\\nHome","▣\\nQBank","▤\\nCards","▥\\nLab","•••\\nMore")'
 if old_names in hs:
     lines=hs.splitlines()
     for idx,line in enumerate(lines):
