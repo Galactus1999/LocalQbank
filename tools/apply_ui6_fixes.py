@@ -314,4 +314,26 @@ cs=re.sub(r"\bdp\s*\(\s*ctx\s*,\s*(\d+)\s*\)", lambda m: f"dp(ctx, {m.group(1)})
 cs=re.sub(r"\bdp\s*\(\s*(\d+)\s*\)", lambda m: f"dp(ctx, {m.group(1)})", cs)
 cp.write_text(cs)
 
-print("Rovex UI6 fixes applied")
+# Deterministic postcondition checks: fail here, before Gradle, if the requested UI6
+# changes did not land in the generated source.
+vp=root/"app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+vm=root/"app/src/main/java/com/localqbank/library/MainActivity.kt"
+vd=root/"app/src/main/java/com/localqbank/library/RovexDailyStudyHub.kt"
+vh=vp.read_text()
+vmain=vm.read_text()
+vdaily=vd.read_text()
+required=[
+    ("QBank navigation handler","openImportedQBankLibraryFromNav" in vmain),
+    ("Study Tools route","StudyToolsActivity::class.java" in vh),
+    ("Home/QBank/Cards/More footer", all(x in vh for x in ['val names=arrayOf(', '"⌂', '"▣', '"▤', '"•••'])),
+    ("theme-adaptive footer", "setColor(if(dark)Color.rgb(15,20,28) else Color.WHITE)" in vh),
+    ("QBank Library", "QBank Library" in vh),
+    ("calendar view", "VIEW CALENDAR" in vdaily),
+]
+for label, ok in required:
+    if not ok:
+        raise SystemExit(f"UI6 postcondition failed: {label}")
+if '"▥' in vh and 'Lab' in vh:
+    raise SystemExit("UI6 postcondition failed: legacy Lab footer remains")
+print("Rovex UI6 fixes applied; postconditions PASS")
+
