@@ -200,8 +200,8 @@ jobs:
               actions.addView(act("OPEN"){startActivity(Intent(this,TestListActivity::class.java).putExtra("sourceId",s.id).putExtra("sourceName",s.fileName))},LinearLayout.LayoutParams(0,d(38),1f).apply{rightMargin=d(3)})
               actions.addView(act("EDIT"){editSource(s)},LinearLayout.LayoutParams(0,d(38),1f).apply{leftMargin=d(3);rightMargin=d(3)})
               actions.addView(act("DELETE"){deleteSource(s)},LinearLayout.LayoutParams(0,d(38),1f).apply{leftMargin=d(3)})
-              actions.addView(act("↑"){reorder(sources,s,-1)},LinearLayout.LayoutParams(d(42),d(38)).apply{leftMargin=d(3)})
-              actions.addView(act("↓"){reorder(sources,s,1)},LinearLayout.LayoutParams(d(42),d(38)).apply{leftMargin=d(3)})
+              actions.addView(act("↑"){reorder(ordered,s,-1)},LinearLayout.LayoutParams(d(42),d(38)).apply{leftMargin=d(3)})
+              actions.addView(act("↓"){reorder(ordered,s,1)},LinearLayout.LayoutParams(d(42),d(38)).apply{leftMargin=d(3)})
               card.addView(actions,LinearLayout.LayoutParams(-1,d(38)).apply{topMargin=d(8)})
               card.setOnClickListener{startActivity(Intent(this,TestListActivity::class.java).putExtra("sourceId",s.id).putExtra("sourceName",s.fileName))};list.addView(card''')
           insert='''          private fun editSource(s:Source){
