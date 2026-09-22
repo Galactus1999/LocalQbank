@@ -88,6 +88,16 @@ jobs:
               raise SystemExit("No Android project source archive found in latest successful build artifact")
           PY
           
+          # Restore a separately transported Qualcomm runtime archive when present.
+          runtime_archive="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_Qualcomm_Runtime.zip' -print -quit || true)"
+          if [ -n "$runtime_archive" ]; then
+            mkdir -p "$RUNNER_TEMP/qualcomm-runtime"
+            unzip -q "$runtime_archive" -d "$RUNNER_TEMP/qualcomm-runtime"
+            mkdir -p "$RUNNER_TEMP/rovex/app/src/main"
+            cp -a "$RUNNER_TEMP/qualcomm-runtime/app/src/main/jniLibs" "$RUNNER_TEMP/rovex/app/src/main/" 2>/dev/null || true
+            cp -a "$RUNNER_TEMP/qualcomm-runtime/jniLibs" "$RUNNER_TEMP/rovex/app/src/main/" 2>/dev/null || true
+          fi
+
           settings_file="$(find "$RUNNER_TEMP/rovex" -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)"
           test -n "$settings_file"
           project_dir="$(dirname "$settings_file")"
@@ -178,21 +188,18 @@ jobs:
         run: |
           set -euo pipefail
           cd "$PROJECT_DIR"
-          rm -f "$RUNNER_TEMP/Rovex_Source.zip"
-          zip -9 -qr "$RUNNER_TEMP/Rovex_Source.zip" . \
-            -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' \
-               '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
+          rm -f "$RUNNER_TEMP/Rovex_Source.zip" "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip"
+          zip -9 -qr "$RUNNER_TEMP/Rovex_Source.zip" .             -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*'                'app/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
+          mkdir -p "$RUNNER_TEMP/qualcomm-package/app/src/main"
+          cp -a app/src/main/jniLibs "$RUNNER_TEMP/qualcomm-package/app/src/main/"
+          (cd "$RUNNER_TEMP/qualcomm-package" && zip -0 -qr "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip" app/src/main/jniLibs)
           size="$(stat -c%s "$RUNNER_TEMP/Rovex_Source.zip")"
+          runtime_size="$(stat -c%s "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip")"
           echo "Corrected source ZIP size: $size bytes"
-          if [ "$size" -ge 25000000 ]; then
-            echo "Largest files in source tree:"
-            find . -type f -printf '%s %p\\n' | sort -nr | head -40
-            echo "Largest top-level directories:"
-            du -x -h --max-depth=2 . 2>/dev/null | sort -h | tail -30
-            echo "Archive top entries:"
-            unzip -l "$RUNNER_TEMP/Rovex_Source.zip" | sort -k1,1nr | head -40
-            exit 1
-          fi
+          echo "Qualcomm runtime ZIP size: $runtime_size bytes"
+          test "$size" -lt 25000000
+          test "$runtime_size" -gt 0
+
 
       - uses: actions/upload-artifact@v4
         with:
@@ -200,5 +207,6 @@ jobs:
           path: |
             ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
             ${{ runner.temp }}/Rovex_Source.zip
+            ${{ runner.temp }}/Rovex_Qualcomm_Runtime.zip
           if-no-files-found: error
           retention-days: 30
