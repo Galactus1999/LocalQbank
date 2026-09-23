@@ -29,17 +29,10 @@ jobs:
             run_id="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
             test -n "$run_id"
           fi
-          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/final"
-          apk="$(find "$RUNNER_TEMP/final" -type f -name '*.apk' -print -quit)"
-          source_zip=""
-          while IFS= read -r candidate; do
-            if unzip -l "$candidate" | grep -Eq '(^|/)settings[.]gradle([.]kts)?$' &&
-               unzip -l "$candidate" | grep -Eq '(^|/)app/build[.]gradle([.]kts)?$' &&
-               unzip -l "$candidate" | grep -Eq '(^|/)gradlew$'; then
-              source_zip="$candidate"
-              break
-            fi
-          done < <(find "$RUNNER_TEMP/final" -type f -iname '*.zip' -print | sort -r)
+          mkdir -p "$RUNNER_TEMP/final/release"
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name "Rovex-Release" --dir "$RUNNER_TEMP/final/release"
+          apk="$(find "$RUNNER_TEMP/final/release" -type f -name '*.apk' -print -quit)"
+          source_zip="$(find "$RUNNER_TEMP/final/release" -type f -name '*.zip' -print -quit)"
           test -n "$apk"
           test -n "$source_zip"
           echo "APK=$apk" >> "$GITHUB_ENV"
