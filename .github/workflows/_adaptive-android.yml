@@ -119,7 +119,11 @@ jobs:
           [[ "$package_id" == "com.localqbank.library" ]] && is_rovex=true
           echo "ADAPTIVE_IS_ROVEX=$is_rovex" >> "$GITHUB_ENV"
           {
-            printf 'has_test_apk=%s\n' "$([[ -n "$test_apk" ]] && echo true || echo false)"
+            has_test_apk=false
+          if [[ -n "$test_apk" ]]; then
+            has_test_apk=true
+          fi
+          printf 'has_test_apk=%s\n' "$has_test_apk"
             printf 'application_id=%s\n' "$package_id"
             printf 'is_rovex=%s\n' "$is_rovex"
           } >> "$GITHUB_OUTPUT"
