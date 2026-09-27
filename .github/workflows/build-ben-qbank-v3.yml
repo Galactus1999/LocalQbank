@@ -148,6 +148,29 @@ jobs:
           test -r /dev/kvm -a -w /dev/kvm
           echo "KVM device is readable/writable by the emulator runner"
 
+      - name: Prepare isolated UTP protobuf runtime override
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$GITHUB_WORKSPACE/utp-protobuf-ci.init.gradle" <<'EOF'
+allprojects {
+    configurations.configureEach { cfg ->
+        def n = cfg.name.toLowerCase(Locale.ROOT)
+        if (n.contains('unified-test-platform') || n.contains('utp')) {
+            cfg.resolutionStrategy.eachDependency { details ->
+                if (details.requested.group == 'com.google.protobuf' &&
+                    (details.requested.name == 'protobuf-java' || details.requested.name == 'protobuf-java-util')) {
+                    details.useVersion('4.28.3')
+                    details.because('AGP UTP generated protos require protobuf RuntimeVersion; keep UTP isolated from app protobuf versions')
+                }
+            }
+        }
+    }
+}
+EOF
+          test -s "$GITHUB_WORKSPACE/utp-protobuf-ci.init.gradle"
+          echo "Prepared CI-only UTP protobuf override; application source is unchanged."
+
       - name: Run Android instrumented regression suite
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -164,7 +187,7 @@ jobs:
             pwd
             test -f gradlew
             chmod +x gradlew
-            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class='com.localqbank.library.QBankDbSearchRegressionTest,com.localqbank.library.QBankDeletionIsolationTest,com.localqbank.library.QBankImportIdentityRegressionTest' --no-daemon --stacktrace
+            ./gradlew -I "$GITHUB_WORKSPACE/utp-protobuf-ci.init.gradle" :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class='com.localqbank.library.QBankDbSearchRegressionTest,com.localqbank.library.QBankDeletionIsolationTest,com.localqbank.library.QBankImportIdentityRegressionTest' --no-daemon --stacktrace
 
       - name: Build release
         shell: bash
