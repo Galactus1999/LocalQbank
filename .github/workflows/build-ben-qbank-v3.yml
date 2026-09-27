@@ -104,6 +104,12 @@ jobs:
           echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
           echo "Resolved project: $project_dir"
 
+      - name: Apply Phase 0 source repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$GITHUB_WORKSPACE/tools/phase0_apply_repairs.py" "$PROJECT_DIR"
+
       - name: Source integrity audit
         shell: bash
         run: |
