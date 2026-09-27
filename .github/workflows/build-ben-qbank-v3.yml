@@ -191,8 +191,20 @@ jobs:
             adb wait-for-device
             adb install -r -d "$GITHUB_WORKSPACE/.rovex-ci-source/$DEBUG_APK"
             adb install -r -d "$GITHUB_WORKSPACE/.rovex-ci-source/$TEST_APK"
-            instrumentation="$(adb shell pm list instrumentation | tr -d '\r' | grep -F 'target=com.localqbank.library' | head -1 || true)"
-            test -n "$instrumentation" || { echo "No instrumentation targeting com.localqbank.library was registered"; adb shell pm list instrumentation || true; exit 1; }
+            instrumentation=""
+            for attempt in $(seq 1 30); do
+              instrumentation="$(adb shell pm list instrumentation 2>/dev/null | tr -d '\r' | grep -E '^instrumentation:.*target=com\.localqbank\.library' | head -1 || true)"
+              if [ -n "$instrumentation" ]; then
+                break
+              fi
+              sleep 1
+            done
+            if [ -z "$instrumentation" ]; then
+              echo "No instrumentation targeting com.localqbank.library was registered after 30 seconds."
+              adb shell pm list instrumentation || true
+              adb shell pm list packages | grep -F 'com.localqbank.library' || true
+              exit 1
+            fi
             runner_spec="${instrumentation#instrumentation:}"
             runner_spec="${runner_spec%% *}"
             test -n "$runner_spec"
