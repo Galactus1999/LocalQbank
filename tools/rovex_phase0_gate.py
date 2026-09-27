@@ -97,7 +97,7 @@ def version_audit(project: Path, full: str):
 def escape_audit(full: str):
     # Static contract: a LIKE expression must have an ESCAPE clause. Accept
     # ordinary Kotlin escaped-string or triple-quoted SQL representations.
-    occurrences = [m.start() for m in re.finditer(r"\\bESCAPE\\b", full, re.I)]
+    occurrences = [m.start() for m in re.finditer(r"\bESCAPE\b", full, re.I)]
     if not occurrences:
         die("No SQL ESCAPE clause found in the current source.")
 
