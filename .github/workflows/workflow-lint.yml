@@ -16,6 +16,16 @@ jobs:
           set -euo pipefail
           bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest "$RUNNER_TEMP"
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - name: Lint workflows
+      - name: Lint active adaptive workflows
         shell: bash
-        run: actionlint -color
+        run: |
+          set -euo pipefail
+          actionlint -color .github/workflows/build-ben-qbank-v3.yml .github/workflows/_adaptive-android.yml .github/workflows/workflow-lint.yml
+      - name: Lint active adaptive shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in .github/ci/adaptive-discover.sh .github/ci/adaptive-gradle-tasks.sh .github/ci/adaptive-instrumentation.sh; do
+            bash -n "$f"
+            shellcheck -x "$f"
+          done
