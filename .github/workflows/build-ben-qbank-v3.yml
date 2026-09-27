@@ -1,4 +1,4 @@
-name: Adaptive Android CI
+name: Rovex Adaptive Android CI
 
 on:
   push:
@@ -8,12 +8,12 @@ on:
   workflow_dispatch:
     inputs:
       source_file:
-        description: "Optional ZIP/source path. Leave blank for automatic discovery."
+        description: "Optional source ZIP/path"
         required: false
         default: ""
         type: string
       strict:
-        description: "Turn optional capability skips into failures."
+        description: "Require optional signing/Qualcomm capabilities"
         required: false
         default: false
         type: boolean
@@ -26,230 +26,16 @@ permissions:
   contents: read
   actions: read
 
-env:
-  SOURCE_FILE: "${{ inputs.source_file }}"
-  STRICT_MODE: "${{ inputs.strict }}"
-  EMULATOR_PORT: "5554"
-
 jobs:
-  workflow-lint:
-    name: Workflow and shell validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install actionlint
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - name: Validate all workflow YAML
-        run: actionlint -color
-      - name: Validate CI shell scripts
-        shell: bash
-        run: |
-          set -euo pipefail
-          while IFS= read -r -d '' f; do
-            bash -n "$f"
-            shellcheck -x "$f"
-          done < <(find .github/ci -type f -name '*.sh' -print0)
+  automatic:
+    if: github.event_name != 'workflow_dispatch'
+    uses: ./.github/workflows/_adaptive-android.yml
+    secrets: inherit
 
-  adaptive-build:
-    name: Adaptive Android build/test
-    needs: workflow-lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
-    env:
-      KEYSTORE_B64: "${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}"
-      KEYSTORE_B64_LEGACY: "${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}"
-      STORE_PASSWORD: "${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}"
-      KEY_ALIAS: "${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}"
-      KEY_PASSWORD: "${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-
-      - name: Install baseline Android SDK
-        shell: bash
-        run: |
-          set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;35.0.0"
-
-      - name: Discover source and Android module
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash -n .github/ci/adaptive-discover.sh
-          .github/ci/adaptive-discover.sh
-
-      - name: Discover Gradle tasks
-        shell: bash
-        run: bash .github/ci/adaptive-gradle-tasks.sh
-
-      - name: Run discovered JVM tests
-        if: env.ADAPTIVE_UNIT_TASK != ''
-        shell: bash
-        run: |
-          set -euxo pipefail
-          cd "$ADAPTIVE_PROJECT"
-          ./gradlew "$ADAPTIVE_UNIT_TASK" --no-daemon --stacktrace
-
-      - name: Build discovered debug target
-        shell: bash
-        run: |
-          set -euxo pipefail
-          cd "$ADAPTIVE_PROJECT"
-          ./gradlew "$ADAPTIVE_DEBUG_TASK" --no-daemon --stacktrace
-
-      - name: Discover generated APKs and application identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          debug_apk="$(find "$ADAPTIVE_PROJECT" -type f -path '*/build/outputs/apk/debug/*.apk' ! -name '*androidTest*.apk' -print -quit)"
-          test_apk="$(find "$ADAPTIVE_PROJECT" -type f -path '*/build/outputs/apk/androidTest/*/*.apk' -print -quit || true)"
-          test -n "$debug_apk"
-          rm -rf "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks"
-          mkdir -p "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks"
-          cp -f "$debug_apk" "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug.apk"
-          if [[ -n "$test_apk" ]]; then
-            cp -f "$test_apk" "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug-androidTest.apk"
-            echo 'ADAPTIVE_HAS_TEST_APK=true' >> "$GITHUB_ENV"
-          else
-            echo 'ADAPTIVE_HAS_TEST_APK=false' >> "$GITHUB_ENV"
-          fi
-          package_id="$(aapt dump badging "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug.apk" | awk -F"'" '/^package:/{print $2; exit}')"
-          [[ -n "$package_id" ]] || { echo "Unable to determine application package"; exit 1; }
-          echo "ADAPTIVE_APPLICATION_ID=$package_id" >> "$GITHUB_ENV"
-          if [[ "$package_id" == "com.localqbank.library" ]]; then echo 'ADAPTIVE_IS_ROVEX=true' >> "$GITHUB_ENV"; else echo 'ADAPTIVE_IS_ROVEX=false' >> "$GITHUB_ENV"; fi
-          echo "Application ID: $package_id"
-          echo "Debug APK: $debug_apk"
-          if [[ -n "$test_apk" ]]; then echo "Test APK: $test_apk"; else echo "Test APK: none"; fi
-
-      - name: Prepare KVM
-        if: env.ADAPTIVE_HAS_TEST_APK == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -e /dev/kvm
-          sudo chmod a+rw /dev/kvm || true
-          test -r /dev/kvm -a -w /dev/kvm
-
-      - name: Run adaptive instrumented tests
-        if: env.ADAPTIVE_HAS_TEST_APK == 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          force-avd-creation: true
-          working-directory: .adaptive-source
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -gpu swiftshader_indirect
-          disable-animations: true
-          emulator-boot-timeout: 300
-          script: sh "$GITHUB_WORKSPACE/.github/ci/adaptive-instrumentation.sh"
-
-      - name: Record instrumentation skip
-        if: env.ADAPTIVE_HAS_TEST_APK != 'true'
-        shell: bash
-        run: echo "CAPABILITY SKIPPED: no Android test APK was discovered."
-
-      - name: Upload adaptive diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: adaptive-android-diagnostics
-          path: |
-            .adaptive-instrumentation.log
-            $RUNNER_TEMP/adaptive-android/reports/**
-          if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Build discovered release target
-        shell: bash
-        run: |
-          set -euxo pipefail
-          cd "$ADAPTIVE_PROJECT"
-          ./gradlew "$ADAPTIVE_RELEASE_TASK" --no-daemon --stacktrace
-
-      - name: Locate release APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          release_apk="$(find "$ADAPTIVE_PROJECT" -type f -path '*/build/outputs/apk/release/*.apk' ! -name '*unsigned*' -print -quit || true)"
-          if [[ -z "$release_apk" ]]; then
-            release_apk="$(find "$ADAPTIVE_PROJECT" -type f -name '*.apk' -path '*/build/outputs/apk/*' ! -name '*androidTest*' -print -quit || true)"
-          fi
-          [[ -n "$release_apk" ]] || { echo "No release APK discovered."; exit 1; }
-          cp -f "$release_apk" "$GITHUB_WORKSPACE/adaptive-release.apk"
-          echo "ADAPTIVE_RELEASE_APK=$GITHUB_WORKSPACE/adaptive-release.apk" >> "$GITHUB_ENV"
-
-      - name: Sign release when signing capability is available
-        if: env.ADAPTIVE_IS_APPLICATION == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          apk="$ADAPTIVE_RELEASE_APK"
-          if [[ -z "$KEYSTORE_B64" ]]; then KEYSTORE_B64="$KEYSTORE_B64_LEGACY"; fi
-          if [[ -z "$KEYSTORE_B64" || -z "$STORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
-            echo "CAPABILITY SKIPPED: signing secrets are not configured."
-            if [[ "$STRICT_MODE" == "true" ]]; then exit 1; fi
-            exit 0
-          fi
-          ks="$RUNNER_TEMP/adaptive-release.jks"
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$apk" | tee "$RUNNER_TEMP/signing.txt"
-          if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then
-            expected="8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153"
-            actual="$(awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}' "$RUNNER_TEMP/signing.txt" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-            [[ "$actual" == "$expected" ]] || { echo "Rovex signing certificate mismatch."; exit 1; }
-          fi
-
-      - name: Verify Qualcomm runtime when present
-        shell: bash
-        run: |
-          set -euo pipefail
-          apk="$ADAPTIVE_RELEASE_APK"
-          if unzip -l "$apk" | grep -Eq 'lib/arm64-v8a/lib(Qnn|LiteRt.*Qualcomm)[^ ]*\.so'; then
-            unzip -l "$apk" > "$RUNNER_TEMP/apk-list.txt"
-            grep -Eq 'lib/arm64-v8a/libQnnHtp[^ ]*\.so' "$RUNNER_TEMP/apk-list.txt"
-            echo "Qualcomm runtime detected and basic native-library verification passed."
-          else
-            echo "CAPABILITY SKIPPED: no Qualcomm native runtime detected."
-            if [[ "$STRICT_MODE" == "true" && "$ADAPTIVE_IS_ROVEX" == "true" ]]; then exit 1; fi
-          fi
-
-      - name: Package source and release
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$ADAPTIVE_PROJECT"
-          zip -9 -qr "$RUNNER_TEMP/adaptive-source.zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
-          size="$(stat -c%s "$RUNNER_TEMP/adaptive-source.zip")"
-          echo "Source archive size: $size bytes"
-          if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then [[ "$size" -lt 25000000 ]]; fi
-
-      - name: Upload adaptive artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: adaptive-android-output
-          path: |
-            adaptive-release.apk
-            $RUNNER_TEMP/adaptive-source.zip
-          if-no-files-found: error
-          retention-days: 30
+  manual:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/_adaptive-android.yml
+    with:
+      source_file: ${{ inputs.source_file }}
+      strict: ${{ inputs.strict }}
+    secrets: inherit
