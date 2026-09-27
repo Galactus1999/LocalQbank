@@ -113,6 +113,9 @@ def escape_audit(full: str):
         if re.search(r"ESCAPE\s*['\"]\\\\\\\\['\"]", s):
             bad.append(s)
     if bad:
+        print("PHASE0 ESCAPE DIAGNOSTIC:")
+        for item in bad:
+            print(item.replace("\\n", "\\n"))
         die("Suspicious four-backslash SQL ESCAPE literal detected; inspect runtime escape character.")
 
 def throwable_audit(current: Path, baseline: Path):
