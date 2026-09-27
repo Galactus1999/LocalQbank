@@ -8,7 +8,14 @@ log() { printf '[adaptive] %s\n' "$*"; }
 fail() { log "FATAL: $*"; exit 1; }
 candidate="$SOURCE_FILE"
 if [[ -n "$candidate" && -f "$ROOT/$candidate" ]]; then candidate="$ROOT/$candidate"; elif [[ -n "$candidate" && ! -f "$candidate" ]]; then fail "Requested SOURCE_FILE does not exist: $candidate"; fi
-if [[ -z "$candidate" && -f "$ROOT/phase0-selected-source.txt" ]]; then p="$(head -n1 "$ROOT/phase0-selected-source.txt" | tr -d '\r')"; [[ -f "$p" ]] && candidate="$p" || true; fi
+if [[ -z "$candidate" && -f "$ROOT/phase0-selected-source.txt" ]]; then
+  p="$(head -n1 "$ROOT/phase0-selected-source.txt" | tr -d '\r')"
+  if [[ -f "$p" ]]; then
+    candidate="$p"
+  elif [[ -f "$ROOT/$p" ]]; then
+    candidate="$ROOT/$p"
+  fi
+fi
 if [[ -z "$candidate" ]]; then candidate="$(python3 - "$ROOT" <<'PY'
 import os,re,sys,zipfile
 root=sys.argv[1]; items=[]
@@ -55,9 +62,19 @@ while IFS= read -r f; do
 done < <(find "$project" -type f \( -name build.gradle -o -name build.gradle.kts \) ! -path '*/build/*' -print)
 module="$app_module"; [[ -n "$module" ]] || module="$library_module"; [[ -n "$module" ]] || fail "No Android Gradle application/library module discovered"
 if [[ "$module" == "$project" ]]; then module_path=":"; else rel="$(realpath --relative-to="$project" "$module")"; module_path=":$(printf '%s' "$rel" | tr '/' ':')"; fi
+is_application=false
+[[ -n "$app_module" ]] && is_application=true
 {
-  printf 'ADAPTIVE_PROJECT=%s\n' "$project"; printf 'ADAPTIVE_MODULE=%s\n' "$module"; printf 'ADAPTIVE_MODULE_PATH=%s\n' "$module_path"
-  [[ -n "$app_module" ]] && echo 'ADAPTIVE_IS_APPLICATION=true' || echo 'ADAPTIVE_IS_APPLICATION=false'
+  printf 'ADAPTIVE_PROJECT=%s\n' "$project"
+  printf 'ADAPTIVE_MODULE=%s\n' "$module"
+  printf 'ADAPTIVE_MODULE_PATH=%s\n' "$module_path"
+  printf 'ADAPTIVE_IS_APPLICATION=%s\n' "$is_application"
 } >> "$GITHUB_ENV"
+{
+  printf 'project=%s\n' "$project"
+  printf 'module=%s\n' "$module"
+  printf 'module_path=%s\n' "$module_path"
+  printf 'is_application=%s\n' "$is_application"
+} >> "$GITHUB_OUTPUT"
 mkdir -p "$ROOT/.adaptive-source"; cp -a "$project/." "$ROOT/.adaptive-source/"
 log "Project: $project"; log "Android module: $module ($module_path)"
