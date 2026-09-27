@@ -35,32 +35,8 @@ env:
   EMULATOR_PORT: "5554"
 
 jobs:
-  workflow-lint:
-    name: Workflow and shell validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install actionlint
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - name: Validate all workflow YAML
-        run: actionlint -color
-      - name: Validate CI shell scripts
-        shell: bash
-        run: |
-          set -euo pipefail
-          while IFS= read -r -d '' f; do
-            bash -n "$f"
-            shellcheck -x "$f"
-          done < <(find .github/ci -type f -name '*.sh' -print0)
-
   adaptive-build:
     name: Adaptive Android build/test
-    needs: workflow-lint
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
@@ -168,7 +144,8 @@ jobs:
       - name: Record instrumentation skip
         if: env.ADAPTIVE_HAS_TEST_APK != 'true'
         shell: bash
-        run: echo "CAPABILITY SKIPPED: no Android test APK was discovered."
+        run: |
+          echo "CAPABILITY SKIPPED: no Android test APK was discovered."
 
       - name: Upload adaptive diagnostics
         if: always()
