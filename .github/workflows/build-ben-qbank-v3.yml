@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 jobs:
@@ -35,47 +35,14 @@ jobs:
           rm -rf "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
 
-          repo_source="$(python3 - "$GITHUB_WORKSPACE" <<'PY'
-          import os, re, sys, zipfile
-          root = sys.argv[1]
-          
-          def valid(names):
-              n = {x.rstrip("/") for x in names}
-              return (
-                  any(x == "settings.gradle" or x == "settings.gradle.kts" or x.endswith("/settings.gradle") or x.endswith("/settings.gradle.kts") for x in n)
-                  and any(x == "app/build.gradle" or x == "app/build.gradle.kts" or x.endswith("/app/build.gradle") or x.endswith("/app/build.gradle.kts") for x in n)
-                  and any(x == "gradlew" or x.endswith("/gradlew") for x in n)
-              )
-          
-          candidates = []
-          for dp, _, fs in os.walk(root):
-              if "/.git" in dp:
-                  continue
-              for f in fs:
-                  if not f.lower().endswith(".zip"):
-                      continue
-                  p = os.path.join(dp, f)
-                  try:
-                      with zipfile.ZipFile(p) as z:
-                          if not valid(z.namelist()):
-                              continue
-                      m = re.search(r"v(\d+)\.(\d+)\.(\d+)", f, re.I)
-                      version = tuple(map(int, m.groups())) if m else (0, 0, 0)
-                      candidates.append((version, f.lower(), p))
-                  except zipfile.BadZipFile:
-                      continue
-          
-          if not candidates:
-              raise SystemExit("No valid Rovex source ZIP found in repository")
-          
-          candidates.sort(key=lambda x: (x[0], x[1]), reverse=True)
-          print(candidates[0][2])
-          PY
-          )"
-
-          echo "Using repository source: $repo_source"
+          repo_source="$GITHUB_WORKSPACE/Rovex_v8.3.438_Phase0_OfflineRootRepair_Source.zip"
+          expected_sha256="99fdb02243f4d17f6590c67cd34328d9ef8064196b830b8c95b7dd6bf91f9e52"
+          test -f "$repo_source"
+          actual_sha256="$(sha256sum "$repo_source" | awk '{print $1}')"
+          test "$actual_sha256" = "$expected_sha256"
+          echo "Verified offline source SHA-256: $actual_sha256"
+          echo "Using verified offline source: $repo_source"
           unzip -q "$repo_source" -d "$RUNNER_TEMP/rovex"
-
           runtime_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId')"
           test -n "$runtime_run" || { echo "No successful Qualcomm-runtime-producing workflow run is available"; exit 1; }
           if [ -n "$runtime_run" ] && [ "$runtime_run" != "$GITHUB_RUN_ID" ]; then
@@ -104,12 +71,6 @@ jobs:
           echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
           echo "Resolved project: $project_dir"
 
-      - name: Apply Phase 0 source repair
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 "$GITHUB_WORKSPACE/tools/phase0_apply_repairs.py" "$PROJECT_DIR"
-
       - name: Source integrity audit
         shell: bash
         run: |
@@ -124,6 +85,15 @@ jobs:
             grep -q 'com.localqbank.library' "$PROJECT_DIR/app/build.gradle"
           fi
 
+      - name: Stage verified source in workspace for emulator action
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$GITHUB_WORKSPACE/.rovex-ci-source"
+          cp -a "$PROJECT_DIR/." "$GITHUB_WORKSPACE/.rovex-ci-source/"
+          test -f "$GITHUB_WORKSPACE/.rovex-ci-source/gradlew"
+          test -f "$GITHUB_WORKSPACE/.rovex-ci-source/settings.gradle.kts" -o -f "$GITHUB_WORKSPACE/.rovex-ci-source/settings.gradle"
+          echo "Emulator-visible project: $GITHUB_WORKSPACE/.rovex-ci-source"
       - name: Restore Qualcomm runtime cache
         uses: actions/cache@v4
         with:
@@ -174,10 +144,12 @@ jobs:
           arch: x86_64
           profile: pixel_2
           force-avd-creation: true
+          working-directory: .rovex-ci-source
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
           script: |
-            cd "$PROJECT_DIR"
+            pwd
+            test -f gradlew
             chmod +x gradlew
             ./gradlew :app:connectedDebugAndroidTest \
               -Pandroid.testInstrumentationRunnerArguments.class='com.localqbank.library.QBankDbSearchRegressionTest,com.localqbank.library.QBankDeletionIsolationTest,com.localqbank.library.QBankImportIdentityRegressionTest' \
@@ -243,60 +215,6 @@ jobs:
           echo "Qualcomm runtime ZIP size: $runtime_size bytes"
           test "$size" -lt 25000000
           test "$runtime_size" -gt 0
-
-      - name: Persist corrected Phase 0 source baseline
-        if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          gradle_file="$PROJECT_DIR/app/build.gradle.kts"
-          if [ ! -f "$gradle_file" ]; then gradle_file="$PROJECT_DIR/app/build.gradle"; fi
-          current_version="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$gradle_file" | head -1)"
-          current_code="$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]*=*[[:space:]]*([0-9]+).*/\1/p' "$gradle_file" | head -1)"
-          test -n "$current_version" -a -n "$current_code"
-          if [ "$current_version" != "8.3.437" ] || [ "$current_code" != "529" ]; then
-            echo "Promotion not needed for source $current_version/$current_code"
-            exit 0
-          fi
-
-          promoted="$RUNNER_TEMP/Rovex_v8.3.438_Phase0_Corrected_Source.zip"
-          work="$RUNNER_TEMP/rovex-promoted"
-          rm -rf "$work" "$promoted"
-          cp -a "$PROJECT_DIR" "$work"
-          p="$work/app/build.gradle.kts"
-          if [ ! -f "$p" ]; then p="$work/app/build.gradle"; fi
-          sed -i 's/versionCode = 529/versionCode = 530/' "$p"
-          sed -i 's/versionName = "8.3.437"/versionName = "8.3.438"/' "$p"
-          test "$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]*=*[[:space:]]*([0-9]+).*/\1/p' "$p" | head -1)" = "530"
-          test "$(sed -nE 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$p" | head -1)" = "8.3.438"
-
-          (cd "$work" && zip -9 -qr "$promoted" . -x ".git/*" ".gradle/*" "*/.gradle/*" "build/*" "*/build/*" "app/build/*" "app/src/main/jniLibs/*" "*.apk" "*.aab" "*.zip" "*.jar" "*.class" "*.dex" "*.hprof" "*.log" "*.tmp")
-          test "$(stat -c%s "$promoted")" -lt 25000000
-          sha256sum "$promoted"
-
-          body="$RUNNER_TEMP/source-commit.json"
-          python3 - "$promoted" "$body" "$GITHUB_REPOSITORY" <<'PY'
-          import base64, json, os, sys
-          archive, out, repo = sys.argv[1:]
-          path = "Rovex_v8.3.438_Phase0_Corrected_Source.zip"
-          payload = {
-              "message": "Phase 0: persist corrected v8.3.438 source baseline",
-              "content": base64.b64encode(open(archive, "rb").read()).decode("ascii"),
-              "branch": "main",
-          }
-          import subprocess
-          existing = subprocess.run(
-              ["gh", "api", f"repos/{repo}/contents/{path}", "-q", ".sha"],
-              text=True, capture_output=True
-          )
-          if existing.returncode == 0 and existing.stdout.strip():
-              payload["sha"] = existing.stdout.strip()
-          json.dump(payload, open(out, "w"))
-          PY
-          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/Rovex_v8.3.438_Phase0_Corrected_Source.zip" --input "$body" >/dev/null
-          echo "Persisted corrected v8.3.438 source baseline."
 
       - name: Upload Rovex release
         uses: actions/upload-artifact@v4
