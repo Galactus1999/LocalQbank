@@ -20,7 +20,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          actionlint -color .github/workflows/build-ben-qbank-v3.yml .github/workflows/_adaptive-android.yml .github/workflows/workflow-lint.yml
+          for f in .github/workflows/build-ben-qbank-v3.yml .github/workflows/_adaptive-android.yml .github/workflows/workflow-lint.yml; do
+            actionlint -color "$f"
+          done
       - name: Lint active adaptive shell scripts
         shell: bash
         run: |
