@@ -20,6 +20,12 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Phase 0 verification gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/rovex_phase0_gate.py
+
       - name: Acquire latest corrected source
         env:
           GH_TOKEN: ${{ github.token }}
