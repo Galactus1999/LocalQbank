@@ -22,12 +22,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_PACKAGE = "com.localqbank.library"
-EXPECTED_VERSION_NAME = "8.3.440"
-EXPECTED_VERSION_CODE = "532"
 CURRENT_RE = re.compile(r"v(\d+)\.(\d+)\.(\d+)", re.I)
-SOURCE_ZIPS = sorted(ROOT.glob("Rovex_v*.zip"))
-EXPECTED_SOURCE_NAME = "Rovex_v8.3.440_Phase0_TestCompileRepair2_Source.zip"
-EXPECTED_SOURCE_SHA256 = "0967b15a836e4013ceea0dbbd18c54d68f3f7263e980eceb0c10253d4ebf4319"
+SOURCE_ZIPS = sorted(ROOT.glob("*.zip"))
 
 def die(msg: str) -> None:
     print(f"PHASE0 FAIL: {msg}")
@@ -56,16 +52,40 @@ def valid_source_zip(p: Path) -> bool:
     except (OSError, zipfile.BadZipFile):
         return False
 
+def archive_version_info(p: Path):
+    try:
+        with zipfile.ZipFile(p) as z:
+            gradle_names = [n for n in z.namelist() if n.endswith("app/build.gradle.kts") or n.endswith("app/build.gradle")]
+            for name in gradle_names:
+                text = z.read(name).decode("utf-8", errors="replace")
+                vm = re.search(r'versionName\s*=\s*["\\']([^"\\']+)["\\']', text)
+                vc = re.search(r'versionCode\s*=\s*(\d+)\\b', text)
+                if vm and vc:
+                    return vm.group(1), int(vc.group(1))
+    except (OSError, zipfile.BadZipFile, KeyError):
+        pass
+    return None
+
 def choose_zip():
-    p = ROOT / EXPECTED_SOURCE_NAME
-    if not p.is_file():
-        die(f"Required offline source archive is missing: {EXPECTED_SOURCE_NAME}")
-    if not valid_source_zip(p):
-        die(f"Required offline source archive is structurally invalid: {EXPECTED_SOURCE_NAME}")
-    actual = __import__("hashlib").sha256(p.read_bytes()).hexdigest()
-    if actual != EXPECTED_SOURCE_SHA256:
-        die(f"Offline source SHA-256 mismatch: expected={EXPECTED_SOURCE_SHA256}, actual={actual}")
-    return p
+    candidates = []
+    for p in SOURCE_ZIPS:
+        if not valid_source_zip(p):
+            continue
+        info = archive_version_info(p)
+        if info is None:
+            continue
+        candidates.append((info[1], info[0], p))
+    if not candidates:
+        die("No valid source ZIP found in repository root. Upload a source ZIP containing Gradle versionName/versionCode.")
+    candidates.sort(key=lambda x: (x[0], x[1], x[2].name))
+    top_code = candidates[-1][0]
+    top = [c for c in candidates if c[0] == top_code]
+    if len(top) != 1:
+        names = ", ".join(c[2].name for c in top)
+        die(f"Ambiguous latest source: multiple valid source ZIPs have versionCode {top_code}: {names}")
+    selected = top[0][2]
+    print(f"PHASE0 DISCOVERY: selected latest source by highest versionCode={top_code}: {selected.name}")
+    return selected
 def find_project(root: Path) -> Path:
     settings = list(root.rglob("settings.gradle.kts")) + list(root.rglob("settings.gradle"))
     settings = [p for p in settings if ".gradle" not in p.parts]
@@ -97,7 +117,9 @@ def version_audit(project: Path, full: str, source_zip: Path):
     m = CURRENT_RE.search(source_zip.name)
     if not m:
         die(f"Source archive has no semantic version: {source_zip.name}")
-    archive_version = ".".join(m.groups())
+    archive_version = archive_version_info(source_zip)[0] if archive_version_info(source_zip) else None
+    if archive_version is None:
+        die(f"Could not extract versionName/versionCode from selected source archive: {source_zip.name}")
 
     gradle_files = list(project.glob("app/build.gradle.kts")) + list(project.glob("app/build.gradle"))
     if not gradle_files:
@@ -270,6 +292,7 @@ def write_manifest(out: Path, src: Path, project: Path, source_version: str, sou
         "project_dir": str(project),
     }
     out.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    (ROOT / "phase0-selected-source.txt").write_text(str(src) + "\n", encoding="utf-8")
 
 def main():
     src = choose_zip()
