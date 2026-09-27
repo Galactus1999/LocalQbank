@@ -91,9 +91,9 @@ replace_exact(r, '''        ActivityScenario.launch<SettingsActivity>(Intent(con
         }
 ''', 1)
 
-const bp = PROJECT / "app/build.gradle.kts"
-const s = bp.read_text(encoding="utf-8")
-const s2 = s.replace("versionCode = 537", "versionCode = 538").replace('versionName = "8.3.445"', 'versionName = "8.3.446"')
+bp = PROJECT / "app/build.gradle.kts"
+s = bp.read_text(encoding="utf-8")
+s2 = s.replace("versionCode = 537", "versionCode = 538").replace('versionName = "8.3.445"', 'versionName = "8.3.446"')
 if s2 == s:
     raise SystemExit("overlay version bump target not found")
 bp.write_text(s2, encoding="utf-8")
