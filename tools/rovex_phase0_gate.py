@@ -94,13 +94,50 @@ def code_text(root: Path) -> str:
             chunks.append(f"\n// FILE: {p.relative_to(root)}\n{read_text(p)}")
     return "\n".join(chunks)
 
-def version_audit(project: Path, full: str):
+def version_audit(project: Path, full: str, source_zip: Path):
+    m = CURRENT_RE.search(source_zip.name)
+    if not m:
+        die(f"Source archive has no semantic version: {source_zip.name}")
+    archive_version = ".".join(m.groups())
+
+    name_match = re.search(r'versionName\s*=\s*["\']([^"\']+)["\']', full)
+    code_match = re.search(r'versionCode\s*=\s*(\d+)\b', full)
+    if not name_match or not code_match:
+        die("Could not locate versionName/versionCode in executable Gradle source.")
+
+    source_version = name_match.group(1)
+    source_code = int(code_match.group(1))
+    if source_version != archive_version:
+        die(f"Version mismatch: archive={archive_version}, source={source_version}")
+
+    # Monotonic versionCode gate against the previous highest semantic source
+    # archive currently stored in the repository.
+    previous = []
+    for candidate in SOURCE_ZIPS:
+        if candidate == source_zip or not valid_source_zip(candidate):
+            continue
+        cm = CURRENT_RE.search(candidate.name)
+        if not cm:
+            continue
+        cv = tuple(map(int, cm.groups()))
+        if cv < tuple(map(int, m.groups())):
+            previous.append((cv, candidate))
+
+    if previous:
+        previous.sort(key=lambda x: x[0], reverse=True)
+        with tempfile.TemporaryDirectory(prefix="rovex-phase0-version-") as td:
+            bp = Path(td)
+            extract(previous[0][1], bp)
+            bproject = find_project(bp)
+            bfull = source_text(bp)
+            bmatch = re.search(r'versionCode\s*=\s*(\d+)\b', bfull)
+            if bmatch and source_code <= int(bmatch.group(1)):
+                die(f"versionCode is not monotonic: previous={bmatch.group(1)}, current={source_code}")
+
     if EXPECTED_PACKAGE not in full:
         die(f"Expected package/applicationId {EXPECTED_PACKAGE} not found.")
-    if not re.search(r'versionName\s*=\s*["\']8\.3\.437["\']', full):
-        die("v8.3.437 versionName contract not found.")
-    if not re.search(r'versionCode\s*=\s*529\b', full):
-        die("versionCode 529 contract not found.")
+
+    return source_version, source_code
 
 def escape_audit(full: str):
     # Static contract: a LIKE expression must have an ESCAPE clause. Accept
@@ -209,14 +246,14 @@ def test_presence_audit(project: Path):
     if missing:
         die("Required regression-test coverage is missing from executable test sources: " + ", ".join(missing))
 
-def write_manifest(out: Path, src: Path, project: Path):
+def write_manifest(out: Path, src: Path, project: Path, source_version: str, source_code: int):
     manifest = {
         "phase": "0",
         "source_archive": src.name,
         "source_archive_sha256": __import__("hashlib").sha256(src.read_bytes()).hexdigest(),
         "expected_package": EXPECTED_PACKAGE,
-        "expected_version_name": EXPECTED_VERSION_NAME,
-        "expected_version_code": int(EXPECTED_VERSION_CODE),
+        "expected_version_name": source_version,
+        "expected_version_code": source_code,
         "classification": {
             "static_review": "PASS",
             "static_audit": "PASS",
@@ -254,14 +291,14 @@ def main():
             extract(baseline_zips[0], baseline)
 
         full = source_text(current)
-        version_audit(project, full)
+        source_version, source_code = version_audit(project, full, src)
         escape_audit(code_text(current))
         throwable_audit(current, baseline)
         db_construction_diff(current, baseline)
         test_presence_audit(project)
 
         out = ROOT / "phase0-verification-manifest.json"
-        write_manifest(out, src, project)
+        write_manifest(out, src, project, source_version, source_code)
         print("PHASE0 STATIC AUDIT: PASS (after exact Phase-0 repair application)")
         print("PHASE0 TEST-PRESENCE AUDIT: PASS")
         print("IMPORTANT: executable tests/build/device are separate CI gates.")
