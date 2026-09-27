@@ -1,283 +1,41 @@
-name: Rovex Build
+name: Rovex Adaptive Android CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      source_file:
+        description: "Optional source ZIP/path"
+        required: false
+        default: ""
+        type: string
+      strict:
+        description: "Require optional signing/Qualcomm capabilities"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
   actions: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+  automatic:
+    if: github.event_name != 'workflow_dispatch'
+    uses: ./.github/workflows/_adaptive-android.yml
+    secrets: inherit
 
-      - name: Phase 0 verification gate
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 tools/rovex_phase0_gate.py
-
-      - name: Acquire latest corrected source
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
-          mkdir -p "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
-
-          test -f "$GITHUB_WORKSPACE/phase0-selected-source.txt"
-          repo_source="$(cat "$GITHUB_WORKSPACE/phase0-selected-source.txt")"
-          case "$repo_source" in
-            "$GITHUB_WORKSPACE"/*.zip) ;;
-            *) echo "Phase-0 selected source is outside the repository root: $repo_source"; exit 1 ;;
-          esac
-          test -f "$repo_source"
-          actual_sha256="$(sha256sum "$repo_source" | awk '{print $1}')"
-          echo "Verified latest available source SHA-256: $actual_sha256"
-          echo "Using latest available source: $repo_source"
-          unzip -q "$repo_source" -d "$RUNNER_TEMP/rovex"
-          runtime_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId')"
-          test -n "$runtime_run" || { echo "No successful Qualcomm-runtime-producing workflow run is available"; exit 1; }
-          if [ -n "$runtime_run" ] && [ "$runtime_run" != "$GITHUB_RUN_ID" ]; then
-            echo "Fetching CI runtime from successful run: $runtime_run"
-            gh run download "$runtime_run" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/source-artifact"
-          fi
-
-          runtime_archive="$(find "$RUNNER_TEMP/source-artifact" -type f -name 'Rovex_Qualcomm_Runtime.zip' -print -quit || true)"
-          test -n "$runtime_archive" || { echo "Successful runtime-producing run did not contain Rovex_Qualcomm_Runtime.zip"; exit 1; }
-          if [ -n "$runtime_archive" ]; then
-            mkdir -p "$RUNNER_TEMP/qualcomm-runtime"
-            unzip -q "$runtime_archive" -d "$RUNNER_TEMP/qualcomm-runtime"
-            mkdir -p "$RUNNER_TEMP/rovex/app/src/main"
-            if [ -d "$RUNNER_TEMP/qualcomm-runtime/app/src/main/jniLibs" ]; then
-              cp -a "$RUNNER_TEMP/qualcomm-runtime/app/src/main/jniLibs" "$RUNNER_TEMP/rovex/app/src/main/"
-            elif [ -d "$RUNNER_TEMP/qualcomm-runtime/jniLibs" ]; then
-              cp -a "$RUNNER_TEMP/qualcomm-runtime/jniLibs" "$RUNNER_TEMP/rovex/app/src/main/"
-            fi
-          fi
-
-          settings_file="$(find "$RUNNER_TEMP/rovex" -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)"
-          test -n "$settings_file"
-          project_dir="$(dirname "$settings_file")"
-          test -f "$project_dir/gradlew"
-          test -f "$project_dir/app/build.gradle.kts" -o -f "$project_dir/app/build.gradle"
-          echo "PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
-          echo "Resolved project: $project_dir"
-
-      - name: Source integrity audit
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f "$PROJECT_DIR/app/src/main/AndroidManifest.xml"
-          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/MainActivity.kt"
-          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
-          test -f "$PROJECT_DIR/app/src/main/java/com/localqbank/library/RovexThemeEngine.kt"
-          if [ -f "$PROJECT_DIR/app/build.gradle.kts" ]; then
-            grep -q 'com.localqbank.library' "$PROJECT_DIR/app/build.gradle.kts"
-          else
-            grep -q 'com.localqbank.library' "$PROJECT_DIR/app/build.gradle"
-          fi
-
-      - name: Stage verified source in workspace for emulator action
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf "$GITHUB_WORKSPACE/.rovex-ci-source"
-          cp -a "$PROJECT_DIR/." "$GITHUB_WORKSPACE/.rovex-ci-source/"
-          test -f "$GITHUB_WORKSPACE/.rovex-ci-source/gradlew"
-          test -f "$GITHUB_WORKSPACE/.rovex-ci-source/settings.gradle.kts" -o -f "$GITHUB_WORKSPACE/.rovex-ci-source/settings.gradle"
-          echo "Emulator-visible project: $GITHUB_WORKSPACE/.rovex-ci-source"
-
-      - name: Restore Qualcomm runtime cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.PROJECT_DIR }}/build/litert_npu_runtime
-          key: rovex-litert-qualcomm-2.2.0-v75-${{ runner.os }}-v1
-          save-always: true
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - uses: android-actions/setup-android@v4
-
-      - name: Install Android SDK
-        shell: bash
-        run: |
-          set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "platform-tools"
-
-      - name: Phase 0 compile-context diagnostics
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "=== invalidate references ==="
-          grep -RIn --include='*.kt' 'invalidate' "$PROJECT_DIR/app/src/main/java" | head -120 || true
-          echo "=== invalidate declarations ==="
-          grep -RIn --include='*.kt' -E 'fun[[:space:]]+invalidate|val[[:space:]]+invalidate|var[[:space:]]+invalidate' "$PROJECT_DIR/app/src/main/java" | head -120 || true
-
-      - name: Run JVM unit tests
-        shell: bash
-        run: |
-          set -euxo pipefail
-          cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
-
-      - name: Prepare KVM access for emulator
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -e /dev/kvm
-          ls -l /dev/kvm
-          if ! [ -r /dev/kvm ] || ! [ -w /dev/kvm ]; then
-            sudo chmod a+rw /dev/kvm
-          fi
-          test -r /dev/kvm -a -w /dev/kvm
-          echo "KVM device is readable/writable by the emulator runner"
-
-      - name: Assemble Android instrumented regression APKs
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --stacktrace
-          debug_apk="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name 'app-debug*.apk' -print -quit)"
-          test_apk="$(find app/build/outputs/apk/androidTest/debug -maxdepth 1 -type f -name '*androidTest*.apk' -print -quit)"
-          test -n "$debug_apk"
-          test -n "$test_apk"
-          ci_apk_dir="$GITHUB_WORKSPACE/.rovex-ci-source/.ci-test-apks"
-          rm -rf "$ci_apk_dir"
-          mkdir -p "$ci_apk_dir"
-          cp -f "$debug_apk" "$ci_apk_dir/app-debug.apk"
-          cp -f "$test_apk" "$ci_apk_dir/app-debug-androidTest.apk"
-          test -s "$ci_apk_dir/app-debug.apk"
-          test -s "$ci_apk_dir/app-debug-androidTest.apk"
-          echo "DEBUG_APK=.ci-test-apks/app-debug.apk" >> "$GITHUB_ENV"
-          echo "TEST_APK=.ci-test-apks/app-debug-androidTest.apk" >> "$GITHUB_ENV"
-          echo "Instrumented regression APKs assembled without invoking AGP UTP and copied into the emulator-visible workspace."
-
-      - name: Prepare direct instrumentation script
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f "$GITHUB_WORKSPACE/.github/ci/run-direct-instrumentation.sh"
-          cp -f "$GITHUB_WORKSPACE/.github/ci/run-direct-instrumentation.sh" "$GITHUB_WORKSPACE/.rovex-ci-source/.ci-run-instrumentation.sh"
-          chmod +x "$GITHUB_WORKSPACE/.rovex-ci-source/.ci-run-instrumentation.sh"
-          sh -n "$GITHUB_WORKSPACE/.rovex-ci-source/.ci-run-instrumentation.sh"
-          test -x "$GITHUB_WORKSPACE/.rovex-ci-source/.ci-run-instrumentation.sh"
-
-      - name: Run Android instrumented regression suite directly
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          force-avd-creation: true
-          working-directory: .rovex-ci-source
-          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -gpu swiftshader_indirect
-          disable-animations: true
-          emulator-boot-timeout: 300
-          script: sh "$GITHUB_WORKSPACE/.rovex-ci-source/.ci-run-instrumentation.sh"
-
-      - name: Upload direct instrumentation diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Rovex-Direct-Instrumentation-Diagnostics
-          path: ${{ github.workspace }}/.rovex-ci-source/.ci-instrumentation.log
-          if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Build release
-        shell: bash
-        run: |
-          set -euxo pipefail
-          cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew :app:assembleRelease --no-daemon --stacktrace
-
-      - name: Sign and verify APK
-        env:
-          KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
-          KEYSTORE_B64_LEGACY: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          out="$PROJECT_DIR/app/build/outputs/apk/release"
-          apk="$(find "$out" -maxdepth 1 -type f -name 'app-release*.apk' -print -quit)"
-          test -n "$apk"
-          if [ -z "$KEYSTORE_B64" ]; then KEYSTORE_B64="$KEYSTORE_B64_LEGACY"; fi
-          test -n "$KEYSTORE_B64" -a -n "$STORE_PASSWORD" -a -n "$KEY_ALIAS" -a -n "$KEY_PASSWORD"
-          ks="$RUNNER_TEMP/rovex-release.jks"
-          printf "%s" "$KEYSTORE_B64" | base64 --decode > "$ks"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$apk"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$apk"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
-          expected="8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153"
-          actual="$(awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}' "$RUNNER_TEMP/rovex-signing.txt" | tr -d ":" | tr "[:upper:]" "[:lower:]")"
-          test "$actual" = "$expected"
-          cp -f "$apk" "$out/app-release.apk"
-
-      - name: Verify Qualcomm native runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-          apk="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
-          unzip -l "$apk" > "$RUNNER_TEMP/apk-list.txt"
-          for lib in libLiteRtDispatch_Qualcomm.so libLiteRtCompilerPlugin_Qualcomm.so libQnnHtp.so libQnnSystem.so libQnnHtpPrepare.so libQnnIr.so libQnnSaver.so; do
-            grep -Fq "lib/arm64-v8a/$lib" "$RUNNER_TEMP/apk-list.txt"
-          done
-          grep -Eq "lib/arm64-v8a/libQnnHtpV75[^ ]*[.]so" "$RUNNER_TEMP/apk-list.txt"
-
-      - name: Package corrected source
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$PROJECT_DIR"
-          rm -f "$RUNNER_TEMP/Rovex_Source.zip" "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip"
-          zip -9 -qr "$RUNNER_TEMP/Rovex_Source.zip" . -x ".git/*" ".gradle/*" "*/.gradle/*" "build/*" "*/build/*" "app/build/*" "app/src/main/jniLibs/*" "*.apk" "*.aab" "*.zip" "*.jar" "*.class" "*.dex" "*.hprof" "*.log" "*.tmp"
-          mkdir -p "$RUNNER_TEMP/qualcomm-package/app/src/main"
-          cp -a app/src/main/jniLibs "$RUNNER_TEMP/qualcomm-package/app/src/main/"
-          (cd "$RUNNER_TEMP/qualcomm-package" && zip -0 -qr "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip" app/src/main/jniLibs)
-          size="$(stat -c%s "$RUNNER_TEMP/Rovex_Source.zip")"
-          runtime_size="$(stat -c%s "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip")"
-          echo "Corrected source ZIP size: $size bytes"
-          echo "Qualcomm runtime ZIP size: $runtime_size bytes"
-          test "$size" -lt 25000000
-          test "$runtime_size" -gt 0
-
-      - name: Upload Rovex release
-        uses: actions/upload-artifact@v4
-        with:
-          name: Rovex-Release
-          path: |
-            ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
-            ${{ runner.temp }}/Rovex_Source.zip
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload Qualcomm CI runtime
-        uses: actions/upload-artifact@v4
-        with:
-          name: Rovex-CI-Qualcomm-Runtime
-          path: ${{ runner.temp }}/Rovex_Qualcomm_Runtime.zip
-          if-no-files-found: error
-          retention-days: 30
+  manual:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/_adaptive-android.yml
+    with:
+      source_file: ${{ inputs.source_file }}
+      strict: ${{ inputs.strict }}
+    secrets: inherit
