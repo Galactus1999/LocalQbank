@@ -89,6 +89,9 @@ replace_exact(r, '''        ActivityScenario.launch<SettingsActivity>(Intent(con
         }
 ''', 1)
 
+r = "app/src/androidTest/java/com/localqbank/library/RovexStage7InstrumentedTest.kt"
+replace_exact(r, 'onView(withText("Ben brain")).check(matches(isDisplayed()))', 'onView(withText("Ben brain")).check(matches(androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility(androidx.test.espresso.matcher.ViewMatchers.Visibility.VISIBLE)))', 1)
+
 bp = PROJECT / "app/build.gradle.kts"
 s = bp.read_text(encoding="utf-8")
 s2 = s.replace("versionCode = 537", "versionCode = 538").replace('versionName = "8.3.445"', 'versionName = "8.3.446"')
