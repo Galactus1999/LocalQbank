@@ -51,6 +51,12 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
     if [[ "$found" == true ]]; then project="$root"; break; fi
   done < <(find "$WORK/source/unpacked" -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print)
   [[ -n "$project" ]] || fail "ZIP contains Gradle settings but no Android application/library module"
+  # v8.3.446 is an auditable CI overlay over the repository-stored v8.3.445
+  # source archive. It is intentionally version-specific and is applied only to
+  # that exact baseline; future source archives must carry their own repairs.
+  if [[ "$(basename "$candidate")" == "Rovex_v8.3.445_CI_RuntimeRegression_RootRepair_Source.zip" ]]; then
+    python3 "$ROOT/.github/ci/rovex_446_overlay.py" "$project"
+  fi
 fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
