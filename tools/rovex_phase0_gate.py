@@ -58,8 +58,8 @@ def archive_version_info(p: Path):
             gradle_names = [n for n in z.namelist() if n.endswith("app/build.gradle.kts") or n.endswith("app/build.gradle")]
             for name in gradle_names:
                 text = z.read(name).decode("utf-8", errors="replace")
-                vm = re.search(r'versionName\s*=\s*["\\']([^"\\']+)["\\']', text)
-                vc = re.search(r'versionCode\s*=\s*(\d+)\\b', text)
+                vm = re.search(r'versionName\s*=\s*["\']([^"\']+)["\']', text)
+                vc = re.search(r'versionCode\s*=\s*(\d+)\b', text)
                 if vm and vc:
                     return vm.group(1), int(vc.group(1))
     except (OSError, zipfile.BadZipFile, KeyError):
@@ -114,12 +114,10 @@ def code_text(root: Path) -> str:
     return "\n".join(chunks)
 
 def version_audit(project: Path, full: str, source_zip: Path):
-    m = CURRENT_RE.search(source_zip.name)
-    if not m:
-        die(f"Source archive has no semantic version: {source_zip.name}")
-    archive_version = archive_version_info(source_zip)[0] if archive_version_info(source_zip) else None
-    if archive_version is None:
+    archive_info = archive_version_info(source_zip)
+    if archive_info is None:
         die(f"Could not extract versionName/versionCode from selected source archive: {source_zip.name}")
+    archive_version, archive_code = archive_info
 
     gradle_files = list(project.glob("app/build.gradle.kts")) + list(project.glob("app/build.gradle"))
     if not gradle_files:
@@ -135,29 +133,21 @@ def version_audit(project: Path, full: str, source_zip: Path):
     if source_version != archive_version:
         die(f"Version mismatch: archive={archive_version}, source={source_version}")
 
-    # Monotonic versionCode gate against the previous highest semantic source
-    # archive currently stored in the repository.
+    # Monotonic versionCode gate against the highest valid source archive
+    # other than the selected archive.
     previous = []
     for candidate in SOURCE_ZIPS:
         if candidate == source_zip or not valid_source_zip(candidate):
             continue
-        cm = CURRENT_RE.search(candidate.name)
-        if not cm:
-            continue
-        cv = tuple(map(int, cm.groups()))
-        if cv < tuple(map(int, m.groups())):
-            previous.append((cv, candidate))
+        info = archive_version_info(candidate)
+        if info is not None:
+            previous.append((info[1], info[0], candidate))
 
     if previous:
-        previous.sort(key=lambda x: x[0], reverse=True)
-        with tempfile.TemporaryDirectory(prefix="rovex-phase0-version-") as td:
-            bp = Path(td)
-            extract(previous[0][1], bp)
-            bproject = find_project(bp)
-            bfull = source_text(bp)
-            bmatch = re.search(r'versionCode\s*=\s*(\d+)\b', bfull)
-            if bmatch and source_code <= int(bmatch.group(1)):
-                die(f"versionCode is not monotonic: previous={bmatch.group(1)}, current={source_code}")
+        previous.sort(key=lambda x: (x[0], x[1], x[2].name), reverse=True)
+        previous_code, previous_version, _previous_zip = previous[0]
+        if source_code <= previous_code:
+            die(f"versionCode is not monotonic: previous={previous_code} ({previous_version}), current={source_code} ({source_version})")
 
     if EXPECTED_PACKAGE not in full:
         die(f"Expected package/applicationId {EXPECTED_PACKAGE} not found.")
