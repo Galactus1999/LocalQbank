@@ -34,13 +34,22 @@ done
 [[ -n "$DEBUG_TASK" ]] || { echo "No usable Android assemble task discovered."; exit 1; }
 [[ -n "$RELEASE_TASK" ]] || { echo "No usable release/assemble task discovered."; exit 1; }
 
+has_android_test=false
+[[ -n "$ANDROID_TEST_TASK" ]] && has_android_test=true
 {
   printf 'ADAPTIVE_UNIT_TASK=%s\n' "$UNIT_TASK"
   printf 'ADAPTIVE_DEBUG_TASK=%s\n' "$DEBUG_TASK"
   printf 'ADAPTIVE_ANDROID_TEST_TASK=%s\n' "$ANDROID_TEST_TASK"
   printf 'ADAPTIVE_RELEASE_TASK=%s\n' "$RELEASE_TASK"
-  [[ -n "$ANDROID_TEST_TASK" ]] && echo 'ADAPTIVE_HAS_ANDROID_TEST=true' || echo 'ADAPTIVE_HAS_ANDROID_TEST=false'
+  printf 'ADAPTIVE_HAS_ANDROID_TEST=%s\n' "$has_android_test"
 } >> "$GITHUB_ENV"
+{
+  printf 'unit_task=%s\n' "$UNIT_TASK"
+  printf 'debug_task=%s\n' "$DEBUG_TASK"
+  printf 'android_test_task=%s\n' "$ANDROID_TEST_TASK"
+  printf 'release_task=%s\n' "$RELEASE_TASK"
+  printf 'has_android_test=%s\n' "$has_android_test"
+} >> "$GITHUB_OUTPUT"
 
 echo "Adaptive Gradle task selection:"
 echo "  unit: $UNIT_TASK"
