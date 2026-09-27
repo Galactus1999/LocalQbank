@@ -197,9 +197,42 @@ jobs:
             runner_spec="${runner_spec%% *}"
             test -n "$runner_spec"
             echo "Registered instrumentation: $runner_spec"
-            adb shell am instrument -w -r \
+            instrumentation_log="$GITHUB_WORKSPACE/.rovex-ci-source/.ci-instrumentation.log"
+            set +e
+            timeout 1200s adb shell am instrument -w -r \
               -e class 'com.localqbank.library.QBankDbSearchRegressionTest,com.localqbank.library.QBankDeletionIsolationTest,com.localqbank.library.QBankImportIdentityRegressionTest' \
-              "$runner_spec"
+              "$runner_spec" > "$instrumentation_log" 2>&1
+            instrumentation_rc=$?
+            set -e
+            cat "$instrumentation_log"
+            test "$instrumentation_rc" -eq 0 || { echo "adb instrumentation process failed with rc=$instrumentation_rc"; exit "$instrumentation_rc"; }
+            if grep -Eq "^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$" "$instrumentation_log"; then
+              echo "Instrumented regression suite reported a test error/failure."
+              exit 1
+            fi
+            for expected_class in \
+              com.localqbank.library.QBankDbSearchRegressionTest \
+              com.localqbank.library.QBankDeletionIsolationTest \
+              com.localqbank.library.QBankImportIdentityRegressionTest; do
+              grep -Fq "INSTRUMENTATION_STATUS: class=$expected_class" "$instrumentation_log" || {
+                echo "Expected regression class did not execute: $expected_class"
+                exit 1
+              }
+            done
+            grep -Eq "^INSTRUMENTATION_STATUS_CODE: 0$" "$instrumentation_log" || {
+              echo "No successful instrumentation test result was reported."
+              exit 1
+            }
+            echo "Direct AndroidJUnitRunner regression suite PASS."
+
+      - name: Upload direct instrumentation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-Direct-Instrumentation-Diagnostics
+          path: ${{ github.workspace }}/.rovex-ci-source/.ci-instrumentation.log
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Build release
         shell: bash
