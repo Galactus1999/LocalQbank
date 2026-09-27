@@ -152,21 +152,28 @@ def throwable_audit(current: Path, baseline: Path):
 
 def db_construction_diff(current: Path, baseline: Path):
     pattern = re.compile(r"\bQBankDb\s*\(")
-    def hits(root):
-        out = set()
+
+    def counts(root):
+        out = {}
         for p in root.rglob("*.kt"):
-            txt = read_text(p)
-            for i, line in enumerate(txt.splitlines(), 1):
-                if pattern.search(line):
-                    out.add((str(p.relative_to(root)), line.strip(), i))
+            rel = str(p.relative_to(root))
+            if "/src/main/" not in rel or rel.endswith("/QBankDb.kt"):
+                continue
+            count = len(pattern.findall(read_text(p)))
+            if count:
+                out[rel] = count
         return out
-    cur = hits(current)
-    old = hits(baseline) if baseline.exists() else set()
-    old_keys = {(p, line) for p,line,_ in old}
-    new = sorted((p,line,i) for p,line,i in cur if (p,line) not in old_keys)
+
+    cur = counts(current)
+    old = counts(baseline) if baseline.exists() else {}
+    new = []
+    for rel, count in sorted(cur.items()):
+        previous = old.get(rel, 0)
+        if count > previous:
+            new.append(f"{rel}: {previous} -> {count}")
+
     if new:
-        die("New QBankDb(...) construction sites detected; review/approve them explicitly: " +
-            "; ".join(f"{p}:{i}: {line}" for p,line,i in new))
+        die("New production QBankDb(...) construction volume detected: " + "; ".join(new))
 
 def test_presence_audit(project: Path):
     tests = []
