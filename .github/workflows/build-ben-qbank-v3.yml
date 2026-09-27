@@ -159,9 +159,16 @@ jobs:
           test_apk="$(find app/build/outputs/apk/androidTest/debug -maxdepth 1 -type f -name '*androidTest*.apk' -print -quit)"
           test -n "$debug_apk"
           test -n "$test_apk"
-          echo "DEBUG_APK=$debug_apk" >> "$GITHUB_ENV"
-          echo "TEST_APK=$test_apk" >> "$GITHUB_ENV"
-          echo "Instrumented regression APKs assembled without invoking AGP UTP."
+          ci_apk_dir="$GITHUB_WORKSPACE/.rovex-ci-source/.ci-test-apks"
+          rm -rf "$ci_apk_dir"
+          mkdir -p "$ci_apk_dir"
+          cp -f "$debug_apk" "$ci_apk_dir/app-debug.apk"
+          cp -f "$test_apk" "$ci_apk_dir/app-debug-androidTest.apk"
+          test -s "$ci_apk_dir/app-debug.apk"
+          test -s "$ci_apk_dir/app-debug-androidTest.apk"
+          echo "DEBUG_APK=.ci-test-apks/app-debug.apk" >> "$GITHUB_ENV"
+          echo "TEST_APK=.ci-test-apks/app-debug-androidTest.apk" >> "$GITHUB_ENV"
+          echo "Instrumented regression APKs assembled without invoking AGP UTP and copied into the emulator-visible workspace."
 
       - name: Run Android instrumented regression suite directly
         uses: reactivecircus/android-emulator-runner@v2
