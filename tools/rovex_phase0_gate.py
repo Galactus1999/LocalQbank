@@ -100,10 +100,14 @@ def version_audit(project: Path, full: str, source_zip: Path):
         die(f"Source archive has no semantic version: {source_zip.name}")
     archive_version = ".".join(m.groups())
 
-    name_match = re.search(r'versionName\s*=\s*["\']([^"\']+)["\']', full)
-    code_match = re.search(r'versionCode\s*=\s*(\d+)\b', full)
+    gradle_files = list(project.glob("app/build.gradle.kts")) + list(project.glob("app/build.gradle"))
+    if not gradle_files:
+        die("No app/build.gradle(.kts) found for authoritative version extraction.")
+    gradle_text = read_text(gradle_files[0])
+    name_match = re.search(r'versionName\s*=\s*["\']([^"\']+)["\']', gradle_text)
+    code_match = re.search(r'versionCode\s*=\s*(\d+)\b', gradle_text)
     if not name_match or not code_match:
-        die("Could not locate versionName/versionCode in executable Gradle source.")
+        die("Could not locate versionName/versionCode in authoritative app Gradle file.")
 
     source_version = name_match.group(1)
     source_code = int(code_match.group(1))
