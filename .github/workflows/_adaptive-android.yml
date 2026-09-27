@@ -68,6 +68,7 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;35.0.0"
 
       - name: Discover source and Android module
+        id: discover
         shell: bash
         run: |
           set -euo pipefail
@@ -75,11 +76,12 @@ jobs:
           .github/ci/adaptive-discover.sh
 
       - name: Discover Gradle tasks
+        id: tasks
         shell: bash
         run: bash .github/ci/adaptive-gradle-tasks.sh
 
       - name: Run discovered JVM tests
-        if: env.ADAPTIVE_UNIT_TASK != ''
+        if: steps.tasks.outputs.unit_task != ''
         shell: bash
         run: |
           set -euxo pipefail
@@ -94,6 +96,7 @@ jobs:
           ./gradlew "$ADAPTIVE_DEBUG_TASK" --no-daemon --stacktrace
 
       - name: Discover generated APKs and application identity
+        id: apk
         shell: bash
         run: |
           set -euo pipefail
@@ -112,13 +115,20 @@ jobs:
           package_id="$(aapt dump badging "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug.apk" | awk -F"'" '/^package:/{print $2; exit}')"
           [[ -n "$package_id" ]] || { echo "Unable to determine application package"; exit 1; }
           echo "ADAPTIVE_APPLICATION_ID=$package_id" >> "$GITHUB_ENV"
-          if [[ "$package_id" == "com.localqbank.library" ]]; then echo 'ADAPTIVE_IS_ROVEX=true' >> "$GITHUB_ENV"; else echo 'ADAPTIVE_IS_ROVEX=false' >> "$GITHUB_ENV"; fi
+          is_rovex=false
+          [[ "$package_id" == "com.localqbank.library" ]] && is_rovex=true
+          echo "ADAPTIVE_IS_ROVEX=$is_rovex" >> "$GITHUB_ENV"
+          {
+            printf 'has_test_apk=%s\n' "$([[ -n "$test_apk" ]] && echo true || echo false)"
+            printf 'application_id=%s\n' "$package_id"
+            printf 'is_rovex=%s\n' "$is_rovex"
+          } >> "$GITHUB_OUTPUT"
           echo "Application ID: $package_id"
           echo "Debug APK: $debug_apk"
           if [[ -n "$test_apk" ]]; then echo "Test APK: $test_apk"; else echo "Test APK: none"; fi
 
       - name: Prepare KVM
-        if: env.ADAPTIVE_HAS_TEST_APK == 'true'
+        if: steps.apk.outputs.has_test_apk == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -142,7 +152,7 @@ jobs:
           script: sh "$GITHUB_WORKSPACE/.github/ci/adaptive-instrumentation.sh"
 
       - name: Record instrumentation skip
-        if: env.ADAPTIVE_HAS_TEST_APK != 'true'
+        if: steps.apk.outputs.has_test_apk != 'true'
         shell: bash
         run: |
           echo "CAPABILITY SKIPPED: no Android test APK was discovered."
@@ -178,7 +188,7 @@ jobs:
           echo "ADAPTIVE_RELEASE_APK=$GITHUB_WORKSPACE/adaptive-release.apk" >> "$GITHUB_ENV"
 
       - name: Sign release when signing capability is available
-        if: env.ADAPTIVE_IS_APPLICATION == 'true'
+        if: steps.discover.outputs.is_application == 'true'
         shell: bash
         run: |
           set -euo pipefail
