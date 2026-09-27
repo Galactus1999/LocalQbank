@@ -197,9 +197,198 @@ jobs:
             runner_spec="${runner_spec%% *}"
             test -n "$runner_spec"
             echo "Registered instrumentation: $runner_spec"
-            adb shell am instrument -w -r \
+            instrumentation_log="$GITHUB_WORKSPACE/.rovex-ci-source/.ci-instrumentation.log"
+            set +e
+            timeout 1200s adb shell am instrument -w -r \
               -e class 'com.localqbank.library.QBankDbSearchRegressionTest,com.localqbank.library.QBankDeletionIsolationTest,com.localqbank.library.QBankImportIdentityRegressionTest' \
-              "$runner_spec"
+              "$runner_spec" > "$instrumentation_log" 2>&1
+            instrumentation_rc=$?
+            set -e
+            cat "$instrumentation_log"
+            test "$instrumentation_rc" -eq 0 || { echo "adb instrumentation process failed with rc=$instrumentation_rc"; exit "$instrumentation_rc"; }
+            if grep -Eq '^INSTRUMENTATION_STATUS_CODE: -[12]
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Sign and verify APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
+          KEYSTORE_B64_LEGACY: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$PROJECT_DIR/app/build/outputs/apk/release"
+          apk="$(find "$out" -maxdepth 1 -type f -name 'app-release*.apk' -print -quit)"
+          test -n "$apk"
+          if [ -z "$KEYSTORE_B64" ]; then KEYSTORE_B64="$KEYSTORE_B64_LEGACY"; fi
+          test -n "$KEYSTORE_B64" -a -n "$STORE_PASSWORD" -a -n "$KEY_ALIAS" -a -n "$KEY_PASSWORD"
+          ks="$RUNNER_TEMP/rovex-release.jks"
+          printf "%s" "$KEYSTORE_B64" | base64 --decode > "$ks"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
+          expected="8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153"
+          actual="$(awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}' "$RUNNER_TEMP/rovex-signing.txt" | tr -d ":" | tr "[:upper:]" "[:lower:]")"
+          test "$actual" = "$expected"
+          cp -f "$apk" "$out/app-release.apk"
+
+      - name: Verify Qualcomm native runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
+          unzip -l "$apk" > "$RUNNER_TEMP/apk-list.txt"
+          for lib in libLiteRtDispatch_Qualcomm.so libLiteRtCompilerPlugin_Qualcomm.so libQnnHtp.so libQnnSystem.so libQnnHtpPrepare.so libQnnIr.so libQnnSaver.so; do
+            grep -Fq "lib/arm64-v8a/$lib" "$RUNNER_TEMP/apk-list.txt"
+          done
+          grep -Eq "lib/arm64-v8a/libQnnHtpV75[^ ]*[.]so" "$RUNNER_TEMP/apk-list.txt"
+
+      - name: Package corrected source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PROJECT_DIR"
+          rm -f "$RUNNER_TEMP/Rovex_Source.zip" "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip"
+          zip -9 -qr "$RUNNER_TEMP/Rovex_Source.zip" . -x ".git/*" ".gradle/*" "*/.gradle/*" "build/*" "*/build/*" "app/build/*" "app/src/main/jniLibs/*" "*.apk" "*.aab" "*.zip" "*.jar" "*.class" "*.dex" "*.hprof" "*.log" "*.tmp"
+          mkdir -p "$RUNNER_TEMP/qualcomm-package/app/src/main"
+          cp -a app/src/main/jniLibs "$RUNNER_TEMP/qualcomm-package/app/src/main/"
+          (cd "$RUNNER_TEMP/qualcomm-package" && zip -0 -qr "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip" app/src/main/jniLibs)
+          size="$(stat -c%s "$RUNNER_TEMP/Rovex_Source.zip")"
+          runtime_size="$(stat -c%s "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip")"
+          echo "Corrected source ZIP size: $size bytes"
+          echo "Qualcomm runtime ZIP size: $runtime_size bytes"
+          test "$size" -lt 25000000
+          test "$runtime_size" -gt 0
+
+      - name: Upload Rovex release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-Release
+          path: |
+            ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
+            ${{ runner.temp }}/Rovex_Source.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Qualcomm CI runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-CI-Qualcomm-Runtime
+          path: ${{ runner.temp }}/Rovex_Qualcomm_Runtime.zip
+          if-no-files-found: error
+          retention-days: 30
+ "$instrumentation_log"; then
+              echo "Instrumented regression suite reported a test error/failure."
+              exit 1
+            fi
+            for expected_class in \
+              com.localqbank.library.QBankDbSearchRegressionTest \
+              com.localqbank.library.QBankDeletionIsolationTest \
+              com.localqbank.library.QBankImportIdentityRegressionTest; do
+              grep -Fq "INSTRUMENTATION_STATUS: class=$expected_class" "$instrumentation_log" || {
+                echo "Expected regression class did not execute: $expected_class"
+                exit 1
+              }
+            done
+            grep -Eq '^INSTRUMENTATION_STATUS_CODE: 0
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Sign and verify APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ROVEX_SIGNING_KEYSTORE_BASE64 }}
+          KEYSTORE_B64_LEGACY: ${{ secrets.ROVEX_SIGNING_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$PROJECT_DIR/app/build/outputs/apk/release"
+          apk="$(find "$out" -maxdepth 1 -type f -name 'app-release*.apk' -print -quit)"
+          test -n "$apk"
+          if [ -z "$KEYSTORE_B64" ]; then KEYSTORE_B64="$KEYSTORE_B64_LEGACY"; fi
+          test -n "$KEYSTORE_B64" -a -n "$STORE_PASSWORD" -a -n "$KEY_ALIAS" -a -n "$KEY_PASSWORD"
+          ks="$RUNNER_TEMP/rovex-release.jks"
+          printf "%s" "$KEYSTORE_B64" | base64 --decode > "$ks"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "$apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk" | tee "$RUNNER_TEMP/rovex-signing.txt"
+          expected="8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153"
+          actual="$(awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}' "$RUNNER_TEMP/rovex-signing.txt" | tr -d ":" | tr "[:upper:]" "[:lower:]")"
+          test "$actual" = "$expected"
+          cp -f "$apk" "$out/app-release.apk"
+
+      - name: Verify Qualcomm native runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
+          unzip -l "$apk" > "$RUNNER_TEMP/apk-list.txt"
+          for lib in libLiteRtDispatch_Qualcomm.so libLiteRtCompilerPlugin_Qualcomm.so libQnnHtp.so libQnnSystem.so libQnnHtpPrepare.so libQnnIr.so libQnnSaver.so; do
+            grep -Fq "lib/arm64-v8a/$lib" "$RUNNER_TEMP/apk-list.txt"
+          done
+          grep -Eq "lib/arm64-v8a/libQnnHtpV75[^ ]*[.]so" "$RUNNER_TEMP/apk-list.txt"
+
+      - name: Package corrected source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PROJECT_DIR"
+          rm -f "$RUNNER_TEMP/Rovex_Source.zip" "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip"
+          zip -9 -qr "$RUNNER_TEMP/Rovex_Source.zip" . -x ".git/*" ".gradle/*" "*/.gradle/*" "build/*" "*/build/*" "app/build/*" "app/src/main/jniLibs/*" "*.apk" "*.aab" "*.zip" "*.jar" "*.class" "*.dex" "*.hprof" "*.log" "*.tmp"
+          mkdir -p "$RUNNER_TEMP/qualcomm-package/app/src/main"
+          cp -a app/src/main/jniLibs "$RUNNER_TEMP/qualcomm-package/app/src/main/"
+          (cd "$RUNNER_TEMP/qualcomm-package" && zip -0 -qr "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip" app/src/main/jniLibs)
+          size="$(stat -c%s "$RUNNER_TEMP/Rovex_Source.zip")"
+          runtime_size="$(stat -c%s "$RUNNER_TEMP/Rovex_Qualcomm_Runtime.zip")"
+          echo "Corrected source ZIP size: $size bytes"
+          echo "Qualcomm runtime ZIP size: $runtime_size bytes"
+          test "$size" -lt 25000000
+          test "$runtime_size" -gt 0
+
+      - name: Upload Rovex release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-Release
+          path: |
+            ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
+            ${{ runner.temp }}/Rovex_Source.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Qualcomm CI runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-CI-Qualcomm-Runtime
+          path: ${{ runner.temp }}/Rovex_Qualcomm_Runtime.zip
+          if-no-files-found: error
+          retention-days: 30
+ "$instrumentation_log" || {
+              echo "No successful instrumentation test result was reported."
+              exit 1
+            }
+            echo "Direct AndroidJUnitRunner regression suite PASS."
+
+      - name: Upload direct instrumentation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-Direct-Instrumentation-Diagnostics
+          path: ${{ github.workspace }}/.rovex-ci-source/.ci-instrumentation.log
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Build release
         shell: bash
