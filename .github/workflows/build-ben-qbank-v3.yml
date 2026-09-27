@@ -145,6 +145,15 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "platform-tools"
 
+      - name: Phase 0 compile-context diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== invalidate references ==="
+          grep -RIn --include='*.kt' 'invalidate' "$PROJECT_DIR/app/src/main/java" | head -120 || true
+          echo "=== invalidate declarations ==="
+          grep -RIn --include='*.kt' -E 'fun[[:space:]]+invalidate|val[[:space:]]+invalidate|var[[:space:]]+invalidate' "$PROJECT_DIR/app/src/main/java" | head -120 || true
+
       - name: Run JVM unit tests
         shell: bash
         run: |
