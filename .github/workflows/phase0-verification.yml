@@ -1,6 +1,8 @@
 name: Rovex Phase 0 Verification Gate
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
