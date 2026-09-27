@@ -35,7 +35,9 @@ done
 [[ -n "$RELEASE_TASK" ]] || { echo "No usable release/assemble task discovered."; exit 1; }
 
 has_android_test=false
-[[ -n "$ANDROID_TEST_TASK" ]] && has_android_test=true
+if [[ -n "$ANDROID_TEST_TASK" ]]; then
+  has_android_test=true
+fi
 {
   printf 'ADAPTIVE_UNIT_TASK=%s\n' "$UNIT_TASK"
   printf 'ADAPTIVE_DEBUG_TASK=%s\n' "$DEBUG_TASK"
