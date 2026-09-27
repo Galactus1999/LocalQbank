@@ -148,31 +148,22 @@ jobs:
           test -r /dev/kvm -a -w /dev/kvm
           echo "KVM device is readable/writable by the emulator runner"
 
-      - name: Prepare isolated UTP protobuf runtime override
+      - name: Assemble Android instrumented regression APKs
         shell: bash
         run: |
           set -euo pipefail
-          cat > "$GITHUB_WORKSPACE/utp-protobuf-ci.init.gradle" <<'EOF'
-          allprojects {
-              configurations.configureEach { cfg ->
-                  def n = cfg.name.toLowerCase(Locale.ROOT)
-                  if (n.contains('unified-test-platform') || n.contains('utp')) {
-                      cfg.resolutionStrategy.eachDependency { details ->
-                          if (details.requested.group == 'com.google.protobuf' &&
-                              (details.requested.name == 'protobuf-java' || details.requested.name == 'protobuf-java-util' || details.requested.name == 'protobuf-kotlin')) {
-                              details.useVersion('4.28.3')
-                              println('[CI UTP PROTOBUF] ' + cfg.name + ': ' + details.requested.name + ' -> 4.28.3')
-                              details.because('AGP UTP generated protos require protobuf RuntimeVersion; keep UTP isolated from app protobuf versions')
-                          }
-                      }
-                  }
-              }
-          }
-          EOF
-          test -s "$GITHUB_WORKSPACE/utp-protobuf-ci.init.gradle"
-          echo "Prepared CI-only UTP protobuf override; application source is unchanged."
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --stacktrace
+          debug_apk="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name 'app-debug*.apk' -print -quit)"
+          test_apk="$(find app/build/outputs/apk/androidTest/debug -maxdepth 1 -type f -name '*androidTest*.apk' -print -quit)"
+          test -n "$debug_apk"
+          test -n "$test_apk"
+          echo "DEBUG_APK=$debug_apk" >> "$GITHUB_ENV"
+          echo "TEST_APK=$test_apk" >> "$GITHUB_ENV"
+          echo "Instrumented regression APKs assembled without invoking AGP UTP."
 
-      - name: Run Android instrumented regression suite
+      - name: Run Android instrumented regression suite directly
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -185,10 +176,23 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 300
           script: |
+            set -euo pipefail
             pwd
             test -f gradlew
-            chmod +x gradlew
-            ./gradlew -I "$GITHUB_WORKSPACE/utp-protobuf-ci.init.gradle" :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class='com.localqbank.library.QBankDbSearchRegressionTest,com.localqbank.library.QBankDeletionIsolationTest,com.localqbank.library.QBankImportIdentityRegressionTest' --no-daemon --stacktrace
+            test -f "$GITHUB_WORKSPACE/.rovex-ci-source/$DEBUG_APK"
+            test -f "$GITHUB_WORKSPACE/.rovex-ci-source/$TEST_APK"
+            adb wait-for-device
+            adb install -r -d "$GITHUB_WORKSPACE/.rovex-ci-source/$DEBUG_APK"
+            adb install -r -d "$GITHUB_WORKSPACE/.rovex-ci-source/$TEST_APK"
+            instrumentation="$(adb shell pm list instrumentation | tr -d '\r' | grep -F 'target=com.localqbank.library' | head -1 || true)"
+            test -n "$instrumentation" || { echo "No instrumentation targeting com.localqbank.library was registered"; adb shell pm list instrumentation || true; exit 1; }
+            runner_spec="${instrumentation#instrumentation:}"
+            runner_spec="${runner_spec%% *}"
+            test -n "$runner_spec"
+            echo "Registered instrumentation: $runner_spec"
+            adb shell am instrument -w -r \
+              -e class 'com.localqbank.library.QBankDbSearchRegressionTest,com.localqbank.library.QBankDeletionIsolationTest,com.localqbank.library.QBankImportIdentityRegressionTest' \
+              "$runner_spec"
 
       - name: Build release
         shell: bash
