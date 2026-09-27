@@ -1,0 +1,46 @@
+name: Rovex Phase 0 Verification Gate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase0:
+    name: Phase 0 — static + regression-contract gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run fail-closed Phase 0 gate
+        id: phase0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/rovex_phase0_gate.py
+
+      - name: Publish verification classification
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## Rovex Phase 0 verification"
+            echo
+            echo "| Gate | Classification | Evidence |"
+            echo "|---|---|---|"
+            echo "| Source/static contract audit | EXECUTED | `tools/rovex_phase0_gate.py` |"
+            echo "| Regression-test presence | EXECUTED | Same gate |"
+            echo "| JVM/instrumented test execution | NOT THIS JOB | Build workflow owns execution |"
+            echo "| Android build | NOT THIS JOB | Build workflow owns execution |"
+            echo "| Device validation | UNVERIFIED | Requires physical-device execution |"
+            echo
+            echo "A failed Phase 0 gate blocks the workflow. No static check is reported as a behavioral PASS."
+          } >> "$GITHUB_STEP_SUMMARY"
