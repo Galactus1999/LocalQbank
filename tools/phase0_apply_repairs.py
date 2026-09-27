@@ -29,10 +29,13 @@ def find_project(root: Path) -> Path:
 def replace_exact(path: Path, old: str, new: str, expected: int):
     text = path.read_text(encoding="utf-8")
     count = text.count(old)
-    if count != expected:
-        fail(f"{path}: expected {expected} occurrences of {old!r}, found {count}")
-    path.write_text(text.replace(old, new), encoding="utf-8")
-    return count
+    if count == expected:
+        path.write_text(text.replace(old, new), encoding="utf-8")
+        return count
+    if count == 0 and text.count(new) >= expected:
+        # Idempotent: this source has already received the exact repair.
+        return 0
+    fail(f"{path}: expected {expected} old occurrences or an already-repaired form; found {count}")
 
 def main():
     if len(sys.argv) != 2:
