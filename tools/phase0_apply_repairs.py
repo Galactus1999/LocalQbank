@@ -46,20 +46,11 @@ def main():
             fail(f"Missing expected source file: {rel}")
         replace_exact(path, "catch (t: Throwable)", "catch (t: Exception)", expected)
 
-    # QBankLoadingEngine's Throwable catches only removed an in-flight key and
-    # rethrew. Both surrounding try blocks already have finally { inFlight.remove(key) }.
-    # Keeping the catch therefore duplicated cleanup and caught Errors unnecessarily.
+    # QBankLoadingEngine has nested try/finally structure that requires the
+    # existing catch/rethrow syntax. Narrow the catch from Throwable to Exception
+    # rather than deleting the structurally-required handler.
     q = project / "app/src/main/java/com/localqbank/library/QBankLoadingEngine.kt"
-    text = q.read_text(encoding="utf-8")
-    old = """        } catch (t: Throwable) {
-            inFlight.remove(key)
-            throw t
-        }
-"""
-    count = text.count(old)
-    if count != 2:
-        fail(f"{q}: expected 2 redundant Throwable cleanup blocks, found {count}")
-    q.write_text(text.replace(old, ""), encoding="utf-8")
+    replace_exact(q, "catch (t: Throwable)", "catch (t: Exception)", 2)
 
     # Postcondition: no broad Throwable catch remains at any of the repaired sites.
     for rel in list(EXPECTED) + ["app/src/main/java/com/localqbank/library/QBankLoadingEngine.kt"]:
