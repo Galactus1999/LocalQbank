@@ -176,7 +176,7 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 300
           script: |
-            set -euo pipefail
+            set -eu
             pwd
             test -f gradlew
             test -f "$GITHUB_WORKSPACE/.rovex-ci-source/$DEBUG_APK"
