@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import zipfile
@@ -224,6 +225,14 @@ def main():
         extract(src, current)
         project = find_project(current)
 
+        # Apply only the audited, exact Phase-0 repair set before evaluating
+        # the executable source tree. The raw source remains an input artifact;
+        # the release workflow must package the corrected tree.
+        subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "phase0_apply_repairs.py"), str(current)],
+            check=True,
+        )
+
         baseline_zips = [p for p in SOURCE_ZIPS if "v8.3.435" in p.name.lower() and valid_source_zip(p)]
         if baseline_zips:
             extract(baseline_zips[0], baseline)
@@ -237,7 +246,7 @@ def main():
 
         out = ROOT / "phase0-verification-manifest.json"
         write_manifest(out, src, project)
-        print("PHASE0 STATIC AUDIT: PASS")
+        print("PHASE0 STATIC AUDIT: PASS (after exact Phase-0 repair application)")
         print("PHASE0 TEST-PRESENCE AUDIT: PASS")
         print("IMPORTANT: executable tests/build/device are separate CI gates.")
 
