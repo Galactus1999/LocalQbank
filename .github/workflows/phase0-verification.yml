@@ -38,7 +38,7 @@ jobs:
             echo
             echo "| Gate | Classification | Evidence |"
             echo "|---|---|---|"
-            echo "| Source/static contract audit | EXECUTED | `tools/rovex_phase0_gate.py` |"
+            echo "| Source/static contract audit | EXECUTED | Phase-0 gate script |"
             echo "| Regression-test presence | EXECUTED | Same gate |"
             echo "| JVM/instrumented test execution | NOT THIS JOB | Build workflow owns execution |"
             echo "| Android build | NOT THIS JOB | Build workflow owns execution |"
