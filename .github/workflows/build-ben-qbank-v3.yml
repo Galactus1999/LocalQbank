@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -241,6 +241,60 @@ jobs:
           echo "Qualcomm runtime ZIP size: $runtime_size bytes"
           test "$size" -lt 25000000
           test "$runtime_size" -gt 0
+
+      - name: Persist corrected Phase 0 source baseline
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle_file="$PROJECT_DIR/app/build.gradle.kts"
+          if [ ! -f "$gradle_file" ]; then gradle_file="$PROJECT_DIR/app/build.gradle"; fi
+          current_version="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$gradle_file" | head -1)"
+          current_code="$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]*=*[[:space:]]*([0-9]+).*/\1/p' "$gradle_file" | head -1)"
+          test -n "$current_version" -a -n "$current_code"
+          if [ "$current_version" != "8.3.437" ] || [ "$current_code" != "529" ]; then
+            echo "Promotion not needed for source $current_version/$current_code"
+            exit 0
+          fi
+
+          promoted="$RUNNER_TEMP/Rovex_v8.3.438_Phase0_Corrected_Source.zip"
+          work="$RUNNER_TEMP/rovex-promoted"
+          rm -rf "$work" "$promoted"
+          cp -a "$PROJECT_DIR" "$work"
+          p="$work/app/build.gradle.kts"
+          if [ ! -f "$p" ]; then p="$work/app/build.gradle"; fi
+          sed -i 's/versionCode = 529/versionCode = 530/' "$p"
+          sed -i 's/versionName = "8.3.437"/versionName = "8.3.438"/' "$p"
+          test "$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]*=*[[:space:]]*([0-9]+).*/\1/p' "$p" | head -1)" = "530"
+          test "$(sed -nE 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$p" | head -1)" = "8.3.438"
+
+          (cd "$work" && zip -9 -qr "$promoted" . -x ".git/*" ".gradle/*" "*/.gradle/*" "build/*" "*/build/*" "app/build/*" "app/src/main/jniLibs/*" "*.apk" "*.aab" "*.zip" "*.jar" "*.class" "*.dex" "*.hprof" "*.log" "*.tmp")
+          test "$(stat -c%s "$promoted")" -lt 25000000
+          sha256sum "$promoted"
+
+          body="$RUNNER_TEMP/source-commit.json"
+          python3 - "$promoted" "$body" "$GITHUB_REPOSITORY" <<'PY'
+          import base64, json, os, sys
+          archive, out, repo = sys.argv[1:]
+          path = "Rovex_v8.3.438_Phase0_Corrected_Source.zip"
+          payload = {
+              "message": "Phase 0: persist corrected v8.3.438 source baseline",
+              "content": base64.b64encode(open(archive, "rb").read()).decode("ascii"),
+              "branch": "main",
+          }
+          import subprocess
+          existing = subprocess.run(
+              ["gh", "api", f"repos/{repo}/contents/{path}", "-q", ".sha"],
+              text=True, capture_output=True
+          )
+          if existing.returncode == 0 and existing.stdout.strip():
+              payload["sha"] = existing.stdout.strip()
+          json.dump(payload, open(out, "w"))
+          PY
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/Rovex_v8.3.438_Phase0_Corrected_Source.zip" --input "$body" >/dev/null
+          echo "Persisted corrected v8.3.438 source baseline."
 
       - name: Upload Rovex release
         uses: actions/upload-artifact@v4
