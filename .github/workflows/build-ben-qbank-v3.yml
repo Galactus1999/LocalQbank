@@ -94,6 +94,7 @@ jobs:
           test -f "$GITHUB_WORKSPACE/.rovex-ci-source/gradlew"
           test -f "$GITHUB_WORKSPACE/.rovex-ci-source/settings.gradle.kts" -o -f "$GITHUB_WORKSPACE/.rovex-ci-source/settings.gradle"
           echo "Emulator-visible project: $GITHUB_WORKSPACE/.rovex-ci-source"
+
       - name: Restore Qualcomm runtime cache
         uses: actions/cache@v4
         with:
@@ -130,10 +131,6 @@ jobs:
           set -euxo pipefail
           cd "$PROJECT_DIR"
           chmod +x gradlew
-          # AGP 9.x does not guarantee a testReleaseUnitTest task for every
-          # application build configuration. The source contains ordinary JVM
-          # tests under app/src/test, so use the generated debug unit-test task,
-          # which is the stable variant for these tests.
           ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Run Android instrumented regression suite
@@ -145,8 +142,12 @@ jobs:
           profile: pixel_2
           force-avd-creation: true
           working-directory: .rovex-ci-source
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -gpu swiftshader
           disable-animations: true
+          cores: 2
+          ram-size: 4096M
+          heap-size: 512M
+          emulator-boot-timeout: 300
           script: |
             pwd
             test -f gradlew
