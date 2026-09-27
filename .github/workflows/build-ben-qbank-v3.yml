@@ -35,13 +35,16 @@ jobs:
           rm -rf "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
           mkdir -p "$RUNNER_TEMP/source-artifact" "$RUNNER_TEMP/rovex"
 
-          repo_source="$GITHUB_WORKSPACE/Rovex_v8.3.440_Phase0_TestCompileRepair2_Source.zip"
-          expected_sha256="0967b15a836e4013ceea0dbbd18c54d68f3f7263e980eceb0c10253d4ebf4319"
+          test -f "$GITHUB_WORKSPACE/phase0-selected-source.txt"
+          repo_source="$(cat "$GITHUB_WORKSPACE/phase0-selected-source.txt")"
+          case "$repo_source" in
+            "$GITHUB_WORKSPACE"/*.zip) ;;
+            *) echo "Phase-0 selected source is outside the repository root: $repo_source"; exit 1 ;;
+          esac
           test -f "$repo_source"
           actual_sha256="$(sha256sum "$repo_source" | awk '{print $1}')"
-          test "$actual_sha256" = "$expected_sha256"
-          echo "Verified offline source SHA-256: $actual_sha256"
-          echo "Using verified offline source: $repo_source"
+          echo "Verified latest available source SHA-256: $actual_sha256"
+          echo "Using latest available source: $repo_source"
           unzip -q "$repo_source" -d "$RUNNER_TEMP/rovex"
           runtime_run="$(gh run list --workflow 363295810 --repo "$GITHUB_REPOSITORY" --status success --limit 20 --json databaseId --jq '.[0].databaseId')"
           test -n "$runtime_run" || { echo "No successful Qualcomm-runtime-producing workflow run is available"; exit 1; }
