@@ -22,10 +22,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_PACKAGE = "com.localqbank.library"
-EXPECTED_VERSION_NAME = "8.3.437"
-EXPECTED_VERSION_CODE = "529"
+EXPECTED_VERSION_NAME = "8.3.438"
+EXPECTED_VERSION_CODE = "530"
 CURRENT_RE = re.compile(r"v(\d+)\.(\d+)\.(\d+)", re.I)
 SOURCE_ZIPS = sorted(ROOT.glob("Rovex_v*.zip"))
+EXPECTED_SOURCE_NAME = "Rovex_v8.3.438_Phase0_OfflineRootRepair_Source.zip"
+EXPECTED_SOURCE_SHA256 = "99fdb02243f4d17f6590c67cd34328d9ef8064196b830b8c95b7dd6bf91f9e52"
 
 def die(msg: str) -> None:
     print(f"PHASE0 FAIL: {msg}")
@@ -55,18 +57,15 @@ def valid_source_zip(p: Path) -> bool:
         return False
 
 def choose_zip():
-    candidates = []
-    for p in SOURCE_ZIPS:
-        if not valid_source_zip(p):
-            continue
-        m = CURRENT_RE.search(p.name)
-        version = tuple(map(int, m.groups())) if m else (0, 0, 0)
-        candidates.append((version, p.name.lower(), p))
-    if not candidates:
-        die("No valid Rovex source ZIP found.")
-    candidates.sort(key=lambda x: (x[0], x[1]), reverse=True)
-    return candidates[0][2]
-
+    p = ROOT / EXPECTED_SOURCE_NAME
+    if not p.is_file():
+        die(f"Required offline source archive is missing: {EXPECTED_SOURCE_NAME}")
+    if not valid_source_zip(p):
+        die(f"Required offline source archive is structurally invalid: {EXPECTED_SOURCE_NAME}")
+    actual = __import__("hashlib").sha256(p.read_bytes()).hexdigest()
+    if actual != EXPECTED_SOURCE_SHA256:
+        die(f"Offline source SHA-256 mismatch: expected={EXPECTED_SOURCE_SHA256}, actual={actual}")
+    return p
 def find_project(root: Path) -> Path:
     settings = list(root.rglob("settings.gradle.kts")) + list(root.rglob("settings.gradle"))
     settings = [p for p in settings if ".gradle" not in p.parts]
@@ -176,6 +175,8 @@ def throwable_audit(current: Path, baseline: Path):
                 out.add((str(p.relative_to(root)), "catch(Throwable)"))
         return out
     cur = hits(current)
+    if cur:
+        die("Broad catch(Throwable) remains in corrected source: " + ", ".join(f"{p}:{k}" for p,k in sorted(cur)))
     old = hits(baseline) if baseline.exists() else set()
     new = sorted(cur - old)
     if new:
@@ -282,14 +283,8 @@ def main():
         extract(src, current)
         project = find_project(current)
 
-        # Apply only the audited, exact Phase-0 repair set before evaluating
-        # the executable source tree. The raw source remains an input artifact;
-        # the release workflow must package the corrected tree.
-        subprocess.run(
-            [sys.executable, str(ROOT / "tools" / "phase0_apply_repairs.py"), str(current)],
-            check=True,
-        )
-
+        # The source archive is already the offline-corrected artifact.
+        # CI audits it as-is and must never mutate application source online.
         baseline_zips = [p for p in SOURCE_ZIPS if "v8.3.435" in p.name.lower() and valid_source_zip(p)]
         if baseline_zips:
             extract(baseline_zips[0], baseline)
