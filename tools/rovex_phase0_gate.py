@@ -137,6 +137,16 @@ def throwable_audit(current: Path, baseline: Path):
     old = hits(baseline) if baseline.exists() else set()
     new = sorted(cur - old)
     if new:
+        print("PHASE0 THROWABLE DIAGNOSTIC:")
+        for rel, _kind in new:
+            p = current / rel
+            lines = read_text(p).splitlines()
+            for i, line in enumerate(lines):
+                if "catch (t: Throwable)" in line or "catch(t: Throwable)" in line:
+                    lo = max(0, i - 5)
+                    hi = min(len(lines), i + 6)
+                    print(f"--- {rel}:{i+1} ---")
+                    print("\\n".join(lines[lo:hi]))
         die("New catch(Throwable) sites introduced relative to v8.3.435: " + ", ".join(f"{p}:{k}" for p,k in new))
 
 def db_construction_diff(current: Path, baseline: Path):
