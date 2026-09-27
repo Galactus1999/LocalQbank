@@ -130,10 +130,8 @@ jobs:
           echo "ADAPTIVE_IS_ROVEX=$is_rovex" >> "$GITHUB_ENV"
           {
             has_test_apk=false
-          if [[ -n "$test_apk" ]]; then
-            has_test_apk=true
-          fi
-          printf 'has_test_apk=%s\n' "$has_test_apk"
+            if [[ -n "$test_apk" ]]; then has_test_apk=true; fi
+            printf 'has_test_apk=%s\n' "$has_test_apk"
             printf 'application_id=%s\n' "$package_id"
             printf 'is_rovex=%s\n' "$is_rovex"
           } >> "$GITHUB_OUTPUT"
@@ -163,7 +161,7 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -gpu swiftshader_indirect
           disable-animations: true
           emulator-boot-timeout: 300
-          script: sh "$GITHUB_WORKSPACE/.github/ci/adaptive-instrumentation.sh"
+          script: bash "$GITHUB_WORKSPACE/.github/ci/adaptive-instrumentation.sh"
 
       - name: Record instrumentation skip
         if: steps.apk.outputs.has_test_apk != 'true'
