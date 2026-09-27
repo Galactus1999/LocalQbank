@@ -31,14 +31,14 @@ new_lines = """        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else
 replace_exact(q, old_line, new_lines)
 
 replace_exact(q, 'val strict=read(tokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty() || tokens.size<=1) return strict\n            val broad=read(tokens.joinToString(" OR "){"$it*"})',
-    'val strict=read(ftsTokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty()) return strict\n            val broad=read(ftsTokens.joinToString(" OR "){"$it*"})', 1)
-replace_exact(q, 'val clauses=tokens.map{"(q.text LIKE ?', 'val clauses=likeTokens.map{"(q.text LIKE ?', 2)
+    'val strict=read(ftsTokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty()) return strict\n            val broad=read(ftsTokens.joinToString(" OR "){"$it*"})')
+replace_exact(q, 'val clauses=tokens.map{"(q.text LIKE ?', 'val clauses=likeTokens.map{"(q.text LIKE ?')
 replace_exact(q, 'val args=tokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}',
-    'val args=likeTokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}', 2)
+    'val args=likeTokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}')
 replace_exact(q, 'return if(strictFallback.isNotEmpty() || tokens.size<=1) strictFallback else likeRows(false)',
-    'return if(strictFallback.isNotEmpty() || likeTokens.size<=1) strictFallback else likeRows(false)', 2)
+    'return if(strictFallback.isNotEmpty() || likeTokens.size<=1) strictFallback else likeRows(false)')
 replace_exact(q, 'val strict=fts(tokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty() || tokens.size<=1) return strict\n            val broad=fts(tokens.joinToString(" OR "){"$it*"})',
-    'val strict=fts(ftsTokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty()) return strict\n            val broad=fts(ftsTokens.joinToString(" OR "){"$it*"})', 1)
+    'val strict=fts(ftsTokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty()) return strict\n            val broad=fts(ftsTokens.joinToString(" OR "){"$it*"})')
 
 d = "app/src/androidTest/java/com/localqbank/library/QBankDeletionIsolationTest.kt"
 replace_exact(d, '''        assertEquals(1, db.questionCount("delete-test"))
