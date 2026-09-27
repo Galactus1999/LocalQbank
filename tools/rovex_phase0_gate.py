@@ -161,7 +161,7 @@ def db_construction_diff(current: Path, baseline: Path):
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        rel, limit = line.split("\\t", 1)
+        rel, limit = line.split("\t", 1)
         approved[rel] = int(limit)
 
     cur = {}
