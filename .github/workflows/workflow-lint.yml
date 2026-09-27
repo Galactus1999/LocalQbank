@@ -1,4 +1,5 @@
 name: Workflow Lint
+# Adaptive CI validator: workflow and shell contracts only.
 on:
   pull_request:
     branches: [main]
