@@ -29,6 +29,7 @@ s=s.replace('val clauses=tokens.map{"(q.text LIKE ?','val clauses=likeTokens.map
 s=s.replace('val args=tokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}','val args=likeTokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}')
 s=s.replace('return if(strictFallback.isNotEmpty() || tokens.size<=1) strictFallback else likeRows(false)','return if(strictFallback.isNotEmpty() || likeTokens.size<=1) strictFallback else likeRows(false)')
 s='\n'.join(line.replace('val args=tokens.flatMap','val args=likeTokens.flatMap',1) if 'val args=tokens.flatMap' in line else line for line in s.split('\n'))
+s=s.replace('''        }.distinct().take(8).ifEmpty { rawTokens }\n        val limit''','''        }.distinct().take(8).ifEmpty { rawTokens }\n        val hasLiteralTerm=rawTokens.any { raw -> raw.any { it == '%' || it == '_' || it == '\\\\' || it == '-' } }\n        val limit''')
 f.write_text(s)
 
 d="app/src/androidTest/java/com/localqbank/library/QBankDeletionIsolationTest.kt"
@@ -82,3 +83,4 @@ b=p/"app/build.gradle.kts";s=b.read_text();s2=s.replace("versionCode = 537","ver
 if s2==s: raise SystemExit("version target missing")
 b.write_text(s2)
 print("overlay applied")
+
