@@ -16,13 +16,10 @@ def replace_exact(path, old, new, count=None):
     p.write_text(s.replace(old, new), encoding="utf-8")
 
 q = "app/src/main/java/com/localqbank/library/QBankDb.kt"
-old_tokens = r'''        val meaningful=rawTokens.flatMap{it.replace(Regex("[^\\p{L}\\p{N}_%\\\\]+")," ").split(Regex("\\s+"))}
-            .filter{it.length>=2 && it.lowercase() !in stopWords}.distinct().take(8)
-        val tokens=if(meaningful.isNotEmpty()) meaningful else rawTokens
-'''
-new_tokens = r'''        val meaningful=rawTokens.flatMap{it.replace(Regex("[^\\p{L}\\p{N}_%\\\\]+")," ").split(Regex("\\s+"))}
-            .filter{it.length>=2 && it.lowercase() !in stopWords}.distinct().take(8)
-        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else rawTokens
+# v8.3.445 already contains the punctuation-as-token-boundary repair.
+# Split only the FTS/LIKE responsibilities here.
+old_line = "        val tokens=if(meaningful.isNotEmpty()) meaningful else rawTokens\n"
+new_lines = """        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else rawTokens
         // Preserve punctuation-bearing search terms as one literal LIKE token. Splitting
         // acid%base/question-A into FTS words is useful for recall, but doing the same for
         // LIKE destroys the user's literal %/_/\\ escape semantics and can match distractors.
@@ -30,8 +27,10 @@ new_tokens = r'''        val meaningful=rawTokens.flatMap{it.replace(Regex("[^\\
             if (raw.any { it == '%' || it == '_' || it == '\\' || it == '-' }) raw
             else raw.takeIf { it.length >= 2 && it.lowercase() !in stopWords }
         }.distinct().take(8).ifEmpty { rawTokens }
-'''
-replace_exact(q, old_tokens, new_tokens, 2)
+"""
+for _ in range(2):
+    replace_exact(q, old_line, new_lines, 1)
+
 replace_exact(q, 'val strict=read(tokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty() || tokens.size<=1) return strict\n            val broad=read(tokens.joinToString(" OR "){"$it*"})',
     'val strict=read(ftsTokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty()) return strict\n            val broad=read(ftsTokens.joinToString(" OR "){"$it*"})', 1)
 replace_exact(q, 'val clauses=tokens.map{"(q.text LIKE ?', 'val clauses=likeTokens.map{"(q.text LIKE ?', 2)
