@@ -152,28 +152,37 @@ def throwable_audit(current: Path, baseline: Path):
 
 def db_construction_diff(current: Path, baseline: Path):
     pattern = re.compile(r"\bQBankDb\s*\(")
+    manifest = ROOT / "tools" / "qbankdb-approved-sites.tsv"
+    if not manifest.is_file():
+        die("Missing QBankDb approved-site manifest.")
 
-    def counts(root):
-        out = {}
-        for p in root.rglob("*.kt"):
-            rel = str(p.relative_to(root))
-            if "/src/main/" not in rel or rel.endswith("/QBankDb.kt"):
-                continue
-            count = len(pattern.findall(read_text(p)))
-            if count:
-                out[rel] = count
-        return out
+    approved = {}
+    for raw in manifest.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        rel, limit = line.split("\\t", 1)
+        approved[rel] = int(limit)
 
-    cur = counts(current)
-    old = counts(baseline) if baseline.exists() else {}
-    new = []
+    cur = {}
+    for p in current.rglob("*.kt"):
+        rel = str(p.relative_to(current))
+        if "/src/main/" not in rel or rel.endswith("/QBankDb.kt"):
+            continue
+        count = len(pattern.findall(read_text(p)))
+        if count:
+            cur[rel] = count
+
+    unexpected = []
     for rel, count in sorted(cur.items()):
-        previous = old.get(rel, 0)
-        if count > previous:
-            new.append(f"{rel}: {previous} -> {count}")
+        limit = approved.get(rel)
+        if limit is None:
+            unexpected.append(f"{rel}: new production construction site ({count})")
+        elif count > limit:
+            unexpected.append(f"{rel}: approved {limit}, current {count}")
 
-    if new:
-        die("New production QBankDb(...) construction volume detected: " + "; ".join(new))
+    if unexpected:
+        die("Unapproved production QBankDb construction detected: " + "; ".join(unexpected))
 
 def test_presence_audit(project: Path):
     tests = []
