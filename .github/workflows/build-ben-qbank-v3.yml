@@ -159,8 +159,9 @@ allprojects {
         if (n.contains('unified-test-platform') || n.contains('utp')) {
             cfg.resolutionStrategy.eachDependency { details ->
                 if (details.requested.group == 'com.google.protobuf' &&
-                    (details.requested.name == 'protobuf-java' || details.requested.name == 'protobuf-java-util')) {
+                    (details.requested.name == 'protobuf-java' || details.requested.name == 'protobuf-java-util' || details.requested.name == 'protobuf-kotlin')) {
                     details.useVersion('4.28.3')
+                    println('[CI UTP PROTOBUF] ' + cfg.name + ': ' + details.requested.name + ' -> 4.28.3')
                     details.because('AGP UTP generated protos require protobuf RuntimeVersion; keep UTP isolated from app protobuf versions')
                 }
             }
