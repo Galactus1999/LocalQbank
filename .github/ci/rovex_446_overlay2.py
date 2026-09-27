@@ -24,7 +24,7 @@ s=s.replace('val strict=read(tokens.joinToString(" AND "){"$it*"})','val strict=
 s=s.replace('val broad=read(tokens.joinToString(" OR "){"$it*"})','val broad=read(ftsTokens.joinToString(" OR "){"$it*"})')
 s=s.replace('val strict=fts(tokens.joinToString(" AND "){"$it*"})','val strict=fts(ftsTokens.joinToString(" AND "){"$it*"})')
 s=s.replace('val broad=fts(tokens.joinToString(" OR "){"$it*"})','val broad=fts(ftsTokens.joinToString(" OR "){"$it*"})')
-s=s.replace('if(strict.isNotEmpty() || tokens.size<=1) return strict','if(strict.isNotEmpty()) return strict')
+s=s.replace('if(strict.isNotEmpty() || tokens.size<=1) return strict','if(!rawTokens.any{token->token.any{ch->ch=='%'||ch=='_'||ch=='\\'||ch=='-'}} && strict.isNotEmpty()) return strict')
 s=s.replace('val clauses=tokens.map{"(q.text LIKE ?','val clauses=likeTokens.map{"(q.text LIKE ?')
 s=s.replace('val args=tokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}','val args=likeTokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}')
 s=s.replace('return if(strictFallback.isNotEmpty() || tokens.size<=1) strictFallback else likeRows(false)','return if(strictFallback.isNotEmpty() || likeTokens.size<=1) strictFallback else likeRows(false)')
@@ -50,7 +50,7 @@ s=s.replace('val legacySource = db.importBundle("legacy-hidden", "legacy.html", 
 s=s.replace('''        ))
         val explicitSource = db.importBundle("explicit-delete", "same.html", "HTML", listOf(
 ''','''        ))
-        val legacySource = raw.rawQuery("SELECT id FROM source WHERE file_name='legacy-hidden'", null).use { it.moveToFirst(); it.getLong(0) }
+        val legacySource = raw.rawQuery("SELECT id FROM source WHERE display_name='legacy.html' LIMIT 1", null).use { it.moveToFirst(); it.getLong(0) }
         db.importBundle("explicit-delete", "same.html", "HTML", listOf(
 ''',1)
 s=s.replace('''        ))
@@ -81,4 +81,5 @@ edit(r,'''        ActivityScenario.launch<SettingsActivity>(Intent(context, Sett
 b=p/"app/build.gradle.kts";s=b.read_text();s2=s.replace("versionCode = 537","versionCode = 538").replace('versionName = "8.3.445"','versionName = "8.3.446"')
 if s2==s: raise SystemExit("version target missing")
 b.write_text(s2)
+edit(r,'onView(withText("Ben brain")).check(matches(isDisplayed()))','onView(withText("Ben brain")).check(matches(androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility(androidx.test.espresso.matcher.ViewMatchers.Visibility.VISIBLE)))',1)
 print("overlay applied")
