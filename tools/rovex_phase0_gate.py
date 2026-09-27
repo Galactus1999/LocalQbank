@@ -22,12 +22,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_PACKAGE = "com.localqbank.library"
-EXPECTED_VERSION_NAME = "8.3.438"
-EXPECTED_VERSION_CODE = "530"
+EXPECTED_VERSION_NAME = "8.3.440"
+EXPECTED_VERSION_CODE = "532"
 CURRENT_RE = re.compile(r"v(\d+)\.(\d+)\.(\d+)", re.I)
 SOURCE_ZIPS = sorted(ROOT.glob("Rovex_v*.zip"))
-EXPECTED_SOURCE_NAME = "Rovex_v8.3.438_Phase0_OfflineRootRepair_Source.zip"
-EXPECTED_SOURCE_SHA256 = "99fdb02243f4d17f6590c67cd34328d9ef8064196b830b8c95b7dd6bf91f9e52"
+EXPECTED_SOURCE_NAME = "Rovex_v8.3.440_Phase0_TestCompileRepair2_Source.zip"
+EXPECTED_SOURCE_SHA256 = "0967b15a836e4013ceea0dbbd18c54d68f3f7263e980eceb0c10253d4ebf4319"
 
 def die(msg: str) -> None:
     print(f"PHASE0 FAIL: {msg}")
