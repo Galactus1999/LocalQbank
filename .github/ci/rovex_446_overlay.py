@@ -31,7 +31,7 @@ new_lines = """        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else
 replace_exact(q, old_line, new_lines)
 
 replace_exact(q, 'val strict=read(tokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty() || tokens.size<=1) return strict\n            val broad=read(tokens.joinToString(" OR "){"$it*"})',
-    'val strict=read(ftsTokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty()) return strict\n            val broad=read(ftsTokens.joinToString(" OR "){"$it*"})')
+    'val hasLiteralSyntax=rawTokens.any{token->token.any{ch->ch==\'%\'||ch==\'_\'||ch==\'\\\\\'||ch==\'-\'}}\n            if(!hasLiteralSyntax){\n                val strict=read(ftsTokens.joinToString(" AND "){"$it*"})\n                if(strict.isNotEmpty()) return strict\n                val broad=read(ftsTokens.joinToString(" OR "){"$it*"})\n                if(broad.isNotEmpty()) return broad\n            }')
 replace_exact(q, 'val clauses=tokens.map{"(q.text LIKE ?', 'val clauses=likeTokens.map{"(q.text LIKE ?')
 replace_exact(q, 'val args=tokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}',
     'val args=likeTokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}')
@@ -60,7 +60,7 @@ replace_exact(d, '''        val legacySource = db.importBundle("legacy-hidden", 
 replace_exact(d, '''        ))
         val explicitSource = db.importBundle("explicit-delete", "same.html", "HTML", listOf(
 ''', '''        ))
-        val legacySource = raw.rawQuery("SELECT id FROM source WHERE file_name='legacy-hidden'", null).use { it.moveToFirst(); it.getLong(0) }
+        val legacySource = raw.rawQuery("SELECT id FROM source WHERE display_name='legacy.html' LIMIT 1", null).use { it.moveToFirst(); it.getLong(0) }
         db.importBundle("explicit-delete", "same.html", "HTML", listOf(
 ''', 1)
 replace_exact(d, '''        ))
@@ -91,6 +91,19 @@ replace_exact(r, '''        ActivityScenario.launch<SettingsActivity>(Intent(con
 
 r = "app/src/androidTest/java/com/localqbank/library/RovexStage7InstrumentedTest.kt"
 replace_exact(r, 'onView(withText("Ben brain")).check(matches(isDisplayed()))', 'onView(withText("Ben brain")).check(matches(androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility(androidx.test.espresso.matcher.ViewMatchers.Visibility.VISIBLE)))', 1)
+
+d = "app/src/androidTest/java/com/localqbank/library/QBankImportIdentityRegressionTest.kt"
+replace_exact(d, '''        raw.execSQL("UPDATE source SET deleting=1,delete_requested=0 WHERE id=1")
+        raw.close()
+
+        val recovered = db.sources()
+''', '''        val sourceId = raw.rawQuery("SELECT id FROM source WHERE display_name='old.html' LIMIT 1", null).use { it.moveToFirst(); it.getLong(0) }
+        raw.execSQL("UPDATE source SET deleting=1,delete_requested=0 WHERE id=?", arrayOf(sourceId))
+        raw.close()
+        db.restoreLegacyTombstonedSources()
+
+        val recovered = db.sources()
+''', 1)
 
 bp = PROJECT / "app/build.gradle.kts"
 s = bp.read_text(encoding="utf-8")
