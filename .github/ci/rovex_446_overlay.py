@@ -28,8 +28,7 @@ new_lines = """        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else
             else raw.takeIf { it.length >= 2 && it.lowercase() !in stopWords }
         }.distinct().take(8).ifEmpty { rawTokens }
 """
-for _ in range(2):
-    replace_exact(q, old_line, new_lines, 1)
+replace_exact(q, old_line, new_lines)
 
 replace_exact(q, 'val strict=read(tokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty() || tokens.size<=1) return strict\n            val broad=read(tokens.joinToString(" OR "){"$it*"})',
     'val strict=read(ftsTokens.joinToString(" AND "){"$it*"})\n            if(strict.isNotEmpty()) return strict\n            val broad=read(ftsTokens.joinToString(" OR "){"$it*"})', 1)
