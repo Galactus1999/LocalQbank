@@ -95,6 +95,14 @@ jobs:
           cd "$ADAPTIVE_PROJECT"
           ./gradlew "$ADAPTIVE_DEBUG_TASK" --no-daemon --stacktrace
 
+      - name: Build discovered Android test target
+        if: steps.tasks.outputs.android_test_task != ''
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$ADAPTIVE_PROJECT"
+          ./gradlew "$ADAPTIVE_ANDROID_TEST_TASK" --no-daemon --stacktrace
+
       - name: Discover generated APKs and application identity
         id: apk
         shell: bash
