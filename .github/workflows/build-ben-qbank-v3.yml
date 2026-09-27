@@ -133,6 +133,18 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
 
+      - name: Prepare KVM access for emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -e /dev/kvm
+          ls -l /dev/kvm
+          if ! [ -r /dev/kvm ] || ! [ -w /dev/kvm ]; then
+            sudo chmod a+rw /dev/kvm
+          fi
+          test -r /dev/kvm -a -w /dev/kvm
+          echo "KVM device is readable/writable by the emulator runner"
+
       - name: Run Android instrumented regression suite
         uses: reactivecircus/android-emulator-runner@v2
         with:
