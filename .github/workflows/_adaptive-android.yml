@@ -72,7 +72,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bash -n bash .github/ci/adaptive-discover.sh
+          bash -n .github/ci/adaptive-discover.sh
           .github/ci/adaptive-discover.sh
 
       - name: Discover Gradle tasks
