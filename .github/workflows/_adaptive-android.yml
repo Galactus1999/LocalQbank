@@ -112,7 +112,9 @@ jobs:
           else
             echo 'ADAPTIVE_HAS_TEST_APK=false' >> "$GITHUB_ENV"
           fi
-          package_id="$(aapt dump badging "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug.apk" | awk -F"'" '/^package:/{print $2; exit}')"
+          aapt="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          [[ -x "$aapt" ]] || { echo "aapt not found: $aapt"; exit 1; }
+          package_id="$("$aapt" dump badging "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug.apk" | awk -F"'" '/^package:/{print $2; exit}')"
           [[ -n "$package_id" ]] || { echo "Unable to determine application package"; exit 1; }
           echo "ADAPTIVE_APPLICATION_ID=$package_id" >> "$GITHUB_ENV"
           is_rovex=false
