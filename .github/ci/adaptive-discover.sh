@@ -55,7 +55,7 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   # source archive. It is intentionally version-specific and is applied only to
   # that exact baseline; future source archives must carry their own repairs.
   if [[ "$(basename "$candidate")" == "Rovex_v8.3.445_CI_RuntimeRegression_RootRepair_Source.zip" ]]; then
-    python3 "$ROOT/.github/ci/rovex_446_overlay.py" "$project"
+    python3 "$ROOT/.github/ci/rovex_446_overlay2.py" "$project"
   fi
 fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
