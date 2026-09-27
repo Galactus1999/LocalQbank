@@ -86,6 +86,13 @@ def source_text(root: Path) -> str:
         chunks.append(f"\n// FILE: {p.relative_to(root)}\n{read_text(p)}")
     return "\n".join(chunks)
 
+def code_text(root: Path) -> str:
+    chunks = []
+    for p in root.rglob("*"):
+        if p.is_file() and p.suffix.lower() in {".kt", ".java", ".kts", ".gradle"}:
+            chunks.append(f"\n// FILE: {p.relative_to(root)}\n{read_text(p)}")
+    return "\n".join(chunks)
+
 def version_audit(project: Path, full: str):
     if EXPECTED_PACKAGE not in full:
         die(f"Expected package/applicationId {EXPECTED_PACKAGE} not found.")
@@ -213,7 +220,7 @@ def main():
 
         full = source_text(current)
         version_audit(project, full)
-        escape_audit(full)
+        escape_audit(code_text(current))
         throwable_audit(current, baseline)
         db_construction_diff(current, baseline)
         test_presence_audit(project)
