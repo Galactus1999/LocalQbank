@@ -11,6 +11,7 @@ def edit(rel, old, new, count=-1):
 q="app/src/main/java/com/localqbank/library/QBankDb.kt"
 old='        val tokens=if(meaningful.isNotEmpty()) meaningful else rawTokens\n'
 new='''        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else rawTokens
+        val tokens=ftsTokens
         // Preserve punctuation-bearing search terms as one literal LIKE token. FTS may split
         // punctuation for recall, but LIKE must retain literal %, _, \\\\ and hyphen semantics.
         val likeTokens=rawTokens.mapNotNull { raw ->
