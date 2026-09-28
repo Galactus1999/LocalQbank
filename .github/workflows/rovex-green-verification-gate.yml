@@ -27,31 +27,3 @@ jobs:
       require_jvm: true
       require_instrumented: true
     secrets: inherit
-
-  green-gate:
-    name: GREEN — verification gate
-    needs: [phase0, android]
-    runs-on: ubuntu-latest
-    if: ${{ needs.phase0.result == 'success' && needs.android.result == 'success' }}
-    steps:
-      - name: Confirm all required verification stages passed
-        run: |
-          set -euo pipefail
-          echo "PHASE0=PASS"
-          echo "JVM_UNIT_TESTS=PASS"
-          echo "ANDROID_BUILD=PASS"
-          echo "INSTRUMENTED_EMULATOR=PASS"
-          echo "GREEN_GATE=PASS"
-
-  fail-closed:
-    name: Fail closed on verification failure
-    needs: [phase0, android]
-    runs-on: ubuntu-latest
-    if: ${{ always() && (needs.phase0.result != 'success' || needs.android.result != 'success') }}
-    steps:
-      - name: Reject non-green verification
-        run: |
-          echo "Verification gate did not pass."
-          echo "Phase 0: ${{ needs.phase0.result }}"
-          echo "Android: ${{ needs.android.result }}"
-          exit 1
