@@ -13,6 +13,7 @@ old='        val tokens=if(meaningful.isNotEmpty()) meaningful else rawTokens\n'
 new='''        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else rawTokens
         // Preserve punctuation-bearing search terms as one literal LIKE token. FTS may split
         // punctuation for recall, but LIKE must retain literal %, _, \\\\ and hyphen semantics.
+        val tokens=ftsTokens
         val likeTokens=rawTokens.mapNotNull { raw ->
             if (raw.any { it == '%' || it == '_' || it == '\\\\' || it == '-' }) raw
             else raw.takeIf { it.length >= 2 && it.lowercase() !in stopWords }
