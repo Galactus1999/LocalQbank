@@ -32,6 +32,15 @@ s='\n'.join(line.replace('val args=tokens.flatMap','val args=likeTokens.flatMap'
 f.write_text(s)
 
 d="app/src/androidTest/java/com/localqbank/library/QBankDeletionIsolationTest.kt"
+edit(d,'''import org.junit.Assert.assertTrue
+import org.junit.Before''','''import org.junit.Assert.assertTrue
+import org.junit.After
+import org.junit.Before''',1)
+edit(d,'''    @Test
+    fun deleteRequestHidesImmediatelyBeforePhysicalCleanup()''','''    @After fun closeRawDatabase() { runCatching { raw.close() } }
+
+    @Test
+    fun deleteRequestHidesImmediatelyBeforePhysicalCleanup()''',1)
 edit(d,'''        assertEquals(1, db.questionCount("delete-test"))
         assertEquals(1, db.questionCount("keep-test"))
 ''','''        assertEquals(1, raw.rawQuery("SELECT COUNT(*) FROM question WHERE test_id='delete-test'", null).use { it.moveToFirst(); it.getInt(0) })
@@ -81,5 +90,5 @@ edit(r,'''        ActivityScenario.launch<SettingsActivity>(Intent(context, Sett
 b=p/"app/build.gradle.kts";s=b.read_text();s2=s.replace("versionCode = 537","versionCode = 538").replace('versionName = "8.3.445"','versionName = "8.3.446"')
 if s2==s: raise SystemExit("version target missing")
 b.write_text(s2)
-edit(r,'onView(withText("Ben brain")).check(matches(isDisplayed()))','onView(withText("Ben brain")).check(matches(androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility(androidx.test.espresso.matcher.ViewMatchers.Visibility.VISIBLE)))',1)
+edit(r,'onView(withText("Ben brain")).check(matches(isDisplayed()))','onView(withText("Ben brain")).perform(androidx.test.espresso.action.ViewActions.scrollTo()).check(matches(isDisplayed()))',1)
 print("overlay applied")
