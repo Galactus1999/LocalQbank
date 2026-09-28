@@ -28,7 +28,7 @@ s=s.replace('val broad=read(tokens.joinToString(" OR "){"$it*"})','val broad=rea
 s=s.replace('val strict=fts(tokens.joinToString(" AND "){"$it*"})','val strict=fts(ftsTokens.joinToString(" AND "){"$it*"})')
 s=s.replace('val broad=fts(tokens.joinToString(" OR "){"$it*"})','val broad=fts(ftsTokens.joinToString(" OR "){"$it*"})')
 s=s.replace("if(strict.isNotEmpty()) return strict","if(strict.isNotEmpty()) return strict")
-s=s.replace("if(broad.isNotEmpty()) return broad","if(broad.isNotEmpty()) return broad")
+s=s.replace("if(!hasLiteralSearchSyntax && broad.isNotEmpty()) return broad","if(broad.isNotEmpty()) return broad")
 s=s.replace('val args=tokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}','val args=likeTokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}')
 s=s.replace('return if(strictFallback.isNotEmpty() || likeTokens.size<=1) strictFallback else likeRows(false)','if (hasLiteralSearchSyntax) return strictFallback\n        return if(strictFallback.isNotEmpty() || likeTokens.size<=1) strictFallback else likeRows(false)',2)
 s='\n'.join(line.replace('val args=tokens.flatMap','val args=likeTokens.flatMap',1) if 'val args=tokens.flatMap' in line else line for line in s.split('\n'))
