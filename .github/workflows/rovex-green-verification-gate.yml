@@ -24,6 +24,7 @@ jobs:
       # Blank source_file: adaptive discovery selects the current repository source/archive.
       # Core CI must not depend on optional signing or Qualcomm/NPU capabilities.
       strict: false
+      require_jvm: true
       require_instrumented: true
     secrets: inherit
 
