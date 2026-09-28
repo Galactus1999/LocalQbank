@@ -21,8 +21,10 @@ jobs:
     needs: phase0
     uses: ./.github/workflows/_adaptive-android.yml
     with:
-      source_file: Rovex_v8.3.465_AnswerAudio_CelebrationVisibility_Source.zip
-      strict: true
+      # Blank source_file: adaptive discovery selects the current repository source/archive.
+      # Core CI must not depend on optional signing or Qualcomm/NPU capabilities.
+      strict: false
+      require_instrumented: true
     secrets: inherit
 
   green-gate:
