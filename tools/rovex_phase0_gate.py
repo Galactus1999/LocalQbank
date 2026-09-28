@@ -205,38 +205,59 @@ def throwable_audit(current: Path, baseline: Path):
         die("New catch(Throwable) sites introduced relative to v8.3.435: " + ", ".join(f"{p}:{k}" for p,k in new))
 
 def db_construction_diff(current: Path, baseline: Path):
+    """Diff-aware QBankDb audit.
+
+    Compare the selected release with the previous source archive. The static
+    manifest records policy for newly introduced sites; it is not a raw-count
+    baseline for historical code.
+    """
     pattern = re.compile(r"\bQBankDb\s*\(")
     manifest = ROOT / "tools" / "qbankdb-approved-sites.tsv"
     if not manifest.is_file():
         die("Missing QBankDb approved-site manifest.")
 
-    approved = {}
+    approved = set()
     for raw in manifest.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        rel, limit = line.split("\t", 1)
-        approved[rel] = int(limit)
+        rel, _limit = line.split("\t", 1)
+        approved.add(rel)
 
-    cur = {}
-    for p in current.rglob("*.kt"):
-        rel = str(p.relative_to(current))
-        if "/src/main/" not in rel or rel.endswith("/QBankDb.kt"):
-            continue
-        count = len(pattern.findall(read_text(p)))
-        if count:
-            cur[rel] = count
+    def counts(root: Path):
+        out = {}
+        if not root.exists():
+            return out
+        for p in root.rglob("*.kt"):
+            rel = str(p.relative_to(root))
+            if "/src/main/" not in rel or rel.endswith("/QBankDb.kt"):
+                continue
+            count = len(pattern.findall(read_text(p)))
+            if count:
+                out[rel] = count
+        return out
+
+    cur = counts(current)
+    old = counts(baseline)
+    if not old:
+        die("No previous source archive available for diff-aware QBankDb audit.")
 
     unexpected = []
     for rel, count in sorted(cur.items()):
-        limit = approved.get(rel)
-        if limit is None:
-            unexpected.append(f"{rel}: new production construction site ({count})")
-        elif count > limit:
-            unexpected.append(f"{rel}: approved {limit}, current {count}")
+        previous = old.get(rel, 0)
+        if count > previous:
+            added = count - previous
+            if rel not in approved:
+                unexpected.append(
+                    f"{rel}: {added} new production QBankDb construction occurrence(s); site is not approved"
+                )
+            else:
+                unexpected.append(
+                    f"{rel}: {added} new production QBankDb construction occurrence(s); review required"
+                )
 
     if unexpected:
-        die("Unapproved production QBankDb construction detected: " + "; ".join(unexpected))
+        die("New production QBankDb construction detected: " + "; ".join(unexpected))
 
 def test_presence_audit(project: Path):
     tests = []
@@ -298,9 +319,20 @@ def main():
 
         # The source archive is already the offline-corrected artifact.
         # CI audits it as-is and must never mutate application source online.
-        baseline_zips = [p for p in SOURCE_ZIPS if "v8.3.435" in p.name.lower() and valid_source_zip(p)]
-        if baseline_zips:
-            extract(baseline_zips[0], baseline)
+        # Use the highest valid lower-version source archive as the diff baseline.
+        current_info = archive_version_info(src)
+        previous_candidates = []
+        for candidate in SOURCE_ZIPS:
+            if candidate == src or not valid_source_zip(candidate):
+                continue
+            info = archive_version_info(candidate)
+            if info is not None and current_info is not None and info[1] < current_info[1]:
+                previous_candidates.append((info[1], info[0], candidate))
+        if previous_candidates:
+            previous_candidates.sort(key=lambda x: (x[0], x[1], x[2].name), reverse=True)
+            previous_zip = previous_candidates[0][2]
+            print(f"PHASE0 DB BASELINE: {previous_zip.name}")
+            extract(previous_zip, baseline)
 
         full = source_text(current)
         source_version, source_code = version_audit(project, full, src)
