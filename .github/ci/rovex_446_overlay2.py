@@ -68,7 +68,7 @@ s=s.replace('''        ))
         assertTrue(legacySource > 0)
         assertTrue(explicitSource > 0)
 ''','''        ))
-        val explicitSource = raw.rawQuery("SELECT id FROM source WHERE file_name='explicit-delete'", null).use { it.moveToFirst(); it.getLong(0) }
+        val explicitSource = raw.rawQuery("SELECT id FROM source WHERE display_name='same.html'", null).use { it.moveToFirst(); it.getLong(0) }
         assertTrue(legacySource > 0)
         assertTrue(explicitSource > 0)
 ''',1)
@@ -89,7 +89,7 @@ edit(r,'''        ActivityScenario.launch<SettingsActivity>(Intent(context, Sett
         }
 ''',1)
 
-b=p/"app/build.gradle.kts";s=b.read_text();s2=s.replace("versionCode = 537","versionCode = 538").replace('versionName = "8.3.445"','versionName = "8.3.446"')
+b=p/"app/build.gradle.kts";s=b.read_text();s2=s.replace("versionCode = 537","versionCode = 539").replace('versionName = "8.3.445"','versionName = "8.3.447"')
 if s2==s: raise SystemExit("version target missing")
 b.write_text(s2)
 edit(r,'onView(withText("Ben brain")).check(matches(isDisplayed()))','onView(withText("Ben brain")).perform(androidx.test.espresso.action.ViewActions.scrollTo()).check(matches(isDisplayed()))',1)
