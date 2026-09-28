@@ -30,7 +30,7 @@ s=s.replace("if(broad.isNotEmpty()) return broad","if(broad.isNotEmpty()) return
 s=s.replace('val args=tokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}','val args=likeTokens.flatMap{val like="%\${escapeLike(it)}%";List(12){like}}')
 s=s.replace('return if(strictFallback.isNotEmpty() || likeTokens.size<=1) strictFallback else likeRows(false)','return if(strictFallback.isNotEmpty() || likeTokens.size<=1) strictFallback else likeRows(false)')
 s='\n'.join(line.replace('val args=tokens.flatMap','val args=likeTokens.flatMap',1) if 'val args=tokens.flatMap' in line else line for line in s.split('\n'))
-s=s.replace('val safeLimit=resultLimit.coerceIn(1,1200)','val tokens=ftsTokens\n        val safeLimit=resultLimit.coerceIn(1,1200)',1)
+s=s.replace('val safeLimit=resultLimit.coerceIn(1,1200)','val safeLimit=resultLimit.coerceIn(1,1200)',1)
 f.write_text(s)
 
 d="app/src/androidTest/java/com/localqbank/library/QBankDeletionIsolationTest.kt"
