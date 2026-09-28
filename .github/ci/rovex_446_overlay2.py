@@ -18,6 +18,7 @@ new='''        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else rawToke
             if (raw.any { it == '%' || it == '_' || it == '\\\\' || it == '-' }) raw
             else raw.takeIf { it.length >= 2 && it.lowercase() !in stopWords }
         }.distinct().take(8).ifEmpty { rawTokens }
+        val tokens=ftsTokens
 '''
 edit(q,old,new,2)
 f=p/q; s=f.read_text()
