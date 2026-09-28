@@ -111,4 +111,42 @@ s2 = s.replace("versionCode = 537", "versionCode = 538").replace('versionName = 
 if s2 == s:
     raise SystemExit("overlay version bump target not found")
 bp.write_text(s2, encoding="utf-8")
+
+# v8.3.446 runtime hardening: remove only deleted question IDs from FTS so stale
+# rows cannot alias a reused AUTOINCREMENT question ID after import/reimport.
+replace_exact(q, '''                        db.delete("option_item", "question_id IN ($placeholders)", args)
+                        db.delete("question_image", "question_id IN ($placeholders)", args)''',
+'''                        runCatching { db.delete("question_fts", "question_id IN ($placeholders)", args) }
+                        db.delete("option_item", "question_id IN ($placeholders)", args)
+                        db.delete("question_image", "question_id IN ($placeholders)", args)''', 1)
+
+# Legacy hidden sources must become visible again on catalog reads; explicit delete intent is
+# still protected by restoreLegacyTombstonedSources().
+replace_exact(q, '''    fun sources(): List<Source> =
+        db.rawQuery("SELECT id,COALESCE(display_name,file_name),provider,COALESCE(series_number,'') FROM source WHERE deleting=0 ORDER BY imported_at DESC",null).use{c->buildList{while(c.moveToNext())add(Source(c.getLong(0),c.getString(1),c.getString(2),c.getString(3)))}}''',
+'''    fun sources(): List<Source> {
+        restoreLegacyTombstonedSources()
+        return db.rawQuery("SELECT id,COALESCE(display_name,file_name),provider,COALESCE(series_number,'') FROM source WHERE deleting=0 ORDER BY imported_at DESC",null).use{c->buildList{while(c.moveToNext())add(Source(c.getLong(0),c.getString(1),c.getString(2),c.getString(3)))}}
+    }''', 1)
+
+d = "app/src/androidTest/java/com/localqbank/library/QBankDeletionIsolationTest.kt"
+replace_exact(d, "import org.junit.Assert.assertTrue\nimport org.junit.Before", "import org.junit.Assert.assertTrue\nimport org.junit.After\nimport org.junit.Before", 1)
+replace_exact(d, "    @Before fun setUp() {", "    @After fun tearDown() { if (::raw.isInitialized) raw.close() }\n\n    @Before fun setUp() {", 1)
+
+# Do not require an off-screen Settings card to have a non-empty viewport; scroll to it first.
+replace_exact(r, 'onView(withText("Ben brain")).check(matches(isDisplayed()))', 'onView(withText("Ben brain")).perform(androidx.test.espresso.action.ViewActions.scrollTo()).check(matches(isDisplayed()))', 1)
+
+# Legacy test must not assume the imported source gets numeric id=1.
+replace_exact(d, '''        raw.execSQL("UPDATE source SET deleting=1,delete_requested=0 WHERE id=1")
+        raw.close()
+
+        val recovered = db.sources()
+''',
+'''        val sourceId = raw.rawQuery("SELECT id FROM source WHERE file_name=? LIMIT 1", arrayOf("rvx-uri-legacy")).use { it.moveToFirst(); it.getLong(0) }
+        raw.execSQL("UPDATE source SET deleting=1,delete_requested=0 WHERE id=?", arrayOf(sourceId))
+        raw.close()
+
+        val recovered = db.sources()
+''', 1)
+
 print("Rovex v8.3.446 overlay applied")
