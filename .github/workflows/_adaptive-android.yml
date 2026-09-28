@@ -8,6 +8,11 @@ on:
         required: false
         default: ""
         type: string
+      require_jvm:
+        description: "Require a discovered JVM unit-test task and execute it."
+        required: false
+        default: false
+        type: boolean
       require_instrumented:
         description: "Require an Android test APK and execute instrumentation."
         required: false
@@ -37,6 +42,7 @@ permissions:
 env:
   SOURCE_FILE: "${{ inputs.source_file }}"
   STRICT_MODE: "${{ inputs.strict }}"
+  REQUIRE_JVM: "${{ inputs.require_jvm }}"
   REQUIRE_INSTRUMENTED: "${{ inputs.require_instrumented }}"
   EMULATOR_PORT: "5554"
 
@@ -85,6 +91,13 @@ jobs:
         id: tasks
         shell: bash
         run: bash .github/ci/adaptive-gradle-tasks.sh
+
+      - name: Reject missing JVM unit-test task when required
+        if: steps.tasks.outputs.unit_task == '' && env.REQUIRE_JVM == 'true'
+        shell: bash
+        run: |
+          echo "REQUIRED VERIFICATION MISSING: no JVM unit-test task was discovered."
+          exit 1
 
       - name: Run discovered JVM tests
         if: steps.tasks.outputs.unit_task != ''
