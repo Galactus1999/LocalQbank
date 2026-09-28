@@ -12,8 +12,9 @@ q="app/src/main/java/com/localqbank/library/QBankDb.kt"
 old='        val tokens=if(meaningful.isNotEmpty()) meaningful else rawTokens\n'
 new='''        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else rawTokens
         val tokens=ftsTokens
-        // Preserve punctuation-bearing search terms as one literal LIKE token. FTS may split
-        // punctuation for recall, but LIKE must retain literal %, _, \\\\ and hyphen semantics.
+        // Literal punctuation must bypass FTS tokenization. This preserves exact search semantics
+        // for %, _, backslash, and hyphen-bearing question/import identities.
+        val hasLiteralSearchSyntax=rawTokens.any { raw -> raw.any { it == '%' || it == '_' || it == '\\\\' || it == '-' } }
         val likeTokens=rawTokens.mapNotNull { raw ->
             if (raw.any { it == '%' || it == '_' || it == '\\\\' || it == '-' }) raw
             else raw.takeIf { it.length >= 2 && it.lowercase() !in stopWords }
@@ -22,9 +23,9 @@ new='''        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else rawToke
 edit(q,old,new,2)
 f=p/q; s=f.read_text()
 s=s.replace('val clauses=tokens.map','val clauses=likeTokens.map')
-s=s.replace('val strict=read(tokens.joinToString(" AND "){"$it*"})','val strict=read(ftsTokens.joinToString(" AND "){"$it*"})')
+s=s.replace('val strict=read(tokens.joinToString(" AND "){"$it*"})','if (hasLiteralSearchSyntax) return likeRows(true)\n            val strict=read(ftsTokens.joinToString(" AND "){"$it*"})')
 s=s.replace('val broad=read(tokens.joinToString(" OR "){"$it*"})','val broad=read(ftsTokens.joinToString(" OR "){"$it*"})')
-s=s.replace('val strict=fts(tokens.joinToString(" AND "){"$it*"})','val strict=fts(ftsTokens.joinToString(" AND "){"$it*"})')
+s=s.replace('val strict=fts(tokens.joinToString(" AND "){"$it*"})','if (hasLiteralSearchSyntax) return likeRows(true)\n            val strict=fts(ftsTokens.joinToString(" AND "){"$it*"})')
 s=s.replace('val broad=fts(tokens.joinToString(" OR "){"$it*"})','val broad=fts(ftsTokens.joinToString(" OR "){"$it*"})')
 s=s.replace("if(strict.isNotEmpty()) return strict","if(strict.isNotEmpty()) return strict")
 s=s.replace("if(broad.isNotEmpty()) return broad","if(broad.isNotEmpty()) return broad")
