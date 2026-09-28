@@ -21,6 +21,7 @@ new='''        val ftsTokens=if(meaningful.isNotEmpty()) meaningful else rawToke
 '''
 edit(q,old,new,2)
 f=p/q; s=f.read_text()
+s=s.replace('val clauses=tokens.map','val clauses=likeTokens.map')
 s=s.replace('val strict=read(tokens.joinToString(" AND "){"$it*"})','val strict=read(ftsTokens.joinToString(" AND "){"$it*"})')
 s=s.replace('val broad=read(tokens.joinToString(" OR "){"$it*"})','val broad=read(ftsTokens.joinToString(" OR "){"$it*"})')
 s=s.replace('val strict=fts(tokens.joinToString(" AND "){"$it*"})','val strict=fts(ftsTokens.joinToString(" AND "){"$it*"})')
@@ -89,7 +90,7 @@ edit(r,'''        ActivityScenario.launch<SettingsActivity>(Intent(context, Sett
         }
 ''',1)
 
-b=p/"app/build.gradle.kts";s=b.read_text();s2=s.replace("versionCode = 537","versionCode = 539").replace('versionName = "8.3.445"','versionName = "8.3.447"')
+b=p/"app/build.gradle.kts";s=b.read_text();s2=s.replace("versionCode = 537","versionCode = 540").replace('versionName = "8.3.445"','versionName = "8.3.448"')
 if s2==s: raise SystemExit("version target missing")
 b.write_text(s2)
 edit(r,'onView(withText("Ben brain")).check(matches(isDisplayed()))','onView(withText("Ben brain")).perform(androidx.test.espresso.action.ViewActions.scrollTo()).check(matches(isDisplayed()))',1)
