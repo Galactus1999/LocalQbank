@@ -34,11 +34,18 @@ for dp,dn,fn in os.walk(root):
             except Exception: pass
             items.append((code,os.path.getmtime(p),p))
 if items:
-    # Prefer an explicit compile-repair archive over the original move archive when
-# multiple archives expose the same highest versionCode. This prevents CI from
-# silently rebuilding a known-broken move archive after a compile repair.
-items.sort(key=lambda x: (x[0], 1 if "CompileRepair_Source.zip" in os.path.basename(x[2]) else 0, x[1], x[2]), reverse=True)
-print(items[0][2])
+    # Prefer a compile-repair archive over the original move archive when
+    # multiple archives expose the same highest versionCode.
+    items.sort(
+        key=lambda x: (
+            x[0],
+            1 if "CompileRepair_Source.zip" in os.path.basename(x[2]) else 0,
+            x[1],
+            x[2],
+        ),
+        reverse=True,
+    )
+    print(items[0][2])
 PY
 )"; fi
 project="$ROOT"
