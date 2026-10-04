@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - rovex-v8.3.532-social-transport-ci
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -67,7 +70,7 @@ jobs:
           set -e
           rm -rf build_input
           mkdir build_input
-          zip -qr build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip             app build.gradle.kts settings.gradle.kts gradle gradle.properties             firestore.rules firebase.json .firebaserc gradlew gradlew.bat             gradle/libs.versions.toml 2>/dev/null || true
+          zip -qr build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip             app build.gradle.kts settings.gradle.kts gradle gradle.properties             firestore.rules firebase.json .firebaserc gradlew gradlew.bat             2>/dev/null
           sha256sum build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip |             tee build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip.sha256
 
       - name: Upload CI proof artifacts
