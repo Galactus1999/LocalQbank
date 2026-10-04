@@ -42,8 +42,10 @@ jobs:
           grep -n 'versionCode\|versionName' app/build.gradle.kts
 
       - name: Prepare Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
           sdkmanager "platform-tools" "platforms;android-37" "build-tools;37.0.0"
 
       - name: Kotlin compile gate
