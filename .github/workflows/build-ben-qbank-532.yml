@@ -32,7 +32,7 @@ jobs:
           set -e
           mkdir -p build_input
           curl -fL --retry 3             "https://raw.githubusercontent.com/Galactus1999/LocalQbank/main/Rovex_v8.3.531_RovexOnline_SocialAccessRepair_Source.zip"             -o build_input/Rovex_v8.3.531.zip
-          unzip -q build_input/Rovex_v8.3.531.zip -d .
+          unzip -oq build_input/Rovex_v8.3.531.zip -d .
           test -f app/build.gradle.kts
           test -f gradlew
 
@@ -71,7 +71,7 @@ jobs:
           rm -rf build_input
           mkdir build_input
           zip -qr build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip             app build.gradle.kts settings.gradle.kts gradle gradle.properties             firestore.rules firebase.json .firebaserc gradlew gradlew.bat             2>/dev/null
-          sha256sum build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip |             tee build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip.sha256
+          sha256sum build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip             | tee build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip.sha256
 
       - name: Upload CI proof artifacts
         uses: actions/upload-artifact@v6
