@@ -1,0 +1,82 @@
+name: Build Ben QBank - v8.3.532 Social Transport
+
+on:
+  push:
+    branches:
+      - rovex-v8.3.532-social-transport-ci
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-532:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout CI branch
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Materialize 8.3.531 canonical source
+        run: |
+          set -e
+          mkdir -p build_input
+          curl -fL --retry 3             "https://raw.githubusercontent.com/Galactus1999/LocalQbank/main/Rovex_v8.3.531_RovexOnline_SocialAccessRepair_Source.zip"             -o build_input/Rovex_v8.3.531.zip
+          unzip -q build_input/Rovex_v8.3.531.zip -d .
+          test -f app/build.gradle.kts
+          test -f gradlew
+
+      - name: Apply deterministic 8.3.532 repair
+        run: |
+          python3 ci/patch_8_3_532.py
+          grep -n 'versionCode\|versionName' app/build.gradle.kts
+
+      - name: Prepare Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platform-tools" "platforms;android-37" "build-tools;37.0.0"
+
+      - name: Kotlin compile gate
+        run: ./gradlew :app:compileDebugKotlin --no-daemon --stacktrace
+
+      - name: Unit test gate
+        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+
+      - name: Debug APK gate
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Verify APK identity
+        run: |
+          set -e
+          grep -q 'versionCode = 622' app/build.gradle.kts
+          grep -q 'versionName = "8.3.532"' app/build.gradle.kts
+          APK=$(find app/build/outputs/apk/debug -type f -name '*.apk' | head -n 1)
+          test -n "$APK"
+          echo "APK=$APK"
+          sha256sum "$APK" | tee build_532_apk.sha256
+
+      - name: Package CI-generated 8.3.532 source
+        run: |
+          set -e
+          rm -rf build_input
+          mkdir build_input
+          zip -qr build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip             app build.gradle.kts settings.gradle.kts gradle gradle.properties             firestore.rules firebase.json .firebaserc gradlew gradlew.bat             gradle/libs.versions.toml 2>/dev/null || true
+          sha256sum build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip |             tee build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip.sha256
+
+      - name: Upload CI proof artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: Rovex-8.3.532-CI-Proof
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            build_532_apk.sha256
+            build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip
+            build_input/Rovex_v8.3.532_RovexOnline_SocialTransportRepair_Source.zip.sha256
+          if-no-files-found: error
