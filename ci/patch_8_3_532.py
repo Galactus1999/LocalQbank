@@ -210,7 +210,13 @@ checks = [
 ]
 for i, ok in enumerate(checks, 1):
     if not ok: raise SystemExit(f"ERROR static check {i}")
-if "import com.google.firebase.firestore.DocumentReference" not in src1:\n    src1 = src1.replace("import com.google.firebase.firestore.FieldValue\\n", "import com.google.firebase.firestore.FieldValue\\nimport com.google.firebase.firestore.DocumentReference\\n", 1)\nSRC.write_text(src1); RULES.write_text(rules1); GRADLE.write_text(gradle1)
+if "import com.google.firebase.firestore.DocumentReference" not in src1:
+    src1 = src1.replace(
+        "import com.google.firebase.firestore.FieldValue\n",
+        "import com.google.firebase.firestore.FieldValue\nimport com.google.firebase.firestore.DocumentReference\n",
+        1
+    )
+SRC.write_text(src1); RULES.write_text(rules1); GRADLE.write_text(gradle1)
 print("PASS v8.3.532 social transport patch")
 print("PASS versionCode=622 versionName=8.3.532")
 print("PASS sender has no client friendCodes lookup")
