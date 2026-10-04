@@ -13,6 +13,9 @@ for p in (SRC, ACT, RULES, GRADLE):
         raise SystemExit(f"ERROR missing {p}")
 
 src0, act0, rules0, gradle0 = SRC.read_text(), ACT.read_text(), RULES.read_text(), GRADLE.read_text()
+
+# Ensure the generated RovexOnline.kt has the Firestore DocumentReference import used by the mailbox materializer.
+src1_import = "import com.google.firebase.firestore.DocumentReference"
 if gradle0.count("versionCode = 621") != 1 or gradle0.count('versionName = "8.3.531"') != 1:
     raise SystemExit("ERROR: input is not clean 8.3.531/621")
 if any("friendCodes" in ln and ".get()" in ln and not ln.lstrip().startswith("//") for ln in act0.splitlines()):
@@ -207,7 +210,7 @@ checks = [
 ]
 for i, ok in enumerate(checks, 1):
     if not ok: raise SystemExit(f"ERROR static check {i}")
-SRC.write_text(src1); RULES.write_text(rules1); GRADLE.write_text(gradle1)
+if "import com.google.firebase.firestore.DocumentReference" not in src1:\n    src1 = src1.replace("import com.google.firebase.firestore.FieldValue\\n", "import com.google.firebase.firestore.FieldValue\\nimport com.google.firebase.firestore.DocumentReference\\n", 1)\nSRC.write_text(src1); RULES.write_text(rules1); GRADLE.write_text(gradle1)
 print("PASS v8.3.532 social transport patch")
 print("PASS versionCode=622 versionName=8.3.532")
 print("PASS sender has no client friendCodes lookup")
