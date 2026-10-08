@@ -131,14 +131,6 @@ def main() -> int:
     if old_action not in s:
         raise SystemExit("Ren action-button baseline block not found")
     s = s.replace(old_action, new_action, 1)
-
-    old_open = """setTextColor(ThemeManager.bg(this@RenActivity))
-            background = UiDrawableUtils.roundedDrawable(this@RenActivity, ThemeManager.accent(this@RenActivity), 12f)"""
-    new_open = """RovexVisualButtonStyle.apply(this, this@RenActivity, emphasized = true)"""
-    if old_open not in s:
-        raise SystemExit("Ren emphasized-button baseline block not found")
-    s = s.replace(old_open, new_open, 1)
-    s = s.replace("textSize = 10.5f", "textSize = RovexVisualTypography.ACTION_EMPHASIS_SP", 1)
     g = g.replace(EXPECTED_CODE, "versionCode = 703", 1).replace(EXPECTED_VERSION, 'versionName = "8.3.617"', 1)
     gradle.write_text(g, encoding="utf-8")
     ren.write_text(s, encoding="utf-8")
