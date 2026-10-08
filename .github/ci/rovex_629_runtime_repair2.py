@@ -54,7 +54,12 @@ def main():
     }'''
     s=replace_once(s,old2,new2,"rawQuestionPosition")
     # questionById must resolve by exact DB id because questionAt is now ordinal.
-    old3='''    fun questionById(questionId: Long): Question? = db.rawQuery(
+    old3='''    fun rawQuestionPosition(testId: String, questionId: Long): Int? = db.rawQuery(
+        "SELECT COUNT(*) FROM question q JOIN test t ON t.id=q.test_id JOIN source s ON s.id=t.source_id AND s.deleting=0 WHERE q.test_id=? AND q.position < (SELECT position FROM question WHERE id=? AND test_id=? LIMIT 1)",
+        arrayOf(testId, questionId.toString(), testId)
+    ).use { c -> if (c.moveToFirst()) c.getInt(0) else null }
+
+    fun questionById(questionId: Long): Question? = db.rawQuery(
         "SELECT q.test_id,q.position FROM question q JOIN test t ON t.id=q.test_id JOIN source s ON s.id=t.source_id WHERE q.id=? AND s.deleting=0 LIMIT 1",
         arrayOf(questionId.toString())
     ).use { c -> if (!c.moveToFirst()) null else questionAt(c.getString(0), c.getInt(1)) }'''
@@ -98,12 +103,10 @@ def main():
     anchor='''override fun onResume() {
         super.onResume()'''
     insert='''    override fun onSaveInstanceState(outState: Bundle) {
-        if (::quizViewModel.isInitialized) {
-            outState.putString("rovex.quiz.testId", quizViewModel.state.testId)
-            outState.putInt("rovex.quiz.position", quizViewModel.state.position)
-            outState.putString("rovex.quiz.stableKey", quizViewModel.state.currentQuestion?.stableKey)
-            outState.putInt("rovex.quiz.questionCount", quizViewModel.state.questionCount)
-        }
+        outState.putString("rovex.quiz.testId", quizViewModel.state.testId)
+        outState.putInt("rovex.quiz.position", quizViewModel.state.position)
+        outState.putString("rovex.quiz.stableKey", quizViewModel.state.currentQuestion?.stableKey)
+        outState.putInt("rovex.quiz.questionCount", quizViewModel.state.questionCount)
         super.onSaveInstanceState(outState)
     }
 
