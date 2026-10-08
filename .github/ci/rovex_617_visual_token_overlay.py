@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Apply the v8.3.617 visual-token phase to the audited v8.3.615 source archive."""
 from __future__ import annotations
+import re
 import sys
 from pathlib import Path
 
@@ -121,22 +122,35 @@ def main() -> int:
     s = ren.read_text(encoding="utf-8")
     if "RovexVisualButtonStyle.apply" in s:
         raise SystemExit("v8.3.617 overlay appears already applied; refusing duplicate patch")
-    old_action = """text=label; textSize=11.5f; gravity = Gravity.CENTER
-            setTextColor(ThemeManager.text(this@RenActivity))
-            background=UiDrawableUtils.roundedDrawable(this@RenActivity,ThemeManager.elevated(this@RenActivity),11f)
-            setOnClickListener{click()}"""
-    new_action = """text=label; textSize=RovexVisualTypography.ACTION_SP; gravity = Gravity.CENTER
+    action_pattern = re.compile(
+        r"""text=label;\s*textSize=11\.5f;\s*gravity = Gravity\.CENTER\s*
+            setTextColor\(ThemeManager\.text\(this@RenActivity\)\)\s*
+            background=UiDrawableUtils\.roundedDrawable\(this@RenActivity,ThemeManager\.elevated\(this@RenActivity\),11f\)\s*
+            setOnClickListener\{click\(\)\}""",
+        re.X,
+    )
+    s, action_count = action_pattern.subn(
+        """text=label; textSize=RovexVisualTypography.ACTION_SP; gravity = Gravity.CENTER
             RovexVisualButtonStyle.apply(this, this@RenActivity)
-            setOnClickListener{click()}"""
-    if old_action not in s:
+            setOnClickListener{click()}""",
+        s,
+        count=1,
+    )
+    if action_count != 1:
         raise SystemExit("Ren action-button baseline block not found")
-    s = s.replace(old_action, new_action, 1)
-    old_open = """setTextColor(ThemeManager.bg(this@RenActivity))
-            background = UiDrawableUtils.roundedDrawable(this@RenActivity, ThemeManager.accent(this@RenActivity), 12f)"""
-    new_open = """RovexVisualButtonStyle.apply(this, this@RenActivity, emphasized = true)"""
-    if old_open not in s:
+
+    open_pattern = re.compile(
+        r"""setTextColor\(ThemeManager\.bg\(this@RenActivity\)\)\s*
+            background = UiDrawableUtils\.roundedDrawable\(this@RenActivity, ThemeManager\.accent\(this@RenActivity\), 12f\)""",
+        re.X,
+    )
+    s, open_count = open_pattern.subn(
+        "RovexVisualButtonStyle.apply(this, this@RenActivity, emphasized = true)",
+        s,
+        count=1,
+    )
+    if open_count != 1:
         raise SystemExit("Ren emphasized-button baseline block not found")
-    s = s.replace(old_open, new_open, 1)
     s = s.replace("textSize = 10.5f", "textSize = RovexVisualTypography.ACTION_EMPHASIS_SP", 1)
     g = g.replace(EXPECTED_CODE, "versionCode = 703", 1).replace(EXPECTED_VERSION, 'versionName = "8.3.617"', 1)
     gradle.write_text(g, encoding="utf-8")
