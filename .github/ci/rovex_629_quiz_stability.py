@@ -56,7 +56,7 @@ def main():
 
     p=one(root,"QuizMenuController.kt")
     s=p.read_text()
-    s=s.replace("quizViewModel.persistPosition();popup.dismiss();showQuestion()","quizViewModel.persistPosition();popup.dismiss();updateBookmarkButton()",2)
+    s=s.replace("quizViewModel.persistPosition();popup.dismiss();showQuestion()","quizViewModel.persistPosition();popup.dismiss();quizViewModel.state.currentQuestion?.let(updateBookmark)",2)
     p.write_text(s)
 
     p=one(root,"QuizActivity.kt")
