@@ -82,19 +82,92 @@ fi
 set -e
 cat "$LOG"
 
-if [[ "$adb_rc" -ne 0 ]]; then
-  echo "ADB instrumentation invocation failed: rc=$adb_rc"
-  exit "$adb_rc"
-fi
-
 if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG"; then
   echo "Instrumented tests reported runner failure or abort."
   exit 1
 fi
 
-if grep -Eq "^INSTRUMENTATION_STATUS_CODE: -2\$" "$LOG"; then
-  echo "Instrumentation runner reported an abort/fatal status."
+if grep -Eq "^INSTRUMENTATION_STATUS_CODE: -1\$|^INSTRUMENTATION_STATUS_CODE: -2\$" "$LOG"; then
+  echo "Instrumentation runner reported a fatal per-test status."
   exit 1
+fi
+
+if [[ "$adb_rc" -ne 0 ]]; then
+  if ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: -4
+if ! grep -Eq "^INSTRUMENTATION_RESULT:|^INSTRUMENTATION_CODE: -1\$" "$LOG"; then
+  echo "Instrumentation did not produce the normal completed result marker."
+  exit 1
+fi
+
+status_ok_count="$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0$' "$LOG" || true)"
+if [[ "$status_ok_count" -lt 1 ]]; then
+  echo "No successful per-test instrumentation result was reported."
+  exit 1
+fi
+
+if ! grep -Eq '^INSTRUMENTATION_CODE: -?[0-9]+$' "$LOG"; then
+  echo "Instrumentation runner did not report a terminal result."
+  exit 1
+fi
+
+VISUAL_DIR="$ROOT/.adaptive-visual"
+mkdir -p "$VISUAL_DIR"
+APP_ID="${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}"
+adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+adb -s "$SERIAL" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+sleep 3
+
+capture_visual() {
+  local name="$1"
+  adb -s "$SERIAL" exec-out screencap -p > "$VISUAL_DIR/$name.png"
+  test -s "$VISUAL_DIR/$name.png"
+  echo "Visual truth capture PASS: $VISUAL_DIR/$name.png"
+}
+
+  # Exact production-owner evidence: launch the real Activities, not heuristic text targets.
+  capture_exact_activity() {
+    local name="$1"
+    local component="$2"
+    adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+    adb -s "$SERIAL" shell am start -W -n "$APP_ID/$component" >/dev/null 2>&1
+    sleep 2
+    adb -s "$SERIAL" exec-out screencap -p > "$VISUAL_DIR/$name.png"
+    test -s "$VISUAL_DIR/$name.png"
+    adb -s "$SERIAL" shell uiautomator dump /sdcard/rovex-window.xml >/dev/null 2>&1
+    adb -s "$SERIAL" exec-out cat /sdcard/rovex-window.xml > "$VISUAL_DIR/$name-window.xml"
+    test -s "$VISUAL_DIR/$name-window.xml"
+    adb -s "$SERIAL" shell dumpsys activity activities 2>/dev/null | grep -m1 "$component" > "$VISUAL_DIR/$name-activity.txt" || true
+    echo "Exact production visual evidence PASS: $name"
+  }
+  capture_exact_activity "qbank-production" "com.localqbank.library.RovexSectionDashboardActivity"
+  capture_exact_activity "ren-production" "com.localqbank.library.RenActivity"
+
+  # Landscape is an explicit visual contract, but failure to rotate an emulator
+  # must not turn otherwise-valid functional instrumentation red.
+  adb -s "$SERIAL" shell settings put system accelerometer_rotation 0 >/dev/null 2>&1 || true
+  adb -s "$SERIAL" shell settings put system user_rotation 1 >/dev/null 2>&1 || true
+  sleep 2
+  capture_visual "home-landscape" || true
+  adb -s "$SERIAL" shell settings put system user_rotation 0 >/dev/null 2>&1 || true
+  adb -s "$SERIAL" shell settings put system accelerometer_rotation 1 >/dev/null 2>&1 || true
+else
+  echo "Visual truth capture BLOCKED: launcher did not start $APP_ID"
+fi
+
+if [[ -x "$PROJECT/.ci/rovex_interaction_explorer.py" ]]; then
+  echo "===== exhaustive interaction/navigation explorer ====="
+  python3 "$PROJECT/.ci/rovex_interaction_explorer.py" "$SERIAL" "$APP_ID" "$ROOT"
+else
+  echo "Exhaustive interaction explorer BLOCKED: injected explorer missing"
+  exit 1
+fi
+
+echo "Adaptive instrumentation suite PASS."
+ "$LOG"; then
+    echo "ADB instrumentation invocation failed without an assumption-only skip: rc=$adb_rc"
+    exit "$adb_rc"
+  fi
+  echo "ADB runner returned rc=$adb_rc with JUnit assumption skip(s); continuing."
 fi
 if ! grep -Eq "^INSTRUMENTATION_RESULT:|^INSTRUMENTATION_CODE: -1\$" "$LOG"; then
   echo "Instrumentation did not produce the normal completed result marker."
