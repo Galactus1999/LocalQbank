@@ -93,7 +93,15 @@ if grep -Eq "^INSTRUMENTATION_STATUS_CODE: -1\$|^INSTRUMENTATION_STATUS_CODE: -2
 fi
 
 if [[ "$adb_rc" -ne 0 ]]; then
-  if ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: -4
+  if grep -Eq '^INSTRUMENTATION_CODE: -1$' "$LOG" && grep -Eq '^INSTRUMENTATION_RESULT: stream=' "$LOG" && grep -Eq '^OK \([0-9]+ tests\)$' "$LOG"; then
+    echo "Instrumentation shell returned rc=$adb_rc but emitted a complete successful terminal result; accepting it."
+    adb_rc=0
+  else
+    echo "ADB instrumentation invocation failed: rc=$adb_rc"
+    exit "$adb_rc"
+  fi
+fi
+
 if ! grep -Eq "^INSTRUMENTATION_RESULT:|^INSTRUMENTATION_CODE: -1\$" "$LOG"; then
   echo "Instrumentation did not produce the normal completed result marker."
   exit 1
