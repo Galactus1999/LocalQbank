@@ -184,6 +184,7 @@ jobs:
           rm -rf .adaptive-ci-diagnostics
           mkdir -p .adaptive-ci-diagnostics
           if [[ -s .adaptive-instrumentation.log ]]; then cp -f .adaptive-instrumentation.log .adaptive-ci-diagnostics/; fi
+          if [[ -d .adaptive-visual ]]; then cp -a .adaptive-visual .adaptive-ci-diagnostics/; fi
           if [[ -d "$RUNNER_TEMP/adaptive-android/reports" ]]; then cp -a "$RUNNER_TEMP/adaptive-android/reports/." .adaptive-ci-diagnostics/; fi
 
       - name: Upload adaptive diagnostics
