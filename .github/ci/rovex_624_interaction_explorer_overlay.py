@@ -79,44 +79,94 @@ capture("000-home")
 home_xml=dump("000-home.xml")
 clickables=[n for n in nodes(home_xml) if n.get("clickable")=="true"]
 scrollables=[n for n in nodes(home_xml) if n.get("scrollable")=="true"]
-seen=set()
+seen_states=set()
+seen_actions=set()
+queue=[("000-home.xml", home_xml)]
 index=0
+MAX_ACTIONS=1000
 
-# Explore every unique visible clickable exposed by the initial screen. Each
-# tap is followed by a liveness check and recovery; destructive labels are
-# opened only far enough to expose their confirmation UI, then recovered.
-for original in clickables:
-    key=(original.get("resource-id",""), original.get("text",""), original.get("content-desc",""))
-    if key in seen: continue
-    seen.add(key)
-    current=dump("pre-%03d.xml"%(index+1))
-    candidates=nodes(current)
-    target=None
-    for n in candidates:
-        if n.get("clickable")!="true": continue
-        if original.get("resource-id") and n.get("resource-id")==original.get("resource-id"):
-            target=n; break
-        if not original.get("resource-id") and (n.get("text")==original.get("text")) and (n.get("content-desc")==original.get("content-desc")):
-            target=n; break
-    if target is None: continue
-    b=bounds(target.get("bounds"))
-    if not b: continue
-    index+=1
-    x,y=(b[0]+b[2])//2,(b[1]+b[3])//2
-    adb("shell","input","tap",str(x),str(y))
-    time.sleep(.8)
-    ok=alive()
-    if ok:
-        dump("post-%03d.xml"%index)
-        capture("%03d-click"%index)
-    label=target.get("text") or target.get("content-desc") or target.get("resource-id","")
-    detail="tap-survived"
-    if re.search(r"\b(delete|remove|reset|clear|erase|logout|sign.?out|wipe|uninstall)\b",label,re.I):
-        detail="destructive-control-opened-and-recovered"
-    log(index,"TAP",target,"PASS" if ok else "FAIL",detail)
-    if not ok: raise SystemExit("application died after clickable interaction: "+label)
-    recover()
+def state_key(xml):
+    try:
+        r=ET.fromstring(xml)
+    except Exception:
+        return ""
+    vals=[]
+    for n in r.iter():
+        a=n.attrib
+        if a.get("visible-to-user")!="true": continue
+        vals.append("|".join([a.get("class",""),a.get("resource-id",""),a.get("text",""),a.get("content-desc",""),a.get("clickable",""),a.get("scrollable",""),a.get("selected","")]))
+    return "\n".join(vals)
 
+while queue and index < MAX_ACTIONS:
+    state_name, state_xml=queue.pop(0)
+    sk=state_key(state_xml)
+    if sk in seen_states: continue
+    seen_states.add(sk)
+    current_clicks=[n for n in nodes(state_xml) if n.get("clickable")=="true"]
+    for original in current_clicks:
+        action_key=(sk,original.get("resource-id",""),original.get("text",""),original.get("content-desc",""),original.get("bounds",""))
+        if action_key in seen_actions: continue
+        seen_actions.add(action_key)
+        current=dump("pre-%03d.xml"%(index+1))
+        candidates=nodes(current)
+        target=None
+        for n in candidates:
+            if n.get("clickable")!="true": continue
+            if original.get("resource-id") and n.get("resource-id")==original.get("resource-id") and n.get("text","")==original.get("text"):
+                target=n; break
+            if not original.get("resource-id") and n.get("text")==original.get("text") and n.get("content-desc")==original.get("content-desc"):
+                target=n; break
+        if target is None: continue
+        b=bounds(target.get("bounds"))
+        if not b: continue
+        index+=1
+        x,y=(b[0]+b[2])//2,(b[1]+b[3])//2
+        adb("shell","input","tap",str(x),str(y))
+        time.sleep(.7)
+        ok=alive()
+        if ok:
+            after=dump("post-%03d.xml"%index)
+            capture("%03d-click"%index)
+            if state_key(after) and state_key(after) not in seen_states:
+                queue.append(("post-%03d.xml"%index,after))
+        label=target.get("text") or target.get("content-desc") or target.get("resource-id","")
+        detail="tap-survived"
+        if re.search(r"\b(delete|remove|reset|clear|erase|logout|sign.?out|wipe|uninstall)\b",label,re.I):
+            detail="destructive-control-opened-and-recovered"
+        log(index,"TAP",target,"PASS" if ok else "FAIL",detail)
+        if not ok: raise SystemExit("application died after clickable interaction: "+label)
+        recover()
+
+# Scroll every scrollable surface discovered across the reachable state graph.
+scroll_seen=set()
+for xml_path in sorted((out/"hierarchies").glob("post-*.xml")):
+    try:
+        xml=xml_path.read_text(encoding="utf-8",errors="ignore")
+    except Exception:
+        continue
+    for n in nodes(xml):
+        if n.get("scrollable")!="true": continue
+        b=bounds(n.get("bounds"))
+        if not b: continue
+        key=(state_key(xml),n.get("resource-id",""),n.get("bounds",""))
+        if key in scroll_seen: continue
+        scroll_seen.add(key)
+        x=(b[0]+b[2])//2
+        top=b[1]+max(20,(b[3]-b[1])//4)
+        bottom=b[3]-max(20,(b[3]-b[1])//4)
+        before=dump("scroll-before-%03d.xml"%(index+1))
+        adb("shell","input","swipe",str(x),str(bottom),str(x),str(top),"450")
+        time.sleep(.5)
+        after=dump("scroll-after-%03d.xml"%(index+1))
+        changed=before!=after
+        index+=1
+        log(index,"SCROLL",n,"PASS" if changed else "WARN",
+            "viewport-or-hierarchy-changed" if changed else "no-observable-hierarchy-change")
+        if not alive(): raise SystemExit("application died during scroll")
+        recover()
+
+if index >= MAX_ACTIONS:
+    raise SystemExit("interaction explorer safety cap reached before graph exhaustion")
 # Exercise every scrollable node visible on the initial screen in both
 # directions and require an observable hierarchy change when content exists.
 for n in scrollables:
