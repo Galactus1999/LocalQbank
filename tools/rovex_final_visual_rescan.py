@@ -75,8 +75,19 @@ def main():
     else: warnings.append({"kind":"version_contract_unresolved","app_gradle_count":len(gradles)})
     repo_discover=Path(__import__("os").environ.get("GITHUB_WORKSPACE", str(Path.cwd())))/".github/ci/adaptive-discover.sh"
     if repo_discover.is_file():
-        d=repo_discover.read_text(encoding="utf-8",errors="ignore"); chain=["616_clinical_day_background","617_visual_token","618_premium_foundation","619_visual_lab","620_visual_truth","621_visual_truth_retrigger","622_premium_surface_migration"]; positions=[d.find(x) for x in chain]
-        if any(x<0 for x in positions) or positions!=sorted(positions): findings.append({"kind":"visual_overlay_chain","detail":"Expected 616→617→618→619→620→621→622 chain is incomplete or out of order."})
+        d=repo_discover.read_text(encoding="utf-8",errors="ignore"); chain=["616_clinical_day_background_overlay.py","617_clinical_day_production_overlay.py"]; positions=[d.find(x) for x in chain]
+        if any(x<0 for x in positions) or positions!=sorted(positions): findings.append({"kind":"visual_overlay_chain","detail":"Expected 616→617 Clinical Day overlay chain is incomplete or out of order."})
+        stale=["617_visual_token_overlay.py","618_premium_foundation_overlay.py","619_visual_lab_overlay.py","620_visual_truth_overlay.py","621_visual_truth_retrigger_overlay.py","622_premium_surface_migration_overlay.py"]
+        stale_present=[x for x in stale if x in d]
+        if stale_present: findings.append({"kind":"stale_visual_overlay_reference","detail":stale_present})
+    production_main=root/"app/src/main/java/com/localqbank/library/MainActivity.kt"
+    production_layer=root/"app/src/main/java/com/localqbank/library/RovexClinicalDayProductionLayer.kt"
+    if production_layer.is_file():
+        ps=production_main.read_text(encoding="utf-8",errors="ignore") if production_main.is_file() else ""
+        if "RovexClinicalDayProductionLayer.apply(this)" not in ps:
+            findings.append({"kind":"clinical_day_wiring","detail":"Production layer exists but MainActivity does not invoke it."})
+    else:
+        findings.append({"kind":"clinical_day_wiring","detail":"Production Clinical Day layer missing from selected source."})
     report={"schema":"rovex-final-rescan/v1","project":str(root),"hard_findings":findings,"warnings":warnings,"startup_onCreate_files":sorted(startup),"status":"FAIL" if findings else "PASS_WITH_WARNINGS" if warnings else "PASS"}
     Path(a.output).write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8"); print(json.dumps(report,indent=2)); return 1 if findings else 0
 if __name__=="__main__": raise SystemExit(main())
