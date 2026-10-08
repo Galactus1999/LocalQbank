@@ -95,7 +95,7 @@ def main():
     # 3) Theme changes must restore the exact quiz state explicitly. Android recreates Activities
     # for configuration changes; do not rely solely on incidental View state.
     p=one(root,"QuizActivity.kt"); s=p.read_text()
-    anchor='''    override fun onResume() {
+    anchor='''override fun onResume() {
         super.onResume()'''
     insert='''    override fun onSaveInstanceState(outState: Bundle) {
         if (::quizViewModel.isInitialized) {
