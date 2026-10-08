@@ -1,4 +1,4 @@
-# Approved production QBankDb construction sites for the v8.3.437 baseline.
+# Approved production QBankDb construction sites for the current audited source baseline.\n# Refreshed 2026-10-08 after exact v8.3.615 source inspection; this is a\n# fail-closed count contract, not permission for new call sites.
 # Format: relative source path<TAB>maximum approved QBankDb(...) occurrences.
 # Test sources are intentionally excluded; they are audited by the lifecycle suite.
 app/src/main/java/com/localqbank/library/AppManagers.kt	3
