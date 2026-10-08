@@ -2,7 +2,7 @@
 from pathlib import Path
 import re, sys
 
-project = Path(sys.argv[1]).resolve()
+project = Path(sys.argv[1]).resolve()\nrepo_root = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else project
 build_files = list(project.rglob("build.gradle")) + list(project.rglob("build.gradle.kts"))
 all_text = "\n".join(p.read_text(errors="ignore") for p in build_files)
 if 'versionName = "8.3.623"' not in all_text or "versionCode = 709" not in all_text:
@@ -190,7 +190,7 @@ print("EXHAUSTIVE_INTERACTION_EXPLORER_PASS")
 ''', encoding="utf-8")
 (ci / "rovex_interaction_explorer.py").chmod(0o755)
 
-inst = project / ".github" / "ci" / "adaptive-instrumentation.sh"
+inst = repo_root / ".github" / "ci" / "adaptive-instrumentation.sh"
 s = inst.read_text()
 marker = 'echo "Adaptive instrumentation suite PASS."'
 block = '''if [[ -x "$PROJECT/.ci/rovex_interaction_explorer.py" ]]; then
