@@ -71,7 +71,7 @@ if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|^INSTRUMENTATION
   exit 1
 fi
 
-if ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: 0
+if ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: 0$' "$LOG"; then
   echo "No successful per-test instrumentation result was reported."
   exit 1
 fi
