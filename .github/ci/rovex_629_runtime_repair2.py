@@ -141,9 +141,14 @@ def main():
                    "milestone sound")
     p.write_text(s)
 
-    # version bump
+    # Idempotent version transition.
     g=[p for p in root.rglob("build.gradle.kts") if p.parent.name=="app"][0]; gs=g.read_text()
-    if OLD_NAME not in gs or OLD_CODE not in gs: raise SystemExit("v8.3.629 baseline version mismatch")
-    gs=gs.replace(OLD_NAME,NEW_NAME,1).replace(OLD_CODE,NEW_CODE,1); g.write_text(gs)
+    if OLD_NAME in gs and OLD_CODE in gs:
+        gs=gs.replace(OLD_NAME,NEW_NAME,1).replace(OLD_CODE,NEW_CODE,1)
+    elif NEW_NAME in gs and NEW_CODE in gs:
+        pass
+    else:
+        raise SystemExit("v8.3.629 baseline version mismatch")
+    g.write_text(gs)
     print("V8.3.629_RUNTIME_REPAIR_APPLIED")
 if __name__=="__main__": main()
