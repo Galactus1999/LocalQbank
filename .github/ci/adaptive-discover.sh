@@ -34,8 +34,6 @@ for dp,dn,fn in os.walk(root):
             except Exception: pass
             items.append((code,os.path.getmtime(p),p))
 if items:
-    # Prefer a compile-repair archive over the original move archive when
-    # multiple archives expose the same highest versionCode.
     items.sort(
         key=lambda x: (
             x[0],
@@ -62,38 +60,18 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
     if [[ "$found" == true ]]; then project="$root"; break; fi
   done < <(find "$WORK/source/unpacked" -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print)
   [[ -n "$project" ]] || fail "ZIP contains Gradle settings but no Android application/library module"
-  # v8.3.446 is an auditable CI overlay over the repository-stored v8.3.445
-  # source archive. It is intentionally version-specific and is applied only to
-  # that exact baseline; future source archives must carry their own repairs.
   if [[ "$(basename "$candidate")" == "Rovex_v8.3.445_CI_RuntimeRegression_RootRepair_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_446_overlay2.py" "$project"
   fi
   if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_616_clinical_day_background_overlay.py" "$project"
-  fi
-  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_617_visual_token_overlay.py" "$project"
-  fi
-  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_618_premium_foundation_overlay.py" "$project"
-  fi
-  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_619_visual_lab_overlay.py" "$project"
-  fi
-  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_620_visual_truth_overlay.py" "$project"
-  fi
-  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_621_visual_truth_retrigger_overlay.py" "$project"
   fi
-  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
-    python3 "$ROOT/.github/ci/rovex_622_premium_surface_migration_overlay.py" "$project"
-  fi
-
 fi
-# Read-only visual architecture inventory. This runs against the exact source
-# selected/unpacked above, including any version-specific CI overlay. It never
-# mutates application source and produces a durable report for every adaptive build.
 visual_report="$WORK/reports/rovex-visual-audit.json"
 if [[ -f "$ROOT/tools/rovex_visual_audit.py" ]]; then
   python3 "$ROOT/tools/rovex_visual_audit.py" --project "$project" --output "$visual_report"
