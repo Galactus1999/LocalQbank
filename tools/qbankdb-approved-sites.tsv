@@ -17,6 +17,7 @@ app/src/main/java/com/localqbank/library/LocalQBankSearchService.kt	1
 app/src/main/java/com/localqbank/library/MainRepository.kt	1
 app/src/main/java/com/localqbank/library/NotesActivity.kt	4
 app/src/main/java/com/localqbank/library/PerformanceManager.kt	2
+app/src/main/java/com/localqbank/library/ProgressDbRegistry.kt	1
 app/src/main/java/com/localqbank/library/QBankDeletionRecoveryWorker.kt	2
 app/src/main/java/com/localqbank/library/QBankLoadingEngine.kt	6
 app/src/main/java/com/localqbank/library/QBankSearchIndexMaintenanceWorker.kt	1
@@ -25,6 +26,7 @@ app/src/main/java/com/localqbank/library/RenIntelligenceOrchestrator.kt	1
 app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt	2
 app/src/main/java/com/localqbank/library/SearchActivity.kt	2
 app/src/main/java/com/localqbank/library/StreakManager.kt	7
+app/src/main/java/com/localqbank/library/StudyCore.kt	1
 app/src/main/java/com/localqbank/library/SubjectFocusSearchEngine.kt	1
 app/src/main/java/com/localqbank/library/TestListActivity.kt	3
 app/src/main/java/com/localqbank/library/data/quiz/QuizDataSources.kt	1
