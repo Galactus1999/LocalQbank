@@ -81,11 +81,15 @@ def main():
         stale_present=[x for x in stale if x in d]
         if stale_present: findings.append({"kind":"stale_visual_overlay_reference","detail":stale_present})
     production_main=root/"app/src/main/java/com/localqbank/library/MainActivity.kt"
+    production_resilience=root/"app/src/main/java/com/localqbank/library/ResilienceManager.kt"
     production_layer=root/"app/src/main/java/com/localqbank/library/RovexClinicalDayProductionLayer.kt"
     if production_layer.is_file():
         ps=production_main.read_text(encoding="utf-8",errors="ignore") if production_main.is_file() else ""
-        if "RovexClinicalDayProductionLayer.apply(this)" not in ps:
-            findings.append({"kind":"clinical_day_wiring","detail":"Production layer exists but MainActivity does not invoke it."})
+        rs=production_resilience.read_text(encoding="utf-8",errors="ignore") if production_resilience.is_file() else ""
+        wired=("RovexClinicalDayProductionLayer.apply(this)" in ps or
+               "RovexClinicalDayProductionLayer.apply(a)" in rs)
+        if not wired:
+            findings.append({"kind":"clinical_day_wiring","detail":"Production layer exists but no production Activity lifecycle wiring was found."})
     else:
         findings.append({"kind":"clinical_day_wiring","detail":"Production Clinical Day layer missing from selected source."})
     report={"schema":"rovex-final-rescan/v1","project":str(root),"hard_findings":findings,"warnings":warnings,"startup_onCreate_files":sorted(startup),"status":"FAIL" if findings else "PASS_WITH_WARNINGS" if warnings else "PASS"}
