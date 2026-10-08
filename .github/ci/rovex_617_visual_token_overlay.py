@@ -121,11 +121,11 @@ def main() -> int:
     s = ren.read_text(encoding="utf-8")
     if "RovexVisualButtonStyle.apply" in s:
         raise SystemExit("v8.3.617 overlay appears already applied; refusing duplicate patch")
-    old_action = """text=label; textSize=11.5f; gravity = Gravity.CENTER
+    old_action = """text=label; textSize=11.5f; gravity=Gravity.CENTER
             setTextColor(ThemeManager.text(this@RenActivity))
             background=UiDrawableUtils.roundedDrawable(this@RenActivity,ThemeManager.elevated(this@RenActivity),11f)
             setOnClickListener{click()}"""
-    new_action = """text=label; textSize=RovexVisualTypography.ACTION_SP; gravity = Gravity.CENTER
+    new_action = """text=label; textSize=RovexVisualTypography.ACTION_SP; gravity=Gravity.CENTER
             RovexVisualButtonStyle.apply(this, this@RenActivity)
             setOnClickListener{click()}"""
     if old_action not in s:
