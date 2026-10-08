@@ -75,11 +75,18 @@ def main():
     else: warnings.append({"kind":"version_contract_unresolved","app_gradle_count":len(gradles)})
     repo_discover=Path(__import__("os").environ.get("GITHUB_WORKSPACE", str(Path.cwd())))/".github/ci/adaptive-discover.sh"
     if repo_discover.is_file():
-        d=repo_discover.read_text(encoding="utf-8",errors="ignore"); chain=["616_clinical_day_background_overlay.py","617_clinical_day_production_overlay.py"]; positions=[d.find(x) for x in chain]
-        if any(x<0 for x in positions) or positions!=sorted(positions): findings.append({"kind":"visual_overlay_chain","detail":"Expected 616→617 Clinical Day overlay chain is incomplete or out of order."})
-        stale=["617_visual_token_overlay.py","618_premium_foundation_overlay.py","619_visual_lab_overlay.py","620_visual_truth_overlay.py","621_visual_truth_retrigger_overlay.py","622_premium_surface_migration_overlay.py"]
-        stale_present=[x for x in stale if x in d]
-        if stale_present: findings.append({"kind":"stale_visual_overlay_reference","detail":stale_present})
+        d=repo_discover.read_text(encoding="utf-8",errors="ignore"); chain=[
+            "616_clinical_day_background_overlay.py",
+            "617_clinical_day_production_overlay.py",
+            "617_visual_token_overlay.py",
+            "618_premium_foundation_overlay.py",
+            "619_visual_lab_overlay.py",
+            "620_visual_truth_overlay.py",
+            "621_visual_truth_retrigger_overlay.py",
+            "622_premium_surface_migration_overlay.py",
+        ]; positions=[d.find(x) for x in chain]
+        if any(x<0 for x in positions) or positions!=sorted(positions):
+            findings.append({"kind":"visual_overlay_chain","detail":"Expected 616→617 production/token→618→619→620→621→622 visual chain is incomplete or out of order."})
     production_main=root/"app/src/main/java/com/localqbank/library/MainActivity.kt"
     production_resilience=root/"app/src/main/java/com/localqbank/library/ResilienceManager.kt"
     production_layer=root/"app/src/main/java/com/localqbank/library/RovexClinicalDayProductionLayer.kt"
