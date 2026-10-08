@@ -264,6 +264,14 @@ jobs:
           echo "Source archive size: $size bytes"
           if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then [[ "$size" -lt 25000000 ]]; fi
 
+      - name: Upload adaptive source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-source-snapshot
+          path: $RUNNER_TEMP/adaptive-source.zip
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Upload adaptive artifacts
         uses: actions/upload-artifact@v4
         with:
