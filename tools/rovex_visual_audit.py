@@ -25,7 +25,7 @@ PATTERNS = {
     "runtime_shader": re.compile(r"RuntimeShader\b|android\.graphics\.Shader\b|setRuntimeShader\b"),
     "generic_shader": re.compile(r"\b(?:LinearGradient|RadialGradient|SweepGradient|ComposeShader)\b"),
     "lottie": re.compile(r"lottie|LottieAnimationView|LottieDrawable", re.I),
-    "rive": re.compile(r"rive|RiveAnimation", re.I),
+    "rive": re.compile(r"\bRive(?:Animation|View)?\b|com\.rive\.", re.I),
     "android_animation": re.compile(r"ObjectAnimator|ValueAnimator|AnimatorSet|ViewPropertyAnimator|AlphaAnimation|TranslateAnimation|ScaleAnimation|RotateAnimation|TransitionManager", re.I),
     "compose_animation": re.compile(r"animate[A-Z]|AnimatedVisibility|rememberInfiniteTransition", re.I),
     "haptics": re.compile(r"HapticFeedbackConstants|performHapticFeedback|Vibrator|VibrationEffect", re.I),
