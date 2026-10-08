@@ -175,4 +175,12 @@ else
   echo "Visual truth capture BLOCKED: launcher did not start $APP_ID"
 fi
 
+if [[ -x "$PROJECT/.ci/rovex_interaction_explorer.py" ]]; then
+  echo "===== exhaustive interaction/navigation explorer ====="
+  python3 "$PROJECT/.ci/rovex_interaction_explorer.py" "$SERIAL" "$APP_ID" "$ROOT"
+else
+  echo "Exhaustive interaction explorer BLOCKED: injected explorer missing"
+  exit 1
+fi
+
 echo "Adaptive instrumentation suite PASS."
