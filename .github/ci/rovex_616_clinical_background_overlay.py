@@ -5,13 +5,28 @@ import sys
 
 ROOT = Path(sys.argv[1]).resolve()
 
-theme = ROOT / "app/src/main/java/com/localqbank/library/ThemeAtmosphereDrawable.kt"
-gradle = ROOT / "app/build.gradle.kts"
+theme_candidates = []
+for p in ROOT.rglob("*.kt"):
+    try:
+        if "class ThemeAtmosphereDrawable" in p.read_text(encoding="utf-8", errors="ignore"):
+            theme_candidates.append(p)
+    except OSError:
+        pass
+if len(theme_candidates) != 1:
+    raise SystemExit(f"Expected exactly one ThemeAtmosphereDrawable source, found {len(theme_candidates)}: {theme_candidates}")
+theme = theme_candidates[0]
 
-if not theme.is_file():
-    raise SystemExit(f"Missing expected visual source: {theme}")
-if not gradle.is_file():
-    raise SystemExit(f"Missing expected app Gradle file: {gradle}")
+gradle_candidates = []
+for p in ROOT.rglob("build.gradle.kts"):
+    try:
+        t = p.read_text(encoding="utf-8", errors="ignore")
+        if "versionCode = 701" in t and 'versionName = "8.3.615"' in t:
+            gradle_candidates.append(p)
+    except OSError:
+        pass
+if len(gradle_candidates) != 1:
+    raise SystemExit(f"Expected exactly one v8.3.615 app Gradle file, found {len(gradle_candidates)}: {gradle_candidates}")
+gradle = gradle_candidates[0]
 
 old = theme.read_text(encoding="utf-8")
 if "class ThemeAtmosphereDrawable" not in old:
