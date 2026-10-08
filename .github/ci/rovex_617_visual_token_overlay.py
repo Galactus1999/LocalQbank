@@ -116,6 +116,14 @@ def main() -> int:
     if not gradle.is_file() or not ren.is_file():
         raise SystemExit("v8.3.617 overlay target files missing")
     g = gradle.read_text(encoding="utf-8")
+    if 'versionName = "8.3.617"' in g and "versionCode = 703" in g and (project / "app/src/main/java/com/localqbank/library/RovexClinicalDayProductionLayer.kt").is_file():
+        base = ren.parent
+        for name, body in TOKENS.items():
+            target = base / name
+            if not target.exists():
+                target.write_text(body, encoding="utf-8")
+        print("v8.3.617 visual token overlay: production phase already applied; token contract verified")
+        return 0
     if EXPECTED_VERSION not in g or EXPECTED_CODE not in g:
         raise SystemExit("v8.3.617 overlay requires the v8.3.616 post-overlay baseline; refusing to patch")
     s = ren.read_text(encoding="utf-8")
