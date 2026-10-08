@@ -4,8 +4,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-EXPECTED_VERSION = 'versionName = "8.3.615"'
-EXPECTED_CODE = "versionCode = 701"
+EXPECTED_VERSION = 'versionName = "8.3.616"'
+EXPECTED_CODE = "versionCode = 702"
 
 TOKENS = {
 "RovexVisualColors.kt": '''package com.localqbank.library
@@ -117,7 +117,7 @@ def main() -> int:
         raise SystemExit("v8.3.617 overlay target files missing")
     g = gradle.read_text(encoding="utf-8")
     if EXPECTED_VERSION not in g or EXPECTED_CODE not in g:
-        raise SystemExit("v8.3.617 overlay baseline version markers not found; refusing to patch")
+        raise SystemExit("v8.3.617 overlay requires the v8.3.616 post-overlay baseline; refusing to patch")
     s = ren.read_text(encoding="utf-8")
     if "RovexVisualButtonStyle.apply" in s:
         raise SystemExit("v8.3.617 overlay appears already applied; refusing duplicate patch")
