@@ -122,8 +122,6 @@ object RovexVisualSurfaceStyle {
     if count != 1:
         raise SystemExit("v8.3.618 overlay: button RippleDrawable baseline not found")
 
-        raise SystemExit("v8.3.618 overlay: button baseline block missing")
-    s = s.replace(old, new, 1)
     if "RovexTouchFeedback.bind(view)" not in s:
         s = s.replace("        view.stateListAnimator = null\n", "        view.stateListAnimator = null\n        RovexTouchFeedback.bind(view)\n", 1)
     button.write_text(s, encoding="utf-8")
