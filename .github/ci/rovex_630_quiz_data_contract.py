@@ -17,8 +17,8 @@ def main():
     fun testIdForQuestion(id: Long): String?
 '''
     new='''    fun questionAt(testId: String, position: Int): Question?
-    fun questionAtOrdinal(testId: String, ordinal: Int): Question?
-    fun questionOrdinal(testId: String, questionId: Long): Int?
+    fun questionAtOrdinal(testId: String, ordinal: Int): Question? = questionAt(testId, ordinal)
+    fun questionOrdinal(testId: String, questionId: Long): Int? = rawQuestionPosition(testId, questionId)
     fun testIdForQuestion(id: Long): String?
 '''
     if old not in s: raise SystemExit("v8.3.630 QuizQuestionDataSource anchor missing")
