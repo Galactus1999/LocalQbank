@@ -69,7 +69,7 @@ new_class = r'''class RovexClinicalDayHomeBackgroundDrawable(
     override fun getOpacity(): Int = android.graphics.PixelFormat.OPAQUE
 }'''
 clinical = c[:cs] + new_class + c[ce:]
-clinical_path.write_text(clinical, encoding="utf-8")
+clinical.write_text(clinical, encoding="utf-8")
 
 l = living.read_text(encoding="utf-8")
 if "Clinical Day foundation: opaque + static." in l:
@@ -115,17 +115,17 @@ l = l.replace(
     }""",
     1,
 )
-living_path.write_text(l, encoding="utf-8")
+living.write_text(l, encoding="utf-8")
 
 t = theme.read_text(encoding="utf-8")
 if "alpha=if(isDark(c))70 else 45" not in t:
     raise SystemExit("v8.3.616 visual repair: expected wallpaper alpha not found")
 t = t.replace("alpha=if(isDark(c))70 else 45", "alpha=if(isDark(c))70 else 10", 1)
-theme_path.write_text(t, encoding="utf-8")
+theme.write_text(t, encoding="utf-8")
 
 g = g.replace("versionCode = 701", "versionCode = 702", 1)
 g = g.replace('versionName = "8.3.615"', 'versionName = "8.3.616"', 1)
-gradle_path.write_text(g, encoding="utf-8")
+gradle.write_text(g, encoding="utf-8")
 
 print("v8.3.616 Clinical Day background repair applied")
 print("Changed: Home Clinical Day background -> opaque cached static gradient")
