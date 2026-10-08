@@ -73,6 +73,15 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   fi
 
 fi
+# Read-only visual architecture inventory. This runs against the exact source
+# selected/unpacked above, including any version-specific CI overlay. It never
+# mutates application source and produces a durable report for every adaptive build.
+visual_report="$WORK/reports/rovex-visual-audit.json"
+if [[ -f "$ROOT/tools/rovex_visual_audit.py" ]]; then
+  python3 "$ROOT/tools/rovex_visual_audit.py" --project "$project" --output "$visual_report"
+else
+  fail "Visual audit tool missing: $ROOT/tools/rovex_visual_audit.py"
+fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
 [[ -f "$project/settings.gradle" || -f "$project/settings.gradle.kts" ]] || fail "Gradle settings not found: $project"
