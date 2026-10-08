@@ -100,16 +100,15 @@ def main():
     if vt.is_file():
         t=vt.read_text(encoding='utf-8')
         old='''    private fun capture(name: String) {
-        shell("mkdir -p /sdcard/RovexVisualTruth")
-        shell("screencap -p /sdcard/RovexVisualTruth/$name.png")
-        // The host-side collector validates the file after instrumentation.
-        // Avoid making the test depend on shell-output timing for the screenshot file.
+        shell("screencap -p > /sdcard/RovexVisualTruth/$name.png && sync")
+        shell("test -s /sdcard/RovexVisualTruth/$name.png")
     }
 
-    private fun settle() { Thread.sleep(1200) }
+    private fun settle() { Thread.sleep(1400) }
 
     @Test
     fun captureCoreRenderedScreens() {
+        shell("rm -rf /sdcard/RovexVisualTruth && mkdir -p /sdcard/RovexVisualTruth")
 '''
         new='''    private fun capture(name: String) {
         shell("screencap -p > /sdcard/RovexVisualTruth/$name.png && sync")
