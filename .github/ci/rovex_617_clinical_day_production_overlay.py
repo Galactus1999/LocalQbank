@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import sys
+import re
 
 ROOT = Path(sys.argv[1]).resolve()
 APP = ROOT / "app"
@@ -114,7 +115,16 @@ if "RovexClinicalDayProductionLayer.apply(this)" not in s:
             s = s.replace(marker, marker + "; RovexClinicalDayProductionLayer.apply(this)", 1)
             break
     else:
-        raise SystemExit("v8.3.617: MainActivity insertion point not found")
+        match = re.search(r'(?m)^(\s*)setContentView\([^\n]+\)\s*    main_path.write_text(s, encoding="utf-8")
+
+g = g.replace("versionCode = 702", "versionCode = 703", 1)
+g = g.replace('versionName = "8.3.616"', 'versionName = "8.3.617"', 1)
+gradle_path.write_text(g, encoding="utf-8")
+print("v8.3.617 Clinical Day production layer applied")
+, s)
+        if not match:
+            raise SystemExit("v8.3.617: MainActivity setContentView anchor not found")
+        s = s[:match.end()] + "; RovexClinicalDayProductionLayer.apply(this)" + s[match.end():]
     main_path.write_text(s, encoding="utf-8")
 
 g = g.replace("versionCode = 702", "versionCode = 703", 1)
