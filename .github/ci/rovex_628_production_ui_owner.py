@@ -83,7 +83,7 @@ def main():
     s=p.read_text()
     s=replace_fun(s,"subjectCategoryBox","unassignedCollectionBox",SUBJECT)
     s=replace_fun(s,"analyticsHero","tests",HERO)
-    s=s.replace("RovexModernUi.applySection(root, this)","RovexModernUi.applySection(root, this)\n    root.background=RovexQBankBackdropDrawable(this)",1)
+
     p.write_text(s)
     p=next(root.rglob("RenActivity.kt"));s=p.read_text()
     old='''val root = LinearLayout(this).apply {
@@ -94,7 +94,7 @@ def main():
     new='''val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(10), dp(7), dp(10), dp(8))
-            background = RovexBenBackdropDrawable(this@RenActivity)
+            background = ThemeManager.backgroundDrawable(this@RenActivity)
         }'''
     if old not in s: raise SystemExit("v8.3.628 Ren root anchor missing")
     s=s.replace(old,new,1)
