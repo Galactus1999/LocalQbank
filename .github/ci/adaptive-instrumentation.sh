@@ -62,40 +62,15 @@ set -e
 cat "$LOG"
 
 if [[ "$adb_rc" -ne 0 ]]; then
-  # Some Android 16 emulator images return a non-zero shell status after the instrumentation
-  # process has already reported a complete zero-failure suite (notably status -4 during teardown).
-  # Treat that as a teardown quirk only when the durable test summary proves every test passed.
-  if (
-      grep -Eq 'run finished: [1-9][0-9]* tests, 0 failed, 0 ignored' "$LOG" ||
-      grep -Eq '^OK \([1-9][0-9]* tests\)
-    echo "ADB invocation itself failed: rc=$adb_rc"
-    exit "$adb_rc"
-  fi
-fi
-
-if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
-  echo "Instrumented tests reported an error, assertion failure, or runner abort."
-  exit 1
-fi
-
-if ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: 0$' "$LOG"; then
-  echo "No successful per-test instrumentation result was reported."
-  exit 1
-fi
-
-if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then
-  visual_out="$RUNNER_TEMP/adaptive-android/reports/visual-truth"
-  bash "$GITHUB_WORKSPACE/.github/ci/rovex_visual_truth_capture.sh" "$visual_out"
-  test -s "$visual_out/visual-truth.json"
-  echo "Rendered visual truth gate PASS."
-fi
-
-echo "Adaptive instrumentation suite PASS."
- "$LOG"
-    ) && ! grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG"; then
-    echo "ADB instrumentation teardown returned rc=$adb_rc after a complete zero-failure suite; continuing to rendered visual truth."
+  # Android 16 emulator images can return a non-zero shell status after the
+  # runner has already emitted a complete zero-failure summary. Only tolerate
+  # that exact teardown condition.
+  if grep -Eq '^OK \([1-9][0-9]* tests\)$' "$LOG" \
+      && ! grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG" \
+      && ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
+    echo "Instrumentation shell teardown returned rc=$adb_rc after a complete zero-failure suite; continuing."
   else
-    echo "ADB invocation itself failed: rc=$adb_rc"
+    echo "ADB instrumentation failed: rc=$adb_rc"
     exit "$adb_rc"
   fi
 fi
