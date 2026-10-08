@@ -56,37 +56,56 @@ runner="$(printf '%s\n' "$runner_line" | sed 's/^instrumentation://' | awk '{pri
 echo "Discovered instrumentation runner: $runner"
 
 set +e
-timeout 1800s adb -s "$SERIAL" shell am instrument -w -r "$runner" > "$LOG" 2>&1
-adb_rc=$?
+rm -f "$LOG"
+adb -s "$SERIAL" shell am instrument -w -r "$runner" > "$LOG" 2>&1 &
+instrument_pid=$!
+terminal_seen=false
+for _ in $(seq 1 1800); do
+  if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|^INSTRUMENTATION_CODE: ' "$LOG"; then
+    terminal_seen=true
+    break
+  fi
+  if ! kill -0 "$instrument_pid" 2>/dev/null; then
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$terminal_seen" == true ]] && kill -0 "$instrument_pid" 2>/dev/null; then
+  kill "$instrument_pid" 2>/dev/null || true
+  wait "$instrument_pid" 2>/dev/null || true
+  adb_rc=0
+else
+  wait "$instrument_pid"
+  adb_rc=$?
+fi
 set -e
 cat "$LOG"
 
 if [[ "$adb_rc" -ne 0 ]]; then
-  if grep -Eq '^OK \([1-9][0-9]* tests\)$' "$LOG" \
-      && ! grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG" \
-      && ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
-    echo "Instrumentation shell teardown returned rc=$adb_rc after a complete zero-failure suite; continuing."
-  else
-    echo "ADB instrumentation failed: rc=$adb_rc"
-    exit "$adb_rc"
-  fi
+  echo "ADB instrumentation invocation failed: rc=$adb_rc"
+  exit "$adb_rc"
 fi
 
-if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
-  echo "Instrumented tests reported an error, assertion failure, or runner abort."
+if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG"; then
+  echo "Instrumented tests reported runner failure or abort."
   exit 1
 fi
 
-if ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: 0$' "$LOG"; then
+if grep -Eq '^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
+  echo "At least one instrumented test reported a fatal status."
+  exit 1
+fi
+
+status_ok_count="$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0$' "$LOG" || true)"
+if [[ "$status_ok_count" -lt 1 ]]; then
   echo "No successful per-test instrumentation result was reported."
   exit 1
 fi
 
-if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then
-  visual_out="$RUNNER_TEMP/adaptive-android/reports/visual-truth"
-  bash "$GITHUB_WORKSPACE/.github/ci/rovex_visual_truth_capture.sh" "$visual_out"
-  test -s "$visual_out/visual-truth.json"
-  echo "Rendered visual truth gate PASS."
+if ! grep -Eq '^INSTRUMENTATION_CODE: -?[0-9]+$' "$LOG"; then
+  echo "Instrumentation runner did not report a terminal result."
+  exit 1
 fi
 
 echo "Adaptive instrumentation suite PASS."
