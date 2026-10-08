@@ -64,7 +64,7 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   python3 "$ROOT/.github/ci/rovex_626_qbank_premium_overlay.py" "$project"
   python3 "$ROOT/.github/ci/rovex_627_ben_premium_overlay.py" "$project"
   python3 "$ROOT/.github/ci/rovex_628_production_ui_owner.py" "$project"
-  python3 "$ROOT/.github/ci/rovex_629_runtime_repair.py" "$project"
+  python3 "$ROOT/.github/ci/rovex_629_runtime_repair2.py" "$project"
   python3 "$ROOT/.github/ci/rovex_629_quiz_runtime_hardening.py" "$project"
   python3 "$ROOT/.github/ci/rovex_629_product_regression_repair.py" "$project"
   python3 "$ROOT/.github/ci/rovex_630_quiz_data_contract.py" "$project"
