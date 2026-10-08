@@ -80,6 +80,26 @@ fi
 set -e
 cat "$LOG"
 
+# The instrumentation run can complete successfully while the host adb daemon
+# transiently dies during the transition to visual/interaction capture. Recover
+# the transport before treating any post-test adb operation as an application
+# failure.
+recover_adb() {
+  for _ in $(seq 1 8); do
+    adb start-server >/dev/null 2>&1 || true
+    state="$(adb -s "$SERIAL" get-state 2>/dev/null | tr -d '\r' || true)"
+    if [[ "$state" == "device" ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
+if ! recover_adb; then
+  echo "ADB transport could not be recovered after a completed instrumentation run."
+  exit 1
+fi
+
 if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG"; then
   echo "Instrumented tests reported runner failure or abort."
   exit 1
