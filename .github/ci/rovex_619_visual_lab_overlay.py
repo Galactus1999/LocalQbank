@@ -86,28 +86,54 @@ class VisualLabActivity : AppCompatActivity() {
     }
 
     private fun themeSamples() = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
+        orientation = LinearLayout.VERTICAL
         val keys = listOf(
             ThemeManager.LIGHT, ThemeManager.PASTEL, ThemeManager.MINT, ThemeManager.SUNSET,
             ThemeManager.LAVENDER, ThemeManager.AMOLED, ThemeManager.PANDORA, ThemeManager.SPACE
         )
-        keys.forEachIndexed { i, key ->
-            val p = RovexThemeProfile.forKey(key)
-            addView(LinearLayout(this@VisualLabActivity).apply {
-                orientation = LinearLayout.VERTICAL; setPadding(d(7), d(8), d(7), d(7))
-                background = GradientDrawable().apply { setColor(p.panel); cornerRadius = d(12).toFloat(); setStroke(d(1), p.accent) }
-                contentDescription = "Theme sample \${p.name}"
-                addView(TextView(this@VisualLabActivity).apply {
-                    text = p.name; textSize = 9f; typeface = Typeface.DEFAULT_BOLD; setTextColor(p.text)
+        keys.chunked(2).forEachIndexed { rowIndex, rowKeys ->
+            val row = LinearLayout(this@VisualLabActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+            }
+            rowKeys.forEachIndexed { columnIndex, key ->
+                val p = RovexThemeProfile.forKey(key)
+                row.addView(LinearLayout(this@VisualLabActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(d(8), d(8), d(8), d(7))
+                    background = GradientDrawable().apply {
+                        setColor(p.panel)
+                        cornerRadius = d(12).toFloat()
+                        setStroke(d(1), p.accent)
+                    }
+                    contentDescription = "Theme sample \${p.name}"
+                    addView(TextView(this@VisualLabActivity).apply {
+                        text = p.name
+                        textSize = 10f
+                        typeface = Typeface.DEFAULT_BOLD
+                        setTextColor(p.text)
+                    })
+                    val swatches = LinearLayout(this@VisualLabActivity).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        setPadding(0, d(6), 0, 0)
+                    }
+                    listOf(p.backgroundA, p.elevated, p.accent).forEachIndexed { j, c ->
+                        swatches.addView(View(this@VisualLabActivity).apply {
+                            background = GradientDrawable().apply {
+                                setColor(c)
+                                cornerRadius = d(5).toFloat()
+                            }
+                        }, LinearLayout.LayoutParams(0, d(15), 1f).apply {
+                            if (j > 0) leftMargin = d(3)
+                        })
+                    }
+                    addView(swatches, LinearLayout.LayoutParams(-1, d(21)))
+                }, LinearLayout.LayoutParams(0, d(72), 1f).apply {
+                    if (columnIndex > 0) leftMargin = d(6)
                 })
-                val swatches = LinearLayout(this@VisualLabActivity).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, d(6), 0, 0) }
-                listOf(p.backgroundA, p.elevated, p.accent).forEachIndexed { j, c ->
-                    addView(View(this@VisualLabActivity).apply {
-                        background = GradientDrawable().apply { setColor(c); cornerRadius = d(5).toFloat() }
-                    }, LinearLayout.LayoutParams(0, d(15), 1f).apply { if (j > 0) leftMargin = d(3) })
-                }
-                addView(swatches)
-            }, LinearLayout.LayoutParams(0, d(66), 1f).apply { if (i > 0) leftMargin = d(4) })
+            }
+            addView(row, LinearLayout.LayoutParams(-1, d(72)).apply {
+                if (rowIndex > 0) topMargin = d(6)
+            })
         }
     }
 
@@ -142,7 +168,8 @@ class VisualLabActivity : AppCompatActivity() {
         addView(button("NORMAL"), LinearLayout.LayoutParams(0, d(44), 1f))
         addView(button("EMPHASIZED", true), LinearLayout.LayoutParams(0, d(44), 1f).apply { leftMargin = d(7) })
         addView(button("PRESS TEST") {
-            android.widget.Toast.makeText(this@VisualLabActivity, "Ripple + press motion + haptic path active", android.widget.Toast.LENGTH_SHORT).show()
+            this@VisualLabActivity.window.decorView.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
+            android.widget.Toast.makeText(this@VisualLabActivity, "Press feedback path active", android.widget.Toast.LENGTH_SHORT).show()
         }, LinearLayout.LayoutParams(0, d(44), 1f).apply { leftMargin = d(7) })
     }
 
@@ -232,7 +259,6 @@ def main() -> int:
         raise SystemExit("usage: rovex_619_visual_lab_overlay.py <project>")
     project = Path(sys.argv[1]).resolve()
     app = project / "app"
-    pkg = app / "src" / "main" / "java" / "com" / "com" / "localqbank" / "library"
     pkg = app / "src" / "main" / "java" / "com" / "localqbank" / "library"
     gradle = app / "build.gradle.kts"
     manifest = app / "src" / "main" / "AndroidManifest.xml"
