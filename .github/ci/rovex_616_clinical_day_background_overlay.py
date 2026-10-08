@@ -3,8 +3,7 @@ from pathlib import Path
 import sys
 
 ROOT = Path(sys.argv[1]).resolve()
-BASE = ROOT / "visual615"
-APP = BASE / "app"
+APP = ROOT / "app"
 PKG = APP / "src/main/java/com/localqbank/library"
 
 clinical = PKG / "RovexClinicalDayHomeVisuals.kt"
