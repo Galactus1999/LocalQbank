@@ -131,7 +131,7 @@ tap_text() {
 import re,sys
 xml,wanted=sys.argv[1],sys.argv[2]
 s=open(xml,encoding="utf-8",errors="ignore").read()
-pat=re.compile(r'<node[^>]*text="' + re.escape(wanted) + r'"[^>]*bounds="\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]"')
+pat=re.compile(r'<node[^>]*text="' + re.escape(wanted) + r'"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"')
 m=pat.search(s)
 if not m:
     sys.exit(1)
