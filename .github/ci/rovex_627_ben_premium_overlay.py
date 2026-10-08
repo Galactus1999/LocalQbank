@@ -145,8 +145,8 @@ private class RovexBenBackdropDrawable(activity: Activity) : android.graphics.dr
             bounds.height().toFloat().coerceAtLeast(1f),
             intArrayOf(
                 p.background,
-                ColorUtils.blend(p.background, p.primaryContainer, if (dark) .20f else .11f),
-                ColorUtils.blend(p.background, p.tertiary, if (dark) .08f else .05f)
+                BenColorUtils.blend(p.background, p.primaryContainer, if (dark) .20f else .11f),
+                BenColorUtils.blend(p.background, p.tertiary, if (dark) .08f else .05f)
             ),
             null, Shader.TileMode.CLAMP
         )
@@ -158,7 +158,7 @@ private class RovexBenBackdropDrawable(activity: Activity) : android.graphics.dr
     override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
 }
 
-private object ColorUtils {
+private object BenColorUtils {
     fun blend(a: Int, b: Int, amount: Float): Int {
         val t = amount.coerceIn(0f, 1f)
         return Color.rgb(
