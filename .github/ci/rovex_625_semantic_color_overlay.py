@@ -367,16 +367,8 @@ def main():
     # get()/isDark() API, while the palette itself maps legacy theme ids.
     tm.write_text(t,encoding="utf-8")
 
-    # Add the new roadmap theme constants without removing legacy aliases.
-    c_line='    const val LIGHT="light"; const val PASTEL="pastel"; const val MINT="mint"; const val SUNSET="sunset"; const val LAVENDER="lavender"; const val AMOLED="amoled"'
-    if c_line not in t:
-        raise SystemExit("v8.3.625: theme constants anchor missing")
-    t=t.replace(c_line,'    const val LIGHT="light"; const val PASTEL="pastel"; const val MINT="mint"; const val SUNSET="sunset"; const val LAVENDER="lavender"; const val AMOLED="amoled"; const val IRIS="iris"; const val PANDORA="pandora"; const val SPACE="space"',1)
-    norm='    private fun normalize(raw:String?):String=when(raw){PASTEL,MINT,SUNSET,LAVENDER,AMOLED,LIGHT->raw; "amoled_dark",DARK,OBSIDIAN_NIGHT,MIDNIGHT,COSMOS,AVATAR->AMOLED; SEPIA->SUNSET; else->LIGHT}'
-    if norm not in t:
-        raise SystemExit("v8.3.625: normalize anchor missing")
-    t=t.replace(norm,'    private fun normalize(raw:String?):String=when(raw){PASTEL,MINT,SUNSET,LAVENDER,AMOLED,LIGHT,IRIS,PANDORA,SPACE->raw; "amoled_dark",DARK,OBSIDIAN_NIGHT,MIDNIGHT,COSMOS,AVATAR->AMOLED; SEPIA->SUNSET; else->LIGHT}',1)
-    tm.write_text(t,encoding="utf-8")
+    # ThemeManager remains untouched in this phase; semantic mapping is owned by the
+    # new palette so legacy theme ids remain compatible with the existing owner.
     (pkg/"RovexPremiumPalette.kt").write_text(PALETTE,encoding="utf-8")
     vc.write_text(VISUAL_COLORS,encoding="utf-8")
     layer.write_text(PRODUCTION_PATCH,encoding="utf-8")
