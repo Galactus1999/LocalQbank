@@ -62,8 +62,15 @@ set -e
 cat "$LOG"
 
 if [[ "$adb_rc" -ne 0 ]]; then
-  echo "ADB invocation itself failed: rc=$adb_rc"
-  exit "$adb_rc"
+  # Some Android 16 emulator images return a non-zero shell status after the instrumentation
+  # process has already reported a complete zero-failure suite (notably status -4 during teardown).
+  # Treat that as a teardown quirk only when the durable test summary proves every test passed.
+  if grep -Eq 'run finished: [1-9][0-9]* tests, 0 failed, 0 ignored' "$LOG" &&      ! grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG"; then
+    echo "ADB instrumentation teardown returned rc=$adb_rc after a complete zero-failure suite; continuing to rendered visual truth."
+  else
+    echo "ADB invocation itself failed: rc=$adb_rc"
+    exit "$adb_rc"
+  fi
 fi
 
 if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
