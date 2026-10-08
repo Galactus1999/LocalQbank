@@ -169,7 +169,8 @@ if adb -s "$SERIAL" shell pidof "$APP_ID" >/dev/null 2>&1; then
     local name="$1" component="$2" extra="$3"
     adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
     if [[ -n "$extra" ]]; then
-      adb -s "$SERIAL" shell am start -W -n "$APP_ID/$component" $extra >/dev/null 2>&1
+      read -r -a extra_args <<< "$extra"
+      adb -s "$SERIAL" shell am start -W -n "$APP_ID/$component" "${extra_args[@]}" >/dev/null 2>&1
     else
       adb -s "$SERIAL" shell am start -W -n "$APP_ID/$component" >/dev/null 2>&1
     fi
