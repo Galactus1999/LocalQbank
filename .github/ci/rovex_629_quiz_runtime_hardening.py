@@ -15,7 +15,10 @@ def replace_once(s,old,new,label):
 def main():
     if len(sys.argv)!=2: raise SystemExit("usage: rovex_629_quiz_runtime_hardening.py <project>")
     root=Path(sys.argv[1])
-    g=one(root,"build.gradle.kts")
+    gradle_files=list(root.rglob("build.gradle.kts"))
+    app_gradles=[p for p in gradle_files if "com.android.application" in p.read_text()]
+    if len(app_gradles)!=1: raise SystemExit(f"v8.3.629 expected exactly one Android application Gradle file, got {len(app_gradles)}")
+    g=app_gradles[0]
     gs=g.read_text()
     if 'versionName = "8.3.628"' not in gs or 'versionCode = 714' not in gs:
         raise SystemExit("v8.3.629 wrong baseline")
