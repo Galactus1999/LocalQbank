@@ -163,6 +163,13 @@ jobs:
           emulator-boot-timeout: 300
           script: bash "$GITHUB_WORKSPACE/.github/ci/adaptive-instrumentation.sh"
 
+      - name: Final source/error/incompleteness rescan
+        if: always() && steps.discover.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$GITHUB_WORKSPACE/tools/rovex_final_visual_rescan.py" --project "$ADAPTIVE_PROJECT" --output "$RUNNER_TEMP/adaptive-android/reports/final-rescan.json"
+
       - name: Record instrumentation skip
         if: steps.apk.outputs.has_test_apk != 'true'
         shell: bash
