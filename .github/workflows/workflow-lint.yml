@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in .github/ci/adaptive-discover.sh .github/ci/adaptive-gradle-tasks.sh .github/ci/adaptive-instrumentation.sh; do
+          for f in .github/ci/adaptive-discover.sh .github/ci/adaptive-gradle-tasks.sh .github/ci/adaptive-instrumentation.sh .github/ci/rovex_visual_truth_capture.sh; do
             bash -n "$f"
             shellcheck -x "$f"
           done
