@@ -98,7 +98,7 @@ def main():
         }'''
     if old not in s: raise SystemExit("v8.3.628 Ren root anchor missing")
     s=s.replace(old,new,1)
-    s=s.replace("topChrome.addView(header, LinearLayout.LayoutParams(-1, dp(32)))\n        root.addView(topChrome, LinearLayout.LayoutParams(-1, dp(32)))","header.background=RovexVisualSurfaceStyle.glass(this@RenActivity,18f,true)\n        header.setPadding(dp(7),dp(4),dp(5),dp(4))\n        topChrome.addView(header, LinearLayout.LayoutParams(-1, dp(44)).apply{bottomMargin=dp(4)})\n        root.addView(topChrome, LinearLayout.LayoutParams(-1, dp(48))",1)
+    s=s.replace("topChrome.addView(header, LinearLayout.LayoutParams(-1, dp(32)))\n        root.addView(topChrome, LinearLayout.LayoutParams(-1, dp(32)))","header.background=RovexVisualSurfaceStyle.glass(this@RenActivity,18f,true)\n        header.setPadding(dp(7),dp(4),dp(5),dp(4))\n        topChrome.addView(header, LinearLayout.LayoutParams(-1, dp(44)).apply{bottomMargin=dp(4)})\n        root.addView(topChrome, LinearLayout.LayoutParams(-1, dp(48)))",1)
     s=s.replace("background = RovexVisualSurfaceStyle.glass(this@RenActivity, 18f, true)","background = RovexVisualSurfaceStyle.glass(this@RenActivity, 22f, true)\n            elevation=dp(2).toFloat()\n            setPadding(dp(4),dp(4),dp(4),dp(4))",1)
     s=s.replace("val bottomChrome = LinearLayout(this).apply {\n            orientation = LinearLayout.VERTICAL\n        }","val bottomChrome = LinearLayout(this).apply {\n            orientation = LinearLayout.VERTICAL\n            setPadding(dp(7),dp(7),dp(7),dp(6))\n            background=RovexVisualSurfaceStyle.glass(this@RenActivity,20f,true)\n        }",1)
     p.write_text(s)
