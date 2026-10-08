@@ -68,7 +68,11 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   if [[ "$(basename "$candidate")" == "Rovex_v8.3.445_CI_RuntimeRegression_RootRepair_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_446_overlay2.py" "$project"
   fi
-fi
+
+  # v8.3.616 is an auditable, version-specific visual repair over the repository-stored v8.3.615 source archive.
+  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
+    python3 "$ROOT/.github/ci/rovex_616_clinical_background_overlay.py" "$project"
+  fifi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
 [[ -f "$project/settings.gradle" || -f "$project/settings.gradle.kts" ]] || fail "Gradle settings not found: $project"
