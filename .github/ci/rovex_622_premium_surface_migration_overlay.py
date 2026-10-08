@@ -94,6 +94,36 @@ def main():
         }''','''            RovexTouchFeedback.bind(this)
             setOnClickListener{click()}
         }''','settings category touch')
+    # Harden rendered screenshot capture: clear stale files and capture PNG through shell stdout,
+    # then sync, so the host collector never accepts a zero-byte/stale frame.
+    vt=root/'app/src/androidTest/java/com/localqbank/library/RovexVisualTruthCaptureTest.kt'
+    if vt.is_file():
+        t=vt.read_text(encoding='utf-8')
+        old='''    private fun capture(name: String) {
+        shell("mkdir -p /sdcard/RovexVisualTruth")
+        shell("screencap -p /sdcard/RovexVisualTruth/$name.png")
+        // The host-side collector validates the file after instrumentation.
+        // Avoid making the test depend on shell-output timing for the screenshot file.
+    }
+
+    private fun settle() { Thread.sleep(1200) }
+
+    @Test
+    fun captureCoreRenderedScreens() {
+'''
+        new='''    private fun capture(name: String) {
+        shell("screencap -p > /sdcard/RovexVisualTruth/$name.png && sync")
+        shell("test -s /sdcard/RovexVisualTruth/$name.png")
+    }
+
+    private fun settle() { Thread.sleep(1400) }
+
+    @Test
+    fun captureCoreRenderedScreens() {
+        shell("rm -rf /sdcard/RovexVisualTruth && mkdir -p /sdcard/RovexVisualTruth")
+'''
+        if old not in t: raise SystemExit('v8.3.622: visual truth capture anchor missing')
+        vt.write_text(t.replace(old,new,1),encoding='utf-8')
     # Correct the known Visual Lab swatch nesting bug from the earlier CI-only lab.
     lab=pkg/'VisualLabActivity.kt'
     if lab.is_file():
