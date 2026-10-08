@@ -392,8 +392,7 @@ def main():
     anchor = "    fun aiText(c:Context)=if(isDark(c))Color.rgb(99,221,255) else Color.rgb(62,55,174)"
     if anchor not in t:
         raise SystemExit("v8.3.625: ThemeManager aiText anchor missing")
-    t = t.replace(anchor, additions + "
-" + anchor, 1)
+    t = t.replace(anchor, additions + "\\n" + anchor, 1)
     # Upgrade only the core generic roles; keep legacy specialized helpers stable.
     replacements = {
         "    fun bg(c:Context)=when(get(c)){PASTEL->Color.rgb(241,246,255);MINT->Color.rgb(239,250,247);SUNSET->Color.rgb(255,247,239);LAVENDER->Color.rgb(246,243,255);AMOLED->Color.BLACK;else->Color.rgb(247,249,255)}":
