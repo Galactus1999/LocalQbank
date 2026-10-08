@@ -77,6 +77,9 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_618_premium_foundation_overlay.py" "$project"
   fi
+  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
+    python3 "$ROOT/.github/ci/rovex_619_visual_lab_overlay.py" "$project"
+  fi
 
 fi
 # Read-only visual architecture inventory. This runs against the exact source
