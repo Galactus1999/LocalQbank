@@ -8,9 +8,10 @@ APP = ROOT / "app"
 PKG = APP / "src/main/java/com/localqbank/library"
 clinical_path = PKG / "RovexClinicalDayHomeVisuals.kt"
 main_path = PKG / "MainActivity.kt"
+resilience_path = PKG / "ResilienceManager.kt"
 gradle_path = APP / "build.gradle.kts"
 
-for p in (clinical_path, main_path, gradle_path):
+for p in (clinical_path, main_path, resilience_path, gradle_path):
     if not p.is_file():
         raise SystemExit(f"v8.3.617: missing expected production file: {p}")
 
@@ -102,26 +103,16 @@ object RovexClinicalDayProductionLayer {
 }
 ''', encoding="utf-8")
 
-s = main_path.read_text(encoding="utf-8")
-if "RovexClinicalDayProductionLayer.apply(this)" not in s:
-    lines = s.splitlines(keepends=True)
-    inserted = False
-    for i, line in enumerate(lines):
-        if "setContentView(" in line:
-            lines[i] = line.rstrip("\n") + " RovexClinicalDayProductionLayer.apply(this)\n"
-            inserted = True
-            break
-    if not inserted:
-        match = re.search(r'(?m)^\s*setContentView\([^\n]+\)', s)
-        if match:
-            s = s[:match.end()] + "; RovexClinicalDayProductionLayer.apply(this)" + s[match.end():]
-            inserted = True
-    if not inserted:
-        raise SystemExit("v8.3.617: MainActivity setContentView anchor not found")
-    else:
-        if lines and any("RovexClinicalDayProductionLayer.apply(this)" in x for x in lines):
-            s = "".join(lines)
-    main_path.write_text(s, encoding="utf-8")
+r = resilience_path.read_text(encoding="utf-8")
+if "RovexClinicalDayProductionLayer.apply(a)" not in r:
+    marker = "override fun onActivityCreated(a: Activity, b: android.os.Bundle?) {"
+    if marker not in r:
+        marker = "override fun onActivityCreated(a: Activity, b: Bundle?) {"
+    if marker not in r:
+        raise SystemExit("v8.3.617: ResilienceManager onActivityCreated anchor not found")
+    replacement = marker + "\n                a.window.decorView.post { if (a is MainActivity) RovexClinicalDayProductionLayer.apply(a) }"
+    r = r.replace(marker, replacement, 1)
+    resilience_path.write_text(r, encoding="utf-8")
 
 g = g.replace("versionCode = 702", "versionCode = 703", 1)
 g = g.replace('versionName = "8.3.616"', 'versionName = "8.3.617"', 1)
