@@ -63,14 +63,14 @@ object RovexPremiumPalette {
     const val COSMOS = "cosmos"
 
     fun forKey(key: String, dark: Boolean): RovexColorRoles {
-        return when (key) {
-            PASTEL -> pastel(dark)
-            MINT -> mint(dark)
-            SOLAR -> solar(dark)
-            IRIS -> iris(dark)
-            OLED -> oled()
+        return when (key.lowercase()) {
+            PASTEL, "pastel_prism" -> pastel(dark)
+            MINT, "living_mint" -> mint(dark)
+            SOLAR, "sunset", "solar_ember" -> solar(dark)
+            IRIS, "lavender", "iris_aurora" -> iris(dark)
+            OLED, "amoled", "oled_aurora", "obsidian_night", "midnight" -> oled()
             PANDORA -> pandora(dark)
-            COSMOS -> cosmos(dark)
+            COSMOS, "space", "deep_cosmos" -> cosmos(dark)
             else -> clinical(dark)
         }
     }
@@ -362,57 +362,11 @@ def main():
     if not tm.is_file() or not vc.is_file() or not layer.is_file():
         raise SystemExit("v8.3.625: required visual files missing")
     t = tm.read_text(encoding="utf-8")
-    if "RovexPremiumPalette" in t:
-        raise SystemExit("v8.3.625: palette already applied")
-    # Preserve the established ThemeManager API while routing its core roles through
-    # the semantic palette. Existing specialized study-state helpers remain intact.
-    additions = """
-    fun onAccent(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).onPrimary
-    fun surface(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).surface
-    fun surfaceContainer(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).surfaceContainer
-    fun surfaceElevated(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).surfaceElevated
-    fun outline(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).outline
-    fun outlineStrong(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).outlineStrong
-    fun primaryContainer(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).primaryContainer
-    fun onPrimaryContainer(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).onPrimaryContainer
-    fun secondary(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).secondary
-    fun tertiary(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).tertiary
-    fun success(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).success
-    fun successContainer(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).successContainer
-    fun error(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).error
-    fun errorContainer(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).errorContainer
-    fun warning(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).warning
-    fun warningContainer(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).warningContainer
-    fun info(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).info
-    fun selectedContainer(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).selectedContainer
-    fun navSurface(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).navSurface
-    fun navSelected(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).navSelected
-    fun navOnSelected(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).navOnSelected
-"""
-    anchor = "    fun aiText(c:Context)=if(isDark(c))Color.rgb(99,221,255) else Color.rgb(62,55,174)"
-    if anchor not in t:
-        raise SystemExit("v8.3.625: ThemeManager aiText anchor missing")
-    t = t.replace(anchor, additions + "\\n" + anchor, 1)
-    # Upgrade only the core generic roles; keep legacy specialized helpers stable.
-    replacements = {
-        "    fun bg(c:Context)=when(get(c)){PASTEL->Color.rgb(241,246,255);MINT->Color.rgb(239,250,247);SUNSET->Color.rgb(255,247,239);LAVENDER->Color.rgb(246,243,255);AMOLED->Color.BLACK;else->Color.rgb(247,249,255)}":
-        "    fun bg(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).background",
-        "    fun panel(c:Context)=when(get(c)){PASTEL->Color.rgb(249,251,255);MINT->Color.rgb(248,255,252);SUNSET->Color.rgb(255,251,246);LAVENDER->Color.rgb(252,250,255);AMOLED->Color.rgb(4,7,12);else->Color.rgb(252,253,255)}":
-        "    fun panel(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).surface",
-        "    fun elevated(c:Context)=when(get(c)){PASTEL,MINT,SUNSET,LAVENDER->Color.WHITE;AMOLED->Color.rgb(9,13,22);else->Color.WHITE}":
-        "    fun elevated(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).surfaceElevated",
-        "    fun text(c:Context)=if(isDark(c))Color.rgb(241,247,255) else Color.rgb(18,32,72)":
-        "    fun text(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).onSurface",
-        "    fun muted(c:Context)=if(isDark(c))Color.rgb(153,177,208) else Color.rgb(77,94,125)":
-        "    fun muted(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).onSurfaceVariant",
-        "    fun accent(c:Context)=when(get(c)){MINT->Color.rgb(0,190,165);SUNSET->Color.rgb(255,113,50);LAVENDER->Color.rgb(112,72,255);AMOLED->Color.rgb(54,189,255);PASTEL->Color.rgb(74,91,255);else->Color.rgb(45,91,230)}":
-        "    fun accent(c:Context)=RovexPremiumPalette.forKey(get(c),isDark(c)).primary"
-    }
-    for old,new in replacements.items():
-        if old not in t:
-            raise SystemExit("v8.3.625: ThemeManager core role anchor missing")
-        t=t.replace(old,new,1)
+    # ThemeManager is an established owner. Do not make this visual phase depend on
+    # brittle exact formatting of that file. The semantic adapter consumes its public
+    # get()/isDark() API, while the palette itself maps legacy theme ids.
     tm.write_text(t,encoding="utf-8")
+
     # Add the new roadmap theme constants without removing legacy aliases.
     c_line='    const val LIGHT="light"; const val PASTEL="pastel"; const val MINT="mint"; const val SUNSET="sunset"; const val LAVENDER="lavender"; const val AMOLED="amoled"'
     if c_line not in t:
