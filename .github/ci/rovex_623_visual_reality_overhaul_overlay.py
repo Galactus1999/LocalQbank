@@ -17,10 +17,9 @@ ROOT = Path(sys.argv[1]).resolve()
 APP = ROOT / "app"
 PKG = APP / "src/main/java/com/localqbank/library"
 GRADLE = APP / "build.gradle.kts"
-REPO_ASSETS = ROOT.parent.parent / "visual-assets"
 # In Adaptive CI the overlay script lives in the repository and ROOT is the
 # extracted project. The repository root is passed separately when available.
-REPO_ROOT = Path(__file__).resolve().parents[1] if len(Path(__file__).resolve().parents) > 1 else ROOT
+REPO_ROOT = Path(__file__).resolve().parents[2] if len(Path(__file__).resolve().parents) > 2 else ROOT
 
 if not GRADLE.is_file():
     raise SystemExit("v8.3.623: build.gradle.kts missing")
