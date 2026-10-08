@@ -71,9 +71,17 @@ if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|^INSTRUMENTATION
   exit 1
 fi
 
-if ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: 0$' "$LOG"; then
+if ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: 0
+ "$LOG"; then
   echo "No successful per-test instrumentation result was reported."
   exit 1
+fi
+
+if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then
+  visual_out="$RUNNER_TEMP/adaptive-android/reports/visual-truth"
+  bash "$GITHUB_WORKSPACE/.github/ci/rovex_visual_truth_capture.sh" "$visual_out"
+  test -s "$visual_out/visual-truth.json"
+  echo "Rendered visual truth gate PASS."
 fi
 
 echo "Adaptive instrumentation suite PASS."
