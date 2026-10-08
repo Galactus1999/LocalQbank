@@ -103,17 +103,8 @@ object RovexVisualSurfaceStyle {
     s = button.read_text(encoding="utf-8")
     if "RovexVisualColors.border(context, emphasized)" in s:
         raise SystemExit("v8.3.618 overlay: button border already present")
-    old = """        view.background = RippleDrawable(
-            ColorStateList.valueOf(RovexVisualColors.controlRipple(context)),
-            GradientDrawable().apply {
-                setColor(if (emphasized) RovexVisualColors.accentFill(context) else RovexVisualColors.controlFill(context))
-                cornerRadius =
-                    RovexVisualShapes.controlCornerDp(context) *
-                    context.resources.displayMetrics.density
-            },
-            null
-        )
-"""
+    import re
+    pattern = re.compile(r"        view\.background = RippleDrawable\\(.*?\\n        \\)\\n        view\.isClickable = true", re.DOTALL)
     new = """        val density = context.resources.displayMetrics.density
         val radius = RovexVisualShapes.controlCornerDp(context) * density
         val fill = GradientDrawable().apply {
@@ -126,8 +117,11 @@ object RovexVisualSurfaceStyle {
             fill,
             null
         )
-"""
-    if old not in s:
+        view.isClickable = true"""
+    s, count = pattern.subn(new, s, count=1)
+    if count != 1:
+        raise SystemExit("v8.3.618 overlay: button RippleDrawable baseline not found")
+
         raise SystemExit("v8.3.618 overlay: button baseline block missing")
     s = s.replace(old, new, 1)
     if "RovexTouchFeedback.bind(view)" not in s:
