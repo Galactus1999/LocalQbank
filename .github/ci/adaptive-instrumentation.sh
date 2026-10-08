@@ -150,7 +150,8 @@ if adb -s "$SERIAL" shell pidof "$APP_ID" >/dev/null 2>&1; then
   for target in "QBank" "Flashcards" "Ben"; do
     coords="$(tap_text "$target" 2>/dev/null || true)"
     if [[ "$coords" =~ ^[0-9]+[[:space:]][0-9]+$ ]]; then
-      adb -s "$SERIAL" shell input tap $coords >/dev/null 2>&1 || true
+      read -r tap_x tap_y <<< "$coords"
+      adb -s "$SERIAL" shell input tap "$tap_x" "$tap_y" >/dev/null 2>&1 || true
       sleep 2
       safe="$(printf '%s' "$target" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
       capture_visual "$safe"
