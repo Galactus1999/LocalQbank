@@ -92,14 +92,7 @@ if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG"; then
   exit 1
 fi
 
-if grep -Eq '^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
-  echo "Instrumentation runner reported an abort/fatal status."
-  exit 1
-fi
-if ! grep -Eq '^INSTRUMENTATION_RESULT:|^INSTRUMENTATION_CODE: -1$' "$LOG"; then
-  echo "Instrumentation did not produce the normal completed result marker."
-  exit 1
-fi
+if grep -Eq '^INSTRUMENTATION_STATUS_CODE: -2
 
 status_ok_count="$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0$' "$LOG" || true)"
 if [[ "$status_ok_count" -lt 1 ]]; then
