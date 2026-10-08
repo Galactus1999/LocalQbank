@@ -73,7 +73,7 @@ def main():
         g=gradles[0].read_text(encoding="utf-8",errors="ignore"); versions=re.findall(r"versionCode\s*=\s*(\d+)",g); names=re.findall(r'versionName\s*=\s*"([^"]+)"',g)
         if len(versions)!=1 or len(names)!=1: findings.append({"kind":"version_contract","file":str(gradles[0].relative_to(root)),"versionCodes":versions,"versionNames":names})
     else: warnings.append({"kind":"version_contract_unresolved","app_gradle_count":len(gradles)})
-    repo_discover=Path.cwd()/".github/ci/adaptive-discover.sh"
+    repo_discover=Path(__import__("os").environ.get("GITHUB_WORKSPACE", str(Path.cwd())))/".github/ci/adaptive-discover.sh"
     if repo_discover.is_file():
         d=repo_discover.read_text(encoding="utf-8",errors="ignore"); chain=["616_clinical_day_background","617_visual_token","618_premium_foundation","619_visual_lab","620_visual_truth","621_visual_truth_retrigger","622_premium_surface_migration"]; positions=[d.find(x) for x in chain]
         if any(x<0 for x in positions) or positions!=sorted(positions): findings.append({"kind":"visual_overlay_chain","detail":"Expected 616→617→618→619→620→621→622 chain is incomplete or out of order."})
