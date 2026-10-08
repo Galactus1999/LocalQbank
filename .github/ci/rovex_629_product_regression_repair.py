@@ -36,23 +36,25 @@ def qbank(root):
 
 '''
     p.write_text(s.replace(a,method+a,1))
-    p=one(root,"QuizSessionRepository.kt");s=p.read_text();s=rep(s,'    fun questionAt(testId: String, position: Int): Question? = questions.questionAt(testId, position)
-','    fun questionAt(testId: String, position: Int): Question? = questions.questionAt(testId, position)
+    p=one(root,"QuizSessionRepository.kt");s=p.read_text();p=one(root,"QuizSessionRepository.kt");s=p.read_text();s=rep(s,'''    fun questionAt(testId: String, position: Int): Question? = questions.questionAt(testId, position)
+''','''    fun questionAt(testId: String, position: Int): Question? = questions.questionAt(testId, position)
     fun questionAtOrdinal(testId:String,ordinal:Int):Question?=questions.questionAtOrdinal(testId,ordinal)
     fun questionOrdinal(testId:String,questionId:Long):Int?=questions.questionOrdinal(testId,questionId)
-','repository ordinal API');p.write_text(s)
-    p=one(root,"QuizViewModel.kt");s=p.read_text();s=rep(s,'    fun questionAt(testId: String, position: Int): Question? = data.questionAt(testId, position)
-','    fun questionAt(testId: String, position: Int): Question? = data.questionAt(testId, position)
+''','repository ordinal API');p.write_text(s)
+    p=one(root,"QuizViewModel.kt");s=p.read_text();s=rep(s,'''    fun questionAt(testId: String, position: Int): Question? = data.questionAt(testId, position)
+''','''    fun questionAt(testId: String, position: Int): Question? = data.questionAt(testId, position)
     fun questionAtOrdinal(testId:String,ordinal:Int):Question?=data.questionAtOrdinal(testId,ordinal)
-','viewmodel ordinal API');p.write_text(s)
+''','viewmodel ordinal API');p.write_text(s)
     p=one(root,"QuizNavigationUseCase.kt");s=p.read_text();s=rep(s,'repository.rawQuestionPosition(testId, requestedQuestionId)','repository.questionOrdinal(testId, requestedQuestionId)','exact question ordinal');p.write_text(s)
     p=one(root,"QuizQuestionLoader.kt");s=p.read_text();s=rep(s,'quizViewModel.questionAt(quizViewModel.state.testId, quizViewModel.state.position)','quizViewModel.questionAtOrdinal(quizViewModel.state.testId, quizViewModel.state.position)','loader ordinal');p.write_text(s)
     p=one(root,"QuizQuestionPrefetcher.kt");s=p.read_text();s=rep(s,'quizViewModel.questionAt(quizViewModel.state.testId, target)','quizViewModel.questionAtOrdinal(quizViewModel.state.testId, target)','prefetch ordinal');p.write_text(s)
 
 def bookmark(root):
     p=one(root,"QuizViewModel.kt");s=p.read_text()
-    s=rep(s,'private val pendingBookmarks = java.util.concurrent.ConcurrentHashMap<String, String?>()','private val pendingBookmarks = java.util.concurrent.ConcurrentHashMap<String, String>()
-    private val pendingBookmarkClears = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()','nullable ConcurrentHashMap')
+    s=rep(s,'''private val pendingBookmarks = java.util.concurrent.ConcurrentHashMap<String, String?>()
+''','''private val pendingBookmarks = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val pendingBookmarkClears = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+''','nullable ConcurrentHashMap')
     s=rep(s,'fun bookmark(stableKey: String): String? = pendingBookmarks[stableKey] ?: foregroundProgress.record(stableKey)?.bookmark','''fun bookmark(stableKey:String):String?=when{
         pendingBookmarkClears.contains(stableKey)->null
         pendingBookmarks.containsKey(stableKey)->pendingBookmarks[stableKey]
