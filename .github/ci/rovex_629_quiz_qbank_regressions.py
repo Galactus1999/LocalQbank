@@ -107,22 +107,35 @@ def main():
 
     # 2) Expose ordinal lookup through the quiz repository/data source.
     p=one(root,"QuizDataSources.kt"); s=p.read_text()
-    s=replace_once(s,'    fun questionAt(testId: String, position: Int): Question?','    fun questionAt(testId: String, position: Int): Question?\n    fun questionAtOrdinal(testId: String, ordinal: Int): Question?', 'QuizQuestionDataSource')
-    s=replace_once(s,'    override fun questionAt(testId: String, position: Int) = db.questionAt(testId, position)','    override fun questionAt(testId: String, position: Int) = db.questionAt(testId, position)\n    override fun questionAtOrdinal(testId: String, ordinal: Int) = db.questionAtOrdinal(testId, ordinal)','QBankQuizDataSource')
+    if "fun questionAtOrdinal(testId: String, ordinal: Int): Question?" not in s:
+        marker="interface QuizQuestionDataSource : AutoCloseable {"
+        i=s.index(marker)+len(marker)
+        s=s[:i]+"\n    fun questionAtOrdinal(testId: String, ordinal: Int): Question?"+s[i:]
+    if "override fun questionAtOrdinal(testId: String, ordinal: Int)" not in s:
+        marker="class QBankQuizDataSource(context: android.content.Context) : QuizQuestionDataSource, QuizNoteDataSource {"
+        i=s.index(marker)+len(marker)
+        i=s.index("\n",i)+1
+        s=s[:i]+"    override fun questionAtOrdinal(testId: String, ordinal: Int) = db.questionAtOrdinal(testId, ordinal)\n"+s[i:]
     p.write_text(s)
 
     p=one(root,"QuizSessionRepository.kt"); s=p.read_text()
-    s=replace_once(s,'    fun questionAt(testId: String, position: Int): Question? = questions.questionAt(testId, position)','    fun questionAt(testId: String, position: Int): Question? = questions.questionAt(testId, position)\n    fun questionAtOrdinal(testId: String, ordinal: Int): Question? = questions.questionAtOrdinal(testId, ordinal)','QuizSessionRepository')
+    if "fun questionAtOrdinal(testId: String, ordinal: Int): Question?" not in s:
+        marker="    fun questionAt(testId: String, position: Int): Question? = questions.questionAt(testId, position)"
+        i=s.index(marker)+len(marker)
+        s=s[:i]+"\n    fun questionAtOrdinal(testId: String, ordinal: Int): Question? = questions.questionAtOrdinal(testId, ordinal)"+s[i:]
     p.write_text(s)
 
     p=one(root,"QuizViewModel.kt"); s=p.read_text()
-    s=replace_once(s,'    fun questionAt(testId: String, position: Int): Question? = data.questionAt(testId, position)','    fun questionAt(testId: String, position: Int): Question? = data.questionAt(testId, position)\n    fun questionAtOrdinal(testId: String, ordinal: Int): Question? = data.questionAtOrdinal(testId, ordinal)','QuizViewModel')
+    if "fun questionAtOrdinal(testId: String, ordinal: Int): Question?" not in s:
+        marker="    fun questionAt(testId: String, position: Int): Question? = data.questionAt(testId, position)"
+        i=s.index(marker)+len(marker)
+        s=s[:i]+"\n    fun questionAtOrdinal(testId: String, ordinal: Int): Question? = data.questionAtOrdinal(testId, ordinal)"+s[i:]
     p.write_text(s)
 
     for name in ["QuizQuestionLoader.kt","QuizQuestionPrefetcher.kt"]:
         p=one(root,name); s=p.read_text()
-        s=s.replace('quizViewModel.questionAt(quizViewModel.state.testId, quizViewModel.state.position)','quizViewModel.questionAtOrdinal(quizViewModel.state.testId, quizViewModel.state.position)')
-        s=s.replace('quizViewModel.questionAt(quizViewModel.state.testId, target)','quizViewModel.questionAtOrdinal(quizViewModel.state.testId, target)')
+        s=s.replace("quizViewModel.questionAt(quizViewModel.state.testId, quizViewModel.state.position)","quizViewModel.questionAtOrdinal(quizViewModel.state.testId, quizViewModel.state.position)")
+        s=s.replace("quizViewModel.questionAt(quizViewModel.state.testId, target)","quizViewModel.questionAtOrdinal(quizViewModel.state.testId, target)")
         p.write_text(s)
 
     # 3) Make Home resume use the same ordinal contract when it resolves a saved ordinal.
