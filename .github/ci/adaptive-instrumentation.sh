@@ -163,6 +163,31 @@ if adb -s "$SERIAL" shell pidof "$APP_ID" >/dev/null 2>&1; then
     fi
   done
 
+  # Exact production-owner visual evidence. Do not infer QBank/Ben screens from text taps:
+  # launch the actual Activities used by the product navigation and export both pixels and UI hierarchy.
+  capture_exact_activity() {
+    local name="$1" component="$2" extra="$3"
+    adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+    if [[ -n "$extra" ]]; then
+      adb -s "$SERIAL" shell am start -W -n "$APP_ID/$component" $extra >/dev/null 2>&1
+    else
+      adb -s "$SERIAL" shell am start -W -n "$APP_ID/$component" >/dev/null 2>&1
+    fi
+    sleep 3
+    local resumed
+    resumed="$(adb -s "$SERIAL" shell dumpsys activity activities 2>/dev/null | tr -d '\\r' | grep -m1 'mResumedActivity' || true)"
+    printf '%s resumed=%s\\n' "$name" "$resumed" >> "$VISUAL_DIR/exact-production-activities.txt"
+    adb -s "$SERIAL" exec-out screencap -p > "$VISUAL_DIR/$name.png"
+    test -s "$VISUAL_DIR/$name.png"
+    adb -s "$SERIAL" shell uiautomator dump /sdcard/rovex-window.xml >/dev/null 2>&1
+    adb -s "$SERIAL" exec-out cat /sdcard/rovex-window.xml > "$VISUAL_DIR/$name-window.xml"
+    test -s "$VISUAL_DIR/$name-window.xml"
+    file "$VISUAL_DIR/$name.png" >> "$VISUAL_DIR/exact-production-activities.txt"
+    echo "Exact production visual evidence PASS: $name"
+  }
+  capture_exact_activity "qbank-production" "com.localqbank.library.RovexSectionDashboardActivity" '--es section qbank'
+  capture_exact_activity "ren-production" "com.localqbank.library.RenActivity" ''
+
   # Landscape is an explicit visual contract, but failure to rotate an emulator
   # must not turn otherwise-valid functional instrumentation red.
   adb -s "$SERIAL" shell settings put system accelerometer_rotation 0 >/dev/null 2>&1 || true
