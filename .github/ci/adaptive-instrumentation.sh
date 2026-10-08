@@ -114,10 +114,62 @@ APP_ID="${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}"
 adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
 adb -s "$SERIAL" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
 sleep 3
+
+capture_visual() {
+  local name="$1"
+  adb -s "$SERIAL" exec-out screencap -p > "$VISUAL_DIR/$name.png"
+  test -s "$VISUAL_DIR/$name.png"
+  echo "Visual truth capture PASS: $VISUAL_DIR/$name.png"
+}
+
+tap_text() {
+  local wanted="$1"
+  local xml="$VISUAL_DIR/window-hierarchy.xml"
+  adb -s "$SERIAL" shell uiautomator dump /sdcard/rovex-window.xml >/dev/null 2>&1 || return 1
+  adb -s "$SERIAL" exec-out cat /sdcard/rovex-window.xml > "$xml" 2>/dev/null || return 1
+  python3 - "$xml" "$wanted" <<'PY'
+import re,sys
+xml,wanted=sys.argv[1],sys.argv[2]
+s=open(xml,encoding="utf-8",errors="ignore").read()
+pat=re.compile(r'<node[^>]*text="' + re.escape(wanted) + r'"[^>]*bounds="\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]"')
+m=pat.search(s)
+if not m:
+    sys.exit(1)
+x1,y1,x2,y2=map(int,m.groups())
+print((x1+x2)//2,(y1+y2)//2)
+PY
+}
+
 if adb -s "$SERIAL" shell pidof "$APP_ID" >/dev/null 2>&1; then
-  adb -s "$SERIAL" exec-out screencap -p > "$VISUAL_DIR/clinical-day-home.png"
-  test -s "$VISUAL_DIR/clinical-day-home.png"
-  echo "Visual truth capture PASS: $VISUAL_DIR/clinical-day-home.png"
+  capture_visual "home-light"
+  # Capture the actual hierarchy alongside the pixels so geometry/text overflow
+  # can be inspected without asking the user for screenshots.
+  adb -s "$SERIAL" shell uiautomator dump /sdcard/rovex-window.xml >/dev/null 2>&1 || true
+  adb -s "$SERIAL" exec-out cat /sdcard/rovex-window.xml > "$VISUAL_DIR/home-window.xml" 2>/dev/null || true
+
+  for target in "QBank" "Flashcards" "Ben"; do
+    coords="$(tap_text "$target" 2>/dev/null || true)"
+    if [[ "$coords" =~ ^[0-9]+[[:space:]][0-9]+$ ]]; then
+      adb -s "$SERIAL" shell input tap $coords >/dev/null 2>&1 || true
+      sleep 2
+      safe="$(printf '%s' "$target" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
+      capture_visual "$safe"
+      adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+      adb -s "$SERIAL" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+      sleep 2
+    else
+      echo "Visual truth capture BLOCKED: text target '$target' not found"
+    fi
+  done
+
+  # Landscape is an explicit visual contract, but failure to rotate an emulator
+  # must not turn otherwise-valid functional instrumentation red.
+  adb -s "$SERIAL" shell settings put system accelerometer_rotation 0 >/dev/null 2>&1 || true
+  adb -s "$SERIAL" shell settings put system user_rotation 1 >/dev/null 2>&1 || true
+  sleep 2
+  capture_visual "home-landscape" || true
+  adb -s "$SERIAL" shell settings put system user_rotation 0 >/dev/null 2>&1 || true
+  adb -s "$SERIAL" shell settings put system accelerometer_rotation 1 >/dev/null 2>&1 || true
 else
   echo "Visual truth capture BLOCKED: launcher did not start $APP_ID"
 fi
