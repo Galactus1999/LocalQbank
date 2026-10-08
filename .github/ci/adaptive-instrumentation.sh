@@ -57,7 +57,7 @@ echo "Discovered instrumentation runner: $runner"
 
 set +e
 rm -f "$LOG"
-adb -s "$SERIAL" shell am instrument -w -r "$runner" > "$LOG" 2>&1 &
+adb -s "$SERIAL" shell am instrument -w -r -e no-isolated-storage 1 "$runner" > "$LOG" 2>&1 &
 instrument_pid=$!
 terminal_seen=false
 for _ in $(seq 1 1800); do
@@ -166,8 +166,7 @@ if adb -s "$SERIAL" shell pidof "$APP_ID" >/dev/null 2>&1; then
   # Pull the screenshots/hierarchies captured by the instrumentation test itself.
   # These are authoritative because the test launches the real production Activities.
   EXACT_DIR="$VISUAL_DIR/exact-production"
-  TEST_ID="\${APP_ID}.test"
-  DEVICE_EXACT_DIR="/sdcard/Android/data/\${TEST_ID}/files/RovexVisualTruth"
+  DEVICE_EXACT_DIR="/sdcard/RovexVisualTruth"
   rm -rf "$EXACT_DIR"
   mkdir -p "$EXACT_DIR"
   if adb -s "$SERIAL" shell test -d "$DEVICE_EXACT_DIR"; then
