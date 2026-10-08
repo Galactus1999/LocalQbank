@@ -169,14 +169,23 @@ jobs:
         run: |
           echo "CAPABILITY SKIPPED: no Android test APK was discovered."
 
+      - name: Stage adaptive diagnostics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .adaptive-ci-diagnostics
+          mkdir -p .adaptive-ci-diagnostics
+          if [[ -s .adaptive-instrumentation.log ]]; then cp -f .adaptive-instrumentation.log .adaptive-ci-diagnostics/; fi
+          if [[ -d "$RUNNER_TEMP/adaptive-android/reports" ]]; then cp -a "$RUNNER_TEMP/adaptive-android/reports/." .adaptive-ci-diagnostics/; fi
+
       - name: Upload adaptive diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: adaptive-android-diagnostics
           path: |
-            .adaptive-instrumentation.log
-            $RUNNER_TEMP/adaptive-android/reports/**
+            .adaptive-ci-diagnostics/**
           if-no-files-found: ignore
           retention-days: 14
 
