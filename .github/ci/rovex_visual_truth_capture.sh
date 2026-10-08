@@ -2,48 +2,23 @@
 set -euo pipefail
 ROOT="$GITHUB_WORKSPACE"
 SERIAL="emulator-$EMULATOR_PORT"
-PACKAGE="${ADAPTIVE_APPLICATION_ID:?ADAPTIVE_APPLICATION_ID is required}"
 OUT="${1:?output directory required}"
 mkdir -p "$OUT/screens"
 log(){ printf '[visual-truth] %s\n' "$*"; }
 fail(){ log "FATAL: $*"; exit 1; }
-wait_stable(){ sleep "${1:-2}"; }
 
-capture(){
-  local label="$1" component="$2" extra="${3:-}"
-  log "Launching $label: $PACKAGE/$component"
-  adb -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true
-  if ! adb -s "$SERIAL" shell am start -W -n "$PACKAGE/$component" $extra >"$OUT/${label}.start.txt" 2>&1; then
-    cat "$OUT/${label}.start.txt" >&2 || true
-    fail "Unable to launch required visual screen: $label"
-  fi
-  wait_stable 2
-  if ! adb -s "$SERIAL" shell dumpsys activity activities | grep -q "$component"; then
-    cat "$OUT/${label}.start.txt" >&2 || true
-    fail "Expected activity not foreground after launch: $label ($component)"
-  fi
-  adb -s "$SERIAL" exec-out screencap -p > "$OUT/screens/${label}.png"
-  test -s "$OUT/screens/${label}.png"
-  log "Captured $label"
-}
+# Activities are intentionally non-exported in Rovex. The companion instrumented
+# test launches them inside the application UID, then leaves real screenshots
+# on the emulator for this host-side collector.
+adb -s "$SERIAL" shell test -d /sdcard/RovexVisualTruth || fail "Instrumented visual truth directory missing"
+rm -rf "$OUT/screens"
+mkdir -p "$OUT/screens"
+adb -s "$SERIAL" pull /sdcard/RovexVisualTruth/. "$OUT/screens/" >/dev/null
+for required in 01_home.png 02_qbank.png 03_flashcards.png 04_ren.png 05_settings.png; do
+  test -s "$OUT/screens/$required" || fail "Required rendered screenshot missing: $required"
+done
+count="$(find "$OUT/screens" -maxdepth 1 -type f -name '*.png' | wc -l | tr -d ' ')"
+log "Collected $count actual rendered screenshots"
 
-capture "01_home" ".MainActivity"
-capture "02_qbank" ".RovexSectionDashboardActivity" '--es section qbank'
-capture "03_flashcards" ".RovexSectionDashboardActivity" '--es section flashcards'
-capture "04_ren" ".RenActivity"
-capture "05_settings" ".SettingsActivity"
-
-if adb -s "$SERIAL" shell cmd package resolve-activity --brief "$PACKAGE/.VisualLabActivity" 2>/dev/null | grep -q 'VisualLabActivity'; then
-  adb -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true
-  if adb -s "$SERIAL" shell am start -W -n "$PACKAGE/.VisualLabActivity" >"$OUT/06_visual_lab.start.txt" 2>&1; then
-    wait_stable 2
-    adb -s "$SERIAL" exec-out screencap -p > "$OUT/screens/06_visual_lab.png"
-    log "Captured 06_visual_lab"
-  else
-    log "Visual Lab launch skipped after failed optional launch"
-  fi
-fi
-
-adb -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true
 python3 "$ROOT/tools/rovex_visual_truth.py" --screens "$OUT/screens" --output "$OUT/visual-truth.json"
 cat "$OUT/visual-truth.json"
