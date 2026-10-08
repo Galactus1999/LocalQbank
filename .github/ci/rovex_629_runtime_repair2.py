@@ -54,29 +54,9 @@ def main():
     }'''
     s=replace_once(s,old2,new2,"rawQuestionPosition")
     # questionById must resolve by exact DB id because questionAt is now ordinal.
-    old3='''    fun rawQuestionPosition(testId: String, questionId: Long): Int? = db.rawQuery(
-        "SELECT COUNT(*) FROM question q JOIN test t ON t.id=q.test_id JOIN source s ON s.id=t.source_id AND s.deleting=0 WHERE q.test_id=? AND q.position < (SELECT position FROM question WHERE id=? AND test_id=? LIMIT 1)",
-        arrayOf(testId, questionId.toString(), testId)
-    ).use { c -> if (c.moveToFirst()) c.getInt(0) else null }
-
-    fun questionById(questionId: Long): Question? = db.rawQuery(
-        "SELECT q.test_id,q.position FROM question q JOIN test t ON t.id=q.test_id JOIN source s ON s.id=t.source_id WHERE q.id=? AND s.deleting=0 LIMIT 1",
-        arrayOf(questionId.toString())
-    ).use { c -> if (!c.moveToFirst()) null else questionAt(c.getString(0), c.getInt(1)) }'''
-    new3='''    fun questionById(questionId: Long): Question? = db.rawQuery(
-        "SELECT q.id,q.test_id,q.position,q.source_question_id,COALESCE(q.text,''),q.raw_text,q.correct_answer,q.explanation,q.bot,q.video,q.audio FROM question q JOIN test t ON t.id=q.test_id JOIN source s ON s.id=t.source_id WHERE q.id=? AND s.deleting=0 LIMIT 1",
-        arrayOf(questionId.toString())
-    ).use { c ->
-        if (!c.moveToFirst()) return@use null
-        val id=c.getLong(0); val testId=c.getString(1); val rawPos=c.getInt(2); val sourceKey=c.getString(3)
-        val opts=mutableListOf<Option>()
-        db.rawQuery("SELECT label,text,is_correct FROM option_item WHERE question_id=? ORDER BY position",arrayOf(id.toString())).use { o ->
-            while(o.moveToNext()) opts.add(Option(o.getString(0) ?: "",o.getString(1) ?: "",o.getInt(2)!=0))
-        }
-        Question(id,stableKey(testId,rawPos,sourceKey),rawPos,sourceKey,c.getString(4),c.getString(5),c.getString(6),c.getString(7),c.getString(8),c.getString(9),c.getString(10),opts,images(id,"question"),images(id,"explanation"))
-    }'''
-    s=replace_once(s,old3,new3,"questionById")
-    p.write_text(s)
+    old3='''if (!c.moveToFirst()) null else questionAt(c.getString(0), c.getInt(1))'''
+    new3='''if (!c.moveToFirst()) null else questionAt(c.getString(0), rawQuestionPosition(c.getString(0), questionId) ?: return@use null)'''
+    s=replace_once(s,old3,new3,"questionById ordinal")    p.write_text(s)
 
     # 2) Removing a bookmark is an in-place UI mutation. Do not force a full question rebuild
     # while an async progress write is pending; that race was able to tear down the Activity.
