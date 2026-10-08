@@ -103,10 +103,16 @@ object RovexVisualSurfaceStyle {
     s = button.read_text(encoding="utf-8")
     if "RovexVisualColors.border(context, emphasized)" in s:
         raise SystemExit("v8.3.618 overlay: button border already present")
-    old = """        view.background = RippleDrawable(ColorStateList.valueOf(RovexVisualColors.controlRipple(context)), GradientDrawable().apply {
-            setColor(if (emphasized) RovexVisualColors.accentFill(context) else RovexVisualColors.controlFill(context))
-            cornerRadius = RovexVisualShapes.controlCornerDp(context) * context.resources.displayMetrics.density
-        }, null)
+    old = """        view.background = RippleDrawable(
+            ColorStateList.valueOf(RovexVisualColors.controlRipple(context)),
+            GradientDrawable().apply {
+                setColor(if (emphasized) RovexVisualColors.accentFill(context) else RovexVisualColors.controlFill(context))
+                cornerRadius =
+                    RovexVisualShapes.controlCornerDp(context) *
+                    context.resources.displayMetrics.density
+            },
+            null
+        )
 """
     new = """        val density = context.resources.displayMetrics.density
         val radius = RovexVisualShapes.controlCornerDp(context) * density
