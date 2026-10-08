@@ -131,7 +131,7 @@ object RovexVisualSurfaceStyle {
     old = " private fun surface(view:View,fill:Int,stroke:Int,radius:Int=20)=GradientDrawable().apply{setColor(fill);setStroke(dp(1,view),stroke);cornerRadius=dp(radius,view).toFloat()}\n"
     if old not in s:
         raise SystemExit("v8.3.618 overlay: ModernUi surface baseline missing")
-    modern.write_text(s.replace(old, " private fun surface(view:View,fill:Int,stroke:Int,radius:Int=20)=RovexVisualSurfaceStyle.glass(view.context,radius)\n", 1), encoding="utf-8")
+    modern.write_text(s.replace(old, " private fun surface(view:View,fill:Int,stroke:Int,radius:Int=20)=RovexVisualSurfaceStyle.glass(view.context,radius.toFloat())\n", 1), encoding="utf-8")
 
     ben = pkg / "BenQuestionAiContextDialog.kt"
     s = ben.read_text(encoding="utf-8")
