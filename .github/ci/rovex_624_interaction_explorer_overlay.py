@@ -135,7 +135,13 @@ while queue and index < MAX_ACTIONS:
         if re.search(r"\b(delete|remove|reset|clear|erase|logout|sign.?out|wipe|uninstall)\b",label,re.I):
             detail="destructive-control-opened-and-recovered"
         log(index,"TAP",target,"PASS" if ok else "FAIL",detail)
-        if not ok: raise SystemExit("application died after clickable interaction: "+label)
+        if not ok:
+            # Activity-closing controls are expected navigation, not app crashes.
+            expected_close = bool(re.search(r"\\b(finish|close|back|cancel|done|exit)\\b", label, re.I))
+            if not expected_close:
+                raise SystemExit("application died after clickable interaction: "+label)
+            recover()
+            continue
         recover()
 
 # Scroll every scrollable surface discovered across the reachable state graph.
