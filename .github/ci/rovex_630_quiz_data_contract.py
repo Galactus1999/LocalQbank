@@ -10,7 +10,9 @@ def one(root,name):
 def main():
     if len(sys.argv)!=2: raise SystemExit("usage: rovex_630_quiz_data_contract.py <project>")
     root=Path(sys.argv[1]).resolve()
-    p=root/"app/src/main/java/com/localqbank/library/data/quiz/QuizDataSources.kt";\n    if not p.is_file(): raise SystemExit("v8.3.630 data quiz source missing")\n    s=p.read_text()
+    p=root/"app/src/main/java/com/localqbank/library/data/quiz/QuizDataSources.kt";
+    if not p.is_file(): raise SystemExit("v8.3.630 data quiz source missing")
+    s=p.read_text()
     old='''    fun questionAt(testId: String, position: Int): Question?
     fun testIdForQuestion(id: Long): String?
 '''
