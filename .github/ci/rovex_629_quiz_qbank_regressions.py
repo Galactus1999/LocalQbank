@@ -19,7 +19,7 @@ def replace_once(s,old,new,label):
 def main():
     if len(sys.argv)!=2: raise SystemExit("usage: rovex_629_qbank_quiz_regressions.py <project>")
     root=Path(sys.argv[1])
-    g=one(root,"build.gradle.kts").read_text()
+    g=(root/"app"/"build.gradle.kts").read_text()
     if OLD not in g or OLD_CODE not in g: raise SystemExit("v8.3.629 wrong baseline")
 
     # 1) Separate ordinal quiz navigation from the persisted/raw q.position field.
@@ -218,6 +218,6 @@ def main():
     p.write_text(s)
 
     # 9) Version.
-    gp=one(root,"build.gradle.kts"); g=gp.read_text().replace(OLD,NEW,1).replace(OLD_CODE,NEW_CODE,1); gp.write_text(g)
+    gp=root/"app"/"build.gradle.kts"; g=gp.read_text().replace(OLD,NEW,1).replace(OLD_CODE,NEW_CODE,1); gp.write_text(g)
     print("v8.3.629 quiz/QBank regression repair applied")
 if __name__=="__main__": main()
