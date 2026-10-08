@@ -108,4 +108,18 @@ if ! grep -Eq '^INSTRUMENTATION_CODE: -?[0-9]+$' "$LOG"; then
   exit 1
 fi
 
+VISUAL_DIR="$ROOT/.adaptive-visual"
+mkdir -p "$VISUAL_DIR"
+APP_ID="${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}"
+adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+adb -s "$SERIAL" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+sleep 3
+if adb -s "$SERIAL" shell pidof "$APP_ID" >/dev/null 2>&1; then
+  adb -s "$SERIAL" exec-out screencap -p > "$VISUAL_DIR/clinical-day-home.png"
+  test -s "$VISUAL_DIR/clinical-day-home.png"
+  echo "Visual truth capture PASS: $VISUAL_DIR/clinical-day-home.png"
+else
+  echo "Visual truth capture BLOCKED: launcher did not start $APP_ID"
+fi
+
 echo "Adaptive instrumentation suite PASS."
