@@ -166,10 +166,12 @@ if adb -s "$SERIAL" shell pidof "$APP_ID" >/dev/null 2>&1; then
   # Pull the screenshots/hierarchies captured by the instrumentation test itself.
   # These are authoritative because the test launches the real production Activities.
   EXACT_DIR="$VISUAL_DIR/exact-production"
+  TEST_ID="\${APP_ID}.test"
+  DEVICE_EXACT_DIR="/sdcard/Android/data/\${TEST_ID}/files/RovexVisualTruth"
   rm -rf "$EXACT_DIR"
   mkdir -p "$EXACT_DIR"
-  if adb -s "$SERIAL" shell test -d /sdcard/RovexVisualTruth; then
-    adb -s "$SERIAL" pull /sdcard/RovexVisualTruth/. "$EXACT_DIR/" >/dev/null
+  if adb -s "$SERIAL" shell test -d "$DEVICE_EXACT_DIR"; then
+    adb -s "$SERIAL" pull "$DEVICE_EXACT_DIR/." "$EXACT_DIR/" >/dev/null
     test -s "$EXACT_DIR/02_qbank.png"
     test -s "$EXACT_DIR/02_qbank-window.xml"
     test -s "$EXACT_DIR/04_ren.png"
