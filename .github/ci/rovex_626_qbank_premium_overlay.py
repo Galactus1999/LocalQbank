@@ -46,14 +46,14 @@ object RovexQBankProductionLayer {
             if (child is Button || child is EditText) styleControl(activity, child)
             if (child is ViewGroup && child !is android.widget.ScrollView &&
                 child !is android.widget.HorizontalScrollView &&
-                child !is android.widget.RecyclerView) {
+                child !is androidx.recyclerview.widget.RecyclerView) {
                 styleTree(activity, child, depth + 1)
             }
         }
     }
 
     private fun isSurfaceCandidate(view: View, name: String, depth: Int): Boolean {
-        if (depth == 0 || view is android.widget.ScrollView || view is android.widget.RecyclerView) return false
+        if (depth == 0 || view is android.widget.ScrollView || view is androidx.recyclerview.widget.RecyclerView) return false
         if (name.contains("nav") || name.contains("toolbar") || name.contains("appbar")) return false
         return name.contains("card") || name.contains("item") || name.contains("row") ||
             name.contains("source") || name.contains("qbank") || name.contains("library") ||
