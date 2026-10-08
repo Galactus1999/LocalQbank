@@ -38,6 +38,8 @@ class RovexVisualTruthCaptureTest {
 
     @Test
     fun captureCoreRenderedScreens() {
+        shell("rm -rf /sdcard/RovexVisualTruth")
+        shell("mkdir -p /sdcard/RovexVisualTruth")
         ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use {
             check(it.state.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)); settle(); capture("01_home")
         }
