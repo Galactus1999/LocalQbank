@@ -86,10 +86,7 @@ def main():
             background = RovexVisualSurfaceStyle.glass(this@RenActivity, 18f, true)
         }''','ren chat')
     r(pkg/'RenActivity.kt','background=UiDrawableUtils.roundedDrawable(this@RenActivity,ThemeManager.elevated(this@RenActivity),16f)','background=RovexVisualSurfaceStyle.glass(this@RenActivity,16f,true)','ren input')
-    r(pkg/'RenActivity.kt','''            setTextColor(ThemeManager.text(this@RenActivity))
-            background=UiDrawableUtils.roundedDrawable(this@RenActivity,ThemeManager.elevated(this@RenActivity),11f)
-            setOnClickListener{click()}''','''            RovexVisualButtonStyle.apply(this, this@RenActivity)
-            setOnClickListener{click()}''','ren action')
+    # Ren action() was already migrated by the v8.3.617 overlay; do not re-patch it.
     r(pkg/'SettingsScreen.kt','this.background=if(background==Color.TRANSPARENT) ThemeManager.transparentSectionDrawable(activity) else rounded(background,radius)','this.background=if(background==Color.TRANSPARENT) RovexVisualSurfaceStyle.glass(activity,radius.toFloat()) else rounded(background,radius)','settings card')
     r(pkg/'SettingsScreen.kt','background=rounded(if(ThemeManager.isDark(activity))Color.rgb(20,28,37) else Color.rgb(248,249,249),13)','background=RovexVisualSurfaceStyle.glass(activity,13f)','settings metric')
     r(pkg/'SettingsScreen.kt','background=GradientDrawable().apply{setColor(ThemeManager.elevated(activity));cornerRadius=dp(18).toFloat();setStroke(dp(1),Color.argb(if(dark)70 else 45,Color.red(tint),Color.green(tint),Color.blue(tint)))}','background=RovexVisualSurfaceStyle.glass(activity,18f)','settings category')
