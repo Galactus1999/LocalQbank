@@ -83,8 +83,6 @@ marker = """    override fun draw(canvas: Canvas) {
         val w = bounds.width().toFloat().coerceAtLeast(1f)"""
 replacement = """    override fun draw(canvas: Canvas) {
         val w = bounds.width().toFloat().coerceAtLeast(1f)
-        val h = bounds.height().toFloat().coerceAtLeast(1f)
-
         // Clinical Day foundation: opaque + static. Full-screen motion is kept out
         // of the light background so theme luminance is deterministic.
         if (profile.scene < 5) {
