@@ -68,6 +68,9 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   if [[ "$(basename "$candidate")" == "Rovex_v8.3.445_CI_RuntimeRegression_RootRepair_Source.zip" ]]; then
     python3 "$ROOT/.github/ci/rovex_446_overlay2.py" "$project"
   fi
+  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]]; then
+    python3 "$ROOT/.github/ci/rovex_616_clinical_day_background_overlay.py" "$project"
+  fi
 
 fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
