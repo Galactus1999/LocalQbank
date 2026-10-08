@@ -66,7 +66,9 @@ if [[ "$adb_rc" -ne 0 ]]; then
   # runner has already emitted a complete zero-failure summary. Only tolerate
   # that exact teardown condition. Some runner versions report the teardown
   # as final INSTRUMENTATION_CODE: -1 rather than a STATUS_CODE line.
-  if grep -Eq '^OK \([1-9][0-9]* tests\)
+  if grep -Eq '^OK \\([1-9][0-9]* tests\\)$' "$LOG" \
+      && ! grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG" \
+      && ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
     echo "Instrumentation shell teardown returned rc=$adb_rc after a complete zero-failure suite; continuing."
   else
     echo "ADB instrumentation failed: rc=$adb_rc"
@@ -74,7 +76,7 @@ if [[ "$adb_rc" -ne 0 ]]; then
   fi
 fi
 
-if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2
+if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|^INSTRUMENTATION_STATUS_CODE: -1$|^INSTRUMENTATION_STATUS_CODE: -2$' "$LOG"; then
   echo "Instrumented tests reported an error, assertion failure, or runner abort."
   exit 1
 fi
