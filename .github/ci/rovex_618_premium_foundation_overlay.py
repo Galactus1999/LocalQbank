@@ -104,7 +104,7 @@ object RovexVisualSurfaceStyle {
     if "RovexVisualColors.border(context, emphasized)" in s:
         raise SystemExit("v8.3.618 overlay: button border already present")
     import re
-    pattern = re.compile(r"        view\.background = RippleDrawable\\(.*?\\n        \\)\\n        view\.isClickable = true", re.DOTALL)
+    pattern = re.compile(r"        view\.background = RippleDrawable\(.*?\n        \)\n        view\.isClickable = true", re.DOTALL)
     new = """        val density = context.resources.displayMetrics.density
         val radius = RovexVisualShapes.controlCornerDp(context) * density
         val fill = GradientDrawable().apply {
