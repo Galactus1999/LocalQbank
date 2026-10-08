@@ -109,11 +109,13 @@ def main():
             Intent(context, RovexSectionDashboardActivity::class.java).putExtra("section","qbank")
         ).use {''',1)
     old_capture='''        shell("screencap -p /sdcard/RovexVisualTruth/$name.png")
-        // The host-side collector validates the file after instrumentation.
-        // Avoid making the test depend on shell-output timing for the screenshot file.'''
-    new_capture='''        shell("screencap -p /sdcard/RovexVisualTruth/$name.png")
         shell("uiautomator dump /sdcard/RovexVisualTruth/$name-window.xml")
         // The host-side collector pulls these exact production-owner artifacts after instrumentation.'''
+    new_capture='''        val outputDir="/sdcard/Android/data/\${context.packageName}/files/RovexVisualTruth"
+        shell("mkdir -p $outputDir")
+        shell("screencap -p $outputDir/$name.png")
+        shell("uiautomator dump $outputDir/$name-window.xml")
+        // App-scoped external storage is readable by the CI shell without disabling scoped storage.'''
     if old_capture not in s: raise SystemExit("v8.3.628: capture function anchor missing")
     s=s.replace(old_capture,new_capture,1)
     p.write_text(s)
