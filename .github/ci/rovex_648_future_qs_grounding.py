@@ -16,7 +16,16 @@ lines = source.splitlines()
 matches = [i for i, line in enumerate(lines) if line.lstrip().startswith('FUTURE_RELATED("FUTURE Qs"')]
 if len(matches) != 1:
     raise SystemExit(f"[648] expected one FUTURE_RELATED prompt, found {len(matches)}")
-lines[matches[0]] = replacement
+start_line = matches[0]
+end_line = next(
+    (i for i in range(start_line + 1, len(lines))
+     if re.match(r"^\s{4}[A-Z][A-Z0-9_]*\(", lines[i])),
+    len(lines),
+)
+# Prompt entries in the baseline may span multiple physical Kotlin lines. Replace
+# the entire enum entry, not just its opening line, or stale continuation lines
+# remain after the new entry and break Kotlin compilation.
+lines = lines[:start_line] + [replacement] + lines[end_line:]
 profile.write_text("\n".join(lines) + "\n")
 
 t = test.read_text()
