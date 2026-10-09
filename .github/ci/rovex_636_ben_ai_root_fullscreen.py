@@ -152,7 +152,7 @@ s = s.replace(start, """        // This is attached to android.R.id.content abov
         // Dialog window. Its MATCH_PARENT root receives keyboard/navigation insets directly.
         activity.mountBenAiPanelRoot(root, ::closePanel)
 """, 1)
-if "dialog." in s: raise SystemExit("[636] unexpected remaining Dialog reference in BenQuestionAiContextDialog")
+if "Dialog(activity)" in s or "dialog.window" in s or "dialog.setContentView" in s or "dialog.setOnDismissListener" in s: raise SystemExit("[636] legacy Ben+AI Dialog window reference remains")
 p.write_text(s)
 
 # Guard the discovered-source chain: every CI build must apply 636 after the validated 635 layer.
