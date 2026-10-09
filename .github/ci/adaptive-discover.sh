@@ -76,6 +76,9 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   python3 "$ROOT/.github/ci/rovex_635_theme_home_quiz_ux.py" "$project"
   python3 "$ROOT/.github/ci/rovex_636_ben_ai_root_fullscreen.py" "$project"
   python3 "$ROOT/.github/ci/rovex_637_imported_home_motion.py" "$project"
+  python3 "$ROOT/.github/ci/rovex_638_quiz_fullscreen_layout.py" "$project"
+  python3 "$ROOT/.github/ci/rovex_638_touch_feedback_unification.py" "$project"
+  python3 "$ROOT/.github/ci/rovex_638_live_motion_theme_switch.py" "$project"
  fi
 fi
 visual_report="$WORK/reports/rovex-visual-audit.json"
