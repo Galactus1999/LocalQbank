@@ -33,9 +33,18 @@ license_note = """Rovex third-party motion assets
 Gradient Animated Background
 - Creator/source page: https://lottiefiles.com/free-animation/gradient-animated-background-Gyh6Lr3KGK
 - Imported JSON mirror: https://raw.githubusercontent.com/xvrh/lottie-flutter/master/example/assets/lottiefiles/gradient_animated_background.json
-- License: Lottie Simple License (the LottieFiles page marks this animation free to use under that license).
-- The animation is bundled as part of Rovex's UI, not offered as a standalone downloadable asset.
-- This is a free-use licensed asset, not public-domain/CC0. Preserve this notice and re-check the upstream license if the asset is replaced.
+- License: Lottie Simple License (FL 9.13.21), Copyright © 2021 Design Barn Inc.
+- The animation is bundled as part of Rovex's UI, not offered or exposed as a standalone downloadable asset.
+- The license permits reproduction, modification, publication, distribution and commercial use provided the asset distribution remains subject to the same license terms. Attribution is not required but encouraged.
+- Do not repackage this animation as a standalone asset or compile assets to create a competing service. Preserve these terms if the asset is redistributed.
+
+Full license terms:
+Permission is hereby granted, free of charge, to any person obtaining a copy of the public animation files available for download at the LottieFiles site (“Files”) to download, reproduce, modify, publish, distribute, publicly display, and publicly digitally perform such Files, including for commercial purposes, provided that any display, publication, performance, or distribution of Files must contain (and be subject to) the same terms and conditions of this license.
+Modifications to Files are deemed derivative works and must also be expressly distributed under the same terms and conditions of this license. You may not purport to impose any additional or different terms or conditions on, or apply any technical measures that restrict exercise of, the rights granted under this license. This license does not include the right to collect or compile Files from LottieFiles to replicate or develop a similar or competing service.
+Use of Files without attributing the creator(s) of the Files is permitted under this license, though attribution is strongly encouraged. If attributions are included, such attributions should be visible to the end user.
+FILES ARE PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. EXCEPT TO THE EXTENT REQUIRED BY APPLICABLE LAW, IN NO EVENT WILL THE CREATOR(S) OF THE FILES OR DESIGN BARN, INC. BE LIABLE ON ANY LEGAL THEORY FOR ANY SPECIAL, INCIDENTAL, CONSEQUENTIAL, PUNITIVE, OR EXEMPLARY DAMAGES ARISING OUT OF THIS LICENSE OR THE USE OF SUCH FILES.
+
+Official license: https://lottiefiles.com/page/license
 
 Existing Rovex assets remain listed in RovexVisualAssetManifest.json.
 """
