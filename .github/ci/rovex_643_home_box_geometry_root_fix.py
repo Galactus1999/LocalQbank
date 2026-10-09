@@ -44,8 +44,8 @@ home.write_text(s)
 # Replace the old motion-wrapper structural test with a source/runtime invariant: the safety
 # rollback must not manufacture any motion wrapper or change child layout params.
 test = P / "app/src/androidTest/java/com/localqbank/library/RovexFlowSurfaceRegressionTest.kt"
-if test.is_file():
-    test.write_text('''package com.localqbank.library
+test.parent.mkdir(parents=True, exist_ok=True)
+test.write_text("""package com.localqbank.library
 
 import android.content.Intent
 import android.view.View
@@ -68,20 +68,18 @@ class RovexFlowSurfaceRegressionTest {
                 val synthetic = mutableListOf<View>()
                 fun walk(view: View) {
                     val tag = view.tag?.toString().orEmpty()
-                    if (tag.startsWith("rovex_motion_surface:") || tag == "rovex_motion_clip") {
-                        synthetic.add(view)
-                    }
+                    if (tag.startsWith("rovex_motion_surface:") || tag == "rovex_motion_clip") synthetic.add(view)
                     if (view is ViewGroup) for (i in 0 until view.childCount) walk(view.getChildAt(i))
                 }
                 walk(root)
                 check(synthetic.isEmpty()) {
-                    "Synthetic Home motion wrappers are disabled until geometry-safe rendering is validated; found " + synthetic.size
+                    "Synthetic Home motion wrappers must remain disabled; found " + synthetic.size
                 }
             }
         }
     }
 }
-''')
+""")
 
 s = home.read_text()
 if "return view" not in s[s.index("private fun withMotionSurface"):s.index("private fun installMotionSurfaces")]:
