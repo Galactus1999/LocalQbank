@@ -135,7 +135,7 @@ rep(p,"                    if (nextReady && nextId != 0) {\n                    
 p=f("FlashcardStudyActivity.kt")
 rep(p,"setOnClickListener{RovexSoundFeedback.playClick(this@FlashcardStudyActivity);click(this)}",
     "setOnClickListener{click(this)}","avoid duplicate flashcard button sound")
-rep(p,"                ACTION_DOWN->{\n                    dragging=true;moved=false;downX=event.rawX;downY=event.rawY;startX=view.x;startY=view.y",
+rep(p,"                MotionEvent.ACTION_DOWN->{\n                    RovexSoundFeedback.playDeepTouch(this@FlashcardStudyActivity)\n                    dragging=true;moved=false;downX=event.rawX;downY=event.rawY;startX=view.x;startY=view.y",
     "                ACTION_DOWN->{\n                    RovexSoundFeedback.playDeepTouch(this@FlashcardStudyActivity)\n                    dragging=true;moved=false;downX=event.rawX;downY=event.rawY;startX=view.x;startY=view.y",
     "movable control touch sound")
 
