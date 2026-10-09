@@ -58,10 +58,10 @@ import re
 sound_text = sound.read_text()
 # Inspect executable Kotlin, not comments/documentation that may mention the old call.
 # The previous literal substring check falsely failed when a comment retained the example text.
-sound_code = re.sub(r"/\\*.*?\\*/", "", sound_text, flags=re.S)
-sound_code = re.sub(r"//[^\\n]*", "", sound_code)
+sound_code = re.sub(r"/\*.*?\*/", "", sound_text, flags=re.S)
+sound_code = re.sub(r"//[^\n]*", "", sound_code)
 unsafe_touch_call = re.search(
-    r"(?m)^\\s*return\\s+playDirectFallback\\s*\\(\\s*context\\s*,\\s*cue\\s*\\)",
+    r"(?m)^\s*return\s+playDirectFallback\s*\(\s*context\s*,\s*cue\s*\)",
     sound_code
 )
 if unsafe_touch_call:
