@@ -23,6 +23,10 @@ gradle.write_text(g.replace('versionName = "8.3.646"', 'versionName = "8.3.647"'
 # (the decor's FrameLayout), not the actual screen root. That decor padding is shared with the
 # window/content transition and can shift weighted screens; put safe insets on the activity root.
 s = system_ui.read_text()
+# The new decor-wrapper cleanup requires ViewGroup for child-root discovery. The baseline only
+# imported View, so add the explicit type import before emitting the replacement Kotlin.
+if "import android.view.ViewGroup" not in s:
+    s = s.replace("package com.localqbank.library\n", "package com.localqbank.library\n\nimport android.view.ViewGroup\n", 1)
 old = """        val content=activity.findViewById<View>(android.R.id.content)
         if(content!=null){
             AdaptiveLayoutManager.install(
