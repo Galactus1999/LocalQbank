@@ -31,7 +31,7 @@ footer_anchor = 'actionsScroll.addView(actions, android.view.ViewGroup.LayoutPar
 if s.count(footer_anchor) != 1:
     raise SystemExit(f"[646] expected one footer viewport anchor, found {s.count(footer_anchor)}")
 if "actionsScroll.isFillViewport = true" not in s:
-    s = s.replace(footer_anchor, 'actionsScroll.isFillViewport = true\n        actionsScroll.isHorizontalScrollBarEnabled = false\n        actionsScroll.overScrollMode = View.OVER_SCROLL_NEVER\n        ' + footer_anchor, 1)
+    s = s.replace(footer_anchor, 'actionsScroll.isFillViewport = true\n        actionsScroll.isHorizontalScrollBarEnabled = false\n        actionsScroll.overScrollMode = android.view.View.OVER_SCROLL_NEVER\n        ' + footer_anchor, 1)
 dialog.write_text(s)
 
 # The weighted rows must be measured against the visible viewport, not an unbounded
@@ -42,8 +42,8 @@ for needle in (
     "actionsScroll.isFillViewport = true",
     "modeScroll.isHorizontalScrollBarEnabled = false",
     "actionsScroll.isHorizontalScrollBarEnabled = false",
-    "modeScroll.overScrollMode = View.OVER_SCROLL_NEVER",
-    "actionsScroll.overScrollMode = View.OVER_SCROLL_NEVER",
+    "modeScroll.overScrollMode = android.view.View.OVER_SCROLL_NEVER",
+    "actionsScroll.overScrollMode = android.view.View.OVER_SCROLL_NEVER",
     "LinearLayout.LayoutParams(0, dp(activity, 32), 1f)",
     "LinearLayout.LayoutParams(0, dp(activity, 30), 1f)",
 ):
