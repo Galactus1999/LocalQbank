@@ -21,6 +21,9 @@ Lottie_REQUIRED = ("v", "fr", "ip", "op", "w", "h", "layers")
 KNOWN_REDISTRIBUTABLE = {
     "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause",
     "CC0-1.0", "CC-BY-4.0", "CC-BY-3.0", "PUBLIC-DOMAIN",
+    # Asset license, not an open-source software license; use only with its full
+    # terms shipped alongside the bundled animation and never as a standalone asset.
+    "LOTTIE SIMPLE LICENSE",
 }
 
 
@@ -78,8 +81,22 @@ def main() -> int:
         parsed = urlparse(source)
         if parsed.scheme != "https" or not parsed.netloc:
             fail(f"{rel}: source must be an HTTPS URL")
-        if license_name.upper() not in KNOWN_REDISTRIBUTABLE:
+        normalized_license = license_name.strip().upper()
+        if normalized_license not in KNOWN_REDISTRIBUTABLE:
             fail(f"{rel}: license '{license_name}' is not on the reviewed redistribution allowlist")
+        if normalized_license == "LOTTIE SIMPLE LICENSE":
+            terms_path = project / "app/src/main/assets/rovex/motion/THIRD_PARTY_ASSETS.md"
+            if not terms_path.is_file():
+                fail(f"{rel}: Lottie Simple License terms must ship in THIRD_PARTY_ASSETS.md")
+            terms = terms_path.read_text(encoding="utf-8")
+            required_terms = (
+                "Permission is hereby granted", "same terms and conditions of this license",
+                "does not include the right to collect or compile",
+                "FILES ARE PROVIDED 'AS IS'",
+            )
+            missing_terms = [clause for clause in required_terms if clause not in terms]
+            if missing_terms:
+                fail(f"{rel}: bundled Lottie Simple License terms are incomplete: {', '.join(missing_terms)}")
         if not SHA256.fullmatch(expected_hash.lower()):
             fail(f"{rel}: sha256 must be exactly 64 hexadecimal characters")
         path = resolve_asset(project, rel)
