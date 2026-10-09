@@ -19,7 +19,7 @@ assert "INSTRUMENTATION_STATUS_CODE: 0" in runner
 assert "captureCoreRenderedScreens" in overlay
 assert "Required rendered screenshot missing" in helper
 assert 'InstrumentationRegistry.getArguments().getString("rovexVisualTruth")' in overlay
-assert "no visible interactive app hierarchy" in overlay
+assert "no foreground Rovex Activity with visible interactive nodes" in overlay
 assert "foreground Rovex Activity" in overlay
 assert "def foreground_app()" in overlay
 assert "actions=%d states=%d" in overlay
