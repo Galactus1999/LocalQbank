@@ -113,8 +113,14 @@ helpers = """    private const val MOTION_BG_TAG = "rovex_home_motion_background
         val visibleRect = android.graphics.Rect()
         val visible = !forcePause && view.isShown &&
             view.getGlobalVisibleRect(visibleRect) && visibleRect.width() > 0 && visibleRect.height() > 0
-        if (visible && motionPolicyAllowed) runCatching { view.resumeAnimation() }
-        else runCatching { view.pauseAnimation() }
+        if (visible && motionPolicyAllowed) {
+            if (!view.isAnimating()) {
+                if (view.progress > 0f) runCatching { view.resumeAnimation() }
+                else runCatching { view.playAnimation() }
+            }
+        } else if (view.isAnimating()) {
+            runCatching { view.pauseAnimation() }
+        }
     }
 
     private fun updateMotionTree(view:View, c:Context, forcePause:Boolean=false) {
