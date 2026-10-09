@@ -132,6 +132,30 @@ rep(p,"                val next = pending; pending = null\n","                va
 rep(p,"                    if (nextReady && nextId != 0) {\n                        stopFallbackPlayerLocked()",
     "                    if (nextReady && nextId != 0) {\n                        pending = null\n                        stopFallbackPlayerLocked()","clear pending only when playable")
 
+# Root cause of delayed touch audio: MediaPlayer.create() ran synchronously on the UI thread
+# whenever an asynchronously-loaded SoundPool sample was not ready or play() returned stream 0.
+# SoundPool is preloaded at app startup; skip a rare not-ready cue rather than decode late on tap.
+p=f("RovexSoundFeedback.kt")
+rep(p,"""            if (!ready || id == 0) {
+                if (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH) {
+                    // Immediate direct fallback; do not queue a duplicate after playing it.
+                    return playDirectFallback(context, cue)
+                }
+                pending = cue
+                return false
+            }""","""            if (!ready || id == 0) {
+                if (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH) {
+                    // Never construct MediaPlayer on a tap. SoundPool is preloaded at startup;
+                    // if the sample is not ready, skip it rather than play a delayed cue.
+                    return false
+                }
+                pending = cue
+                return false
+            }""","remove synchronous touch fallback")
+rep(p,"""            if (stream == 0 && (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH)) return playDirectFallback(context, cue)""",
+       """            if (stream == 0 && (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH)) return false""",
+       "remove stream-failure synchronous fallback")
+
 p=f("FlashcardStudyActivity.kt")
 rep(p,"setOnClickListener{RovexSoundFeedback.playClick(this@FlashcardStudyActivity);click(this)}",
     "setOnClickListener{click(this)}","avoid duplicate flashcard button sound")
