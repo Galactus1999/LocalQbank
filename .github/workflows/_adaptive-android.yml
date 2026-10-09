@@ -195,6 +195,7 @@ jobs:
           name: adaptive-android-diagnostics
           path: |
             .adaptive-ci-diagnostics/**
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 14
 
