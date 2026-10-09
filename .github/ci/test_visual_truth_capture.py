@@ -20,6 +20,8 @@ assert "captureCoreRenderedScreens" in overlay
 assert "Required rendered screenshot missing" in helper
 assert 'InstrumentationRegistry.getArguments().getString("rovexVisualTruth")' in overlay
 assert "no visible interactive app hierarchy" in overlay
+assert "foreground Rovex Activity" in overlay
+assert "def foreground_app()" in overlay
 assert "actions=%d states=%d" in overlay
 assert "sha256" in truth and "byte-identical screenshots" in truth
 assert "01_home.png" in truth and "05_settings.png" in truth
