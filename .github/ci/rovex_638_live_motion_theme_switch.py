@@ -13,7 +13,7 @@ def rep(p,a,b,label,count=1):
  p.write_text(s.replace(a,b,count))
 
 # Persisted preference, separate from Android's accessibility animation scale and from touch sound.
-f("RovexLiveMotionSettings.kt").write_text("""package com.localqbank.library
+(K / "RovexLiveMotionSettings.kt").write_text("""package com.localqbank.library
 
 import android.content.Context
 
