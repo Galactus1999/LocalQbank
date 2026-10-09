@@ -25,7 +25,7 @@ mode_anchor = 'modeScroll.addView(modeRow, android.view.ViewGroup.LayoutParams(-
 if s.count(mode_anchor) != 1:
     raise SystemExit(f"[646] expected one mode viewport anchor, found {s.count(mode_anchor)}")
 if "modeScroll.isFillViewport = true" not in s:
-    s = s.replace(mode_anchor, 'modeScroll.isFillViewport = true\n        modeScroll.isHorizontalScrollBarEnabled = false\n        modeScroll.overScrollMode = View.OVER_SCROLL_NEVER\n        ' + mode_anchor, 1)
+    s = s.replace(mode_anchor, 'modeScroll.isFillViewport = true\n        modeScroll.isHorizontalScrollBarEnabled = false\n        modeScroll.overScrollMode = android.view.View.OVER_SCROLL_NEVER\n        ' + mode_anchor, 1)
 
 footer_anchor = 'actionsScroll.addView(actions, android.view.ViewGroup.LayoutParams(-1, dp(activity, 32)))'
 if s.count(footer_anchor) != 1:
