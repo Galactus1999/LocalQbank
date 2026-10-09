@@ -27,7 +27,7 @@ rep(p,"infoRow.addView(jumpButton, LinearLayout.LayoutParams(dp(48), dp(48)).app
 rep(p,"root.addView(infoRow, LinearLayout.LayoutParams(-1, dp(32)))","root.addView(infoRow, LinearLayout.LayoutParams(-1, dp(34)))","progress height")
 rep(p,"setPadding(dp(20), dp(14), dp(20), dp(50))","setPadding(dp(20), dp(14), dp(20), dp(18))","question trailing padding")
 rep(p,"setPadding(dp(12), dp(8), dp(12), dp(10))","setPadding(dp(10), dp(4), dp(10), dp(4))","footer outer padding")
-rep(p,"background=ThemeManager.backgroundDrawable(context)","background=android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)","footer scrim")
+rep(p,"""val actionWrap = FrameLayout(context).apply {\n            setPadding(dp(10), dp(4), dp(10), dp(4))\n            background=ThemeManager.backgroundDrawable(context)\n        }""","""val actionWrap = FrameLayout(context).apply {\n            setPadding(dp(10), dp(4), dp(10), dp(4))\n            background=android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)\n        }""","footer scrim")
 rep(p,"setPadding(dp(8), dp(7), dp(8), dp(7))","setPadding(dp(8), dp(5), dp(8), dp(5))","footer inner padding")
 rep(p,"background = RovexVisualSurfaceStyle.glass(context,22f,true)","""background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(ThemeManager.elevated(context), ThemeManager.panel(context))).apply {
                 cornerRadius = dp(18).toFloat()
