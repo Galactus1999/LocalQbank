@@ -68,7 +68,7 @@ class RovexFlowSurfaceRegressionTest {
                 val synthetic = mutableListOf<View>()
                 fun walk(view: View) {
                     val tag = view.tag?.toString().orEmpty()
-                    if (tag.startsWith("rovex_motion_surface:") || tag == "rovex_motion_clip") synthetic.add(view)
+                    if (tag.startsWith("rovex_motion_surface:auto-") || tag == "rovex_motion_clip:auto") synthetic.add(view)
                     if (view is ViewGroup) for (i in 0 until view.childCount) walk(view.getChildAt(i))
                 }
                 walk(root)
