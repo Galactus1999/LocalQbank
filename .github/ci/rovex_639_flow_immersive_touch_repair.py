@@ -485,9 +485,10 @@ class RovexHeaderCosmicView @JvmOverloads constructor(context: Context, attrs: A
 # failed on first use or when the single stream was occupied. Keep a bounded three-stream cue pool.
 p = file("RovexSoundFeedback.kt")
 replace(p, "                if (cue == Cue.CLICK) {\n                    // SoundPool loads asynchronously. A short UI cue must still work on the\n                    // very first tap, so use the same PCM asset through MediaPlayer while the\n                    // pool finishes loading. Do not queue a second click or the user can hear\n                    // two sounds when onLoadComplete fires.\n                    return playDirectFallback(context)\n                }\n                pending = cue\n                return false",
-        "                if (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH) {\n                    // Immediate direct fallback; do not queue a duplicate after playing it.\n                    return playDirectFallback(context, cue)\n                }\n                pending = cue\n                return false", "first-tap fallback for all touch cues")
+        "                if (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH) {\n                    // Immediate direct fallback; do not queue a duplicate after playing it.\n                    pending = cue
+                    return false\n                }\n                pending = cue\n                return false", "first-tap fallback for all touch cues")
 replace(p, "            if (stream == 0 && cue == Cue.CLICK) return playDirectFallback(context)",
-        "            if (stream == 0 && (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH)) return playDirectFallback(context, cue)",
+        "            if (stream == 0) return false",
         "fallback on rejected stream")
 replace(p, "SoundPool.Builder().setMaxStreams(1).setAudioAttributes(attrs).build()",
         "SoundPool.Builder().setMaxStreams(3).setAudioAttributes(attrs).build()", "allow brief tap cues")
@@ -641,7 +642,12 @@ settings = file("SettingsScreen.kt").read_text()
 if "keepStatusBarVisible = false" not in quiz: raise SystemExit("[639] quiz status-bar ownership incomplete")
 if "RovexMotionAssetLoader.themedJson(c)" not in home or "RovexColorFlowTextView(a)" not in home: raise SystemExit("[639] themed imported motion/quote incomplete")
 if "Animate pastel card surfaces using these colours" not in settings: raise SystemExit("[639] Colour Flow surface switch missing")
-if "playDirectFallback(context, cue)" not in sound or "setMaxStreams(3)" not in sound: raise SystemExit("[639] touch cue fallback/concurrency repair incomplete")
+if "setMaxStreams(3)" not in sound: raise SystemExit("[639] touch cue concurrency repair incomplete")
+import re
+sound_code = re.sub(r"/\*.*?\*/", "", sound, flags=re.S)
+sound_code = re.sub(r"//[^\n]*", "", sound_code)
+if re.search(r"(?m)^\s*return\s+playDirectFallback\s*\(\s*context\s*,\s*cue\s*\)", sound_code):
+    raise SystemExit("[639] synchronous touch fallback was reintroduced")
 if "leftMargin = -d(14,a)" in home: raise SystemExit("[639] old inset-square layout remains")
 print("[639] applied v8.3.639 / versionCode 725")
 print("[639] immersive quiz insets, opaque clipped footer, palette-recoloured imported Lottie, all Home card layers, Colour Flow switch, living imported logo, and first-tap sound fallback")
