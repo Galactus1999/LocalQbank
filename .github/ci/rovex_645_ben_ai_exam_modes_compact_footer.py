@@ -135,6 +135,9 @@ class BenQuestionAiModePromptTest {
         assertTrue(BenQuestionAiMode.PYT_CONTEXT.prompt.contains("whole-topic revision map"))
         assertTrue(BenQuestionAiMode.FUTURE_RELATED.prompt.contains("5–8 genuinely varied"))
         assertTrue(BenQuestionAiMode.OTHER_OPTIONS.prompt.contains("option-by-option discriminator analysis"))
+        assertTrue(modes.all { it.prompt.contains("SOURCE POLICY (mandatory)") })
+        assertTrue(modes.all { it.prompt.contains("official institutional/government/academic-body websites") })
+        assertTrue(modes.all { it.prompt.contains("Do not use unofficial websites") })
         assertTrue(modes.all { it.prompt.length >= 400 })
     }
 }
