@@ -63,6 +63,7 @@ s = p.read_text()
 anchor = '    private fun d(v:Int,c:Context)=(v*c.resources.displayMetrics.density).toInt()\n'
 helpers = """    private const val MOTION_BG_TAG = "rovex_home_motion_background"
     private const val MOTION_CARD_PREFIX = "rovex_home_motion_card:"
+    private var motionPolicyAllowed = true
     private fun motionAlpha(c:Context, background:Boolean):Float {
         val card = when (ThemeManager.get(c)) {
             ThemeManager.LIGHT -> 0.22f
@@ -79,7 +80,7 @@ helpers = """    private const val MOTION_BG_TAG = "rovex_home_motion_background
     }
 
     private fun motionBackground(c:Context, tagValue:String, background:Boolean=false):LottieAnimationView? {
-        if (!AnimationPolicy.enabled(c)) return null
+        if (!motionPolicyAllowed) return null
         val view = LottieAnimationView(c).apply {
             tag = tagValue
             setAnimation("rovex/motion/gradient_animated_background.json")
@@ -112,7 +113,7 @@ helpers = """    private const val MOTION_BG_TAG = "rovex_home_motion_background
         val visibleRect = android.graphics.Rect()
         val visible = !forcePause && view.isShown &&
             view.getGlobalVisibleRect(visibleRect) && visibleRect.width() > 0 && visibleRect.height() > 0
-        if (visible && AnimationPolicy.enabled(c)) runCatching { view.resumeAnimation() }
+        if (visible && motionPolicyAllowed) runCatching { view.resumeAnimation() }
         else runCatching { view.pauseAnimation() }
     }
 
@@ -131,7 +132,8 @@ if anchor not in s: raise SystemExit("[637] Home helper insertion anchor missing
 s = s.replace(anchor, anchor + helpers, 1)
 
 old_refresh = '''        root.findViewWithTag<FrameLayout>(TAG)?.let{it.background=if (ThemeManager.get(a) == ThemeManager.LIGHT) RovexClinicalDayHomeBackgroundDrawable(a) else ThemeManager.backgroundDrawable(a);it.invalidate()}'''
-new_refresh = '''        root.findViewWithTag<FrameLayout>(TAG)?.let {
+new_refresh = '''        motionPolicyAllowed = AnimationPolicy.enabled(a)
+        root.findViewWithTag<FrameLayout>(TAG)?.let {
             it.background = if (ThemeManager.get(a) == ThemeManager.LIGHT) RovexClinicalDayHomeBackgroundDrawable(a) else ThemeManager.backgroundDrawable(a)
             updateMotionTree(it, a)
             it.invalidate()
@@ -159,7 +161,8 @@ s = s.replace(old_box, new_box, 1)
 
 old_shell = '''        val shell=FrameLayout(a).apply{tag=TAG;contentDescription="rovexHomeShell";background=if (ThemeManager.get(a) == ThemeManager.LIGHT) RovexClinicalDayHomeBackgroundDrawable(a) else ThemeManager.backgroundDrawable(a)}
         val scroll=ScrollView(a).apply{tag="ROVEX_HOME_SCROLL";overScrollMode=View.OVER_SCROLL_NEVER;clipToPadding=false;isFillViewport=true}'''
-new_shell = '''        val shell=FrameLayout(a).apply{tag=TAG;contentDescription="rovexHomeShell";background=if (ThemeManager.get(a) == ThemeManager.LIGHT) RovexClinicalDayHomeBackgroundDrawable(a) else ThemeManager.backgroundDrawable(a)}
+new_shell = '''        motionPolicyAllowed = AnimationPolicy.enabled(a)
+        val shell=FrameLayout(a).apply{tag=TAG;contentDescription="rovexHomeShell";background=if (ThemeManager.get(a) == ThemeManager.LIGHT) RovexClinicalDayHomeBackgroundDrawable(a) else ThemeManager.backgroundDrawable(a)}
         motionBackground(a, MOTION_BG_TAG, true)?.let { shell.addView(it, FrameLayout.LayoutParams(-1,-1)) }
         val scroll=ScrollView(a).apply{tag="ROVEX_HOME_SCROLL";overScrollMode=View.OVER_SCROLL_NEVER;clipToPadding=false;isFillViewport=true}
         scroll.setOnScrollChangeListener { _, _, _, _, _ -> updateMotionTree(shell, a) }'''
