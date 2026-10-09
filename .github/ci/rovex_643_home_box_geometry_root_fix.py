@@ -88,8 +88,8 @@ if "No heuristic view reparenting on Home." not in s:
     raise SystemExit("[643] auto-reparenting disablement missing")
 if "FrameLayout.LayoutParams(-1, if (fillHeight) -1 else -2)" in s:
     raise SystemExit("[643] layout-mutating wrapper implementation remains")
-if test.is_file() and "synthetic Home motion wrappers are disabled" not in test.read_text():
-    raise SystemExit("[643] runtime regression test missing")
+if not test.is_file() or "Synthetic Home motion wrappers must remain disabled" not in test.read_text():
+    raise SystemExit("[643] runtime regression test generation/postcondition failed")
 print("[643] applied v8.3.643 / versionCode 729")
 print("[643] root cause fixed: Home card wrapper no longer replaces LayoutParams or adds full-size Lottie viewport")
 print("[643] original Home view geometry, backgrounds, click targets and accessibility are preserved")
