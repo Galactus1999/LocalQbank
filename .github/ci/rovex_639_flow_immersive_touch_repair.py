@@ -46,6 +46,121 @@ replace(p, "        val infoRow = LinearLayout(context).apply {\n            ori
 replace(p, "        val actionWrap = FrameLayout(context).apply {\n            setPadding",
        "        val actionWrap = FrameLayout(context).apply {\n            tag = \"quiz:footer\"\n            setPadding", "quiz footer theme ownership")
 
+# Replace the hand-drawn live wallpaper renderer with the imported Lottie asset on every themed Activity.
+(K / "RovexImportedMotionBackgroundDrawable.kt").write_text("""package com.localqbank.library
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.PixelFormat
+import android.graphics.Rect
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
+import com.airbnb.lottie.LottieCompositionFactory
+import com.airbnb.lottie.LottieDrawable
+
+/** Theme background composed from theme tokens plus the imported, licensed Lottie motion asset. */
+class RovexImportedMotionBackgroundDrawable(
+    private val context: Context,
+    profile: RovexThemeProfile
+) : Drawable(), Drawable.Callback {
+    private val base = GradientDrawable(
+        GradientDrawable.Orientation.TL_BR,
+        intArrayOf(profile.backgroundA, profile.backgroundB)
+    )
+    private val motion = LottieDrawable()
+    private val motionAlpha = 18
+    private var released = false
+
+    init {
+        base.callback = this
+        motion.callback = this
+        motion.repeatCount = LottieDrawable.INFINITE
+        motion.repeatMode = LottieDrawable.RESTART
+        motion.speed = 0.24f
+        motion.alpha = motionAlpha
+        val first = RovexColorFlowTextView.colorOne(context)
+        val second = RovexColorFlowTextView.colorTwo(context)
+        val key = "rovex-live-wallpaper-" + ThemeManager.get(context) + "-" + first + "-" + second
+        LottieCompositionFactory.fromJsonString(RovexMotionAssetLoader.themedJson(context, first, second), key)
+            .addListener { composition ->
+                if (released) return@addListener
+                motion.composition = composition
+                if (isVisible && allowed()) motion.playAnimation()
+                invalidateSelf()
+            }
+            .addFailureListener { invalidateSelf() }
+    }
+
+    private fun allowed(): Boolean = !released && isVisible &&
+        AnimationPolicy.enabled(context) && RovexLiveMotionSettings.enabled(context)
+
+    override fun draw(canvas: Canvas) {
+        base.bounds = bounds
+        base.draw(canvas)
+        if (!allowed()) {
+            if (motion.isAnimating) motion.pauseAnimation()
+            return
+        }
+        motion.bounds = bounds
+        if (motion.composition != null && !motion.isAnimating) motion.playAnimation()
+        motion.draw(canvas)
+    }
+
+    override fun onBoundsChange(bounds: Rect) {
+        base.bounds = bounds
+        motion.bounds = bounds
+    }
+
+    override fun setAlpha(alpha: Int) {
+        base.alpha = alpha
+        motion.alpha = (alpha * motionAlpha / 255).coerceIn(0, 255)
+        invalidateSelf()
+    }
+
+    override fun setColorFilter(colorFilter: ColorFilter?) {
+        base.colorFilter = colorFilter
+        motion.colorFilter = colorFilter
+        invalidateSelf()
+    }
+
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+    override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
+        val changed = super.setVisible(visible, restart)
+        motion.isVisible = visible
+        if (visible && allowed()) {
+            if (restart) motion.progress = 0f
+            if (motion.composition != null && !motion.isAnimating) motion.playAnimation()
+        } else {
+            motion.pauseAnimation()
+        }
+        return changed
+    }
+
+    override fun invalidateDrawable(who: Drawable) = invalidateSelf()
+    override fun scheduleDrawable(who: Drawable, what: Runnable, time: Long) = scheduleSelf(what, time)
+    override fun unscheduleDrawable(who: Drawable, what: Runnable) = unscheduleSelf(what)
+    override fun onLevelChange(level: Int): Boolean = base.setLevel(level) || motion.setLevel(level)
+    override fun onStateChange(state: IntArray): Boolean = base.setState(state) || motion.setState(state)
+}
+""")
+
+p = file("ThemeManager.kt")
+replace(p, "        val base = RovexLivingBackgroundDrawable(c, profile(c))",
+        "        val base: Drawable = if (RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)) RovexImportedMotionBackgroundDrawable(c, profile(c)) else GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(profile(c).backgroundA, profile(c).backgroundB))",
+        "use imported Lottie wallpaper across themes")
+replace(p, "        val bundled = if (custom == null && get(c) == PASTEL) RovexBundledVisualAssets.bitmapIfReady(c) else null",
+        "        val bundled = if (custom == null) RovexBundledVisualAssets.bitmapIfReady(c) else null",
+        "allow imported wallpaper in every theme")
+old_wallpaper = "        val alpha = if (custom != null) {\n            if (isDark(c)) 70 else 10\n        } else {\n            46\n        }"
+new_wallpaper = "        val alpha = if (custom != null) { if (isDark(c)) 70 else 12 } else 36"
+replace(p, old_wallpaper, new_wallpaper, "lower wallpaper overlay to preserve legibility")
+living = K / "RovexLivingBackgroundDrawable.kt"
+if living.exists():
+    living.unlink()
+print("[639] removed custom-drawn live wallpaper runtime; all theme roots now use imported Lottie motion or a static theme gradient when disabled")
+
 # Recolour the imported licensed Lottie asset from the saved Colour Flow palette. Motion geometry is untouched.
 (K / "RovexMotionAssetLoader.kt").write_text("""package com.localqbank.library
 
