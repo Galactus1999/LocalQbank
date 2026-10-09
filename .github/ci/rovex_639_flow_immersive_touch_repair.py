@@ -78,7 +78,7 @@ class RovexImportedMotionBackgroundDrawable(
         motion.repeatCount = LottieDrawable.INFINITE
         motion.repeatMode = LottieDrawable.RESTART
         motion.speed = 0.24f
-        motion.alpha = motionAlpha
+        motion.setAlpha(motionAlpha)
         val first = RovexColorFlowTextView.colorOne(context)
         val second = RovexColorFlowTextView.colorTwo(context)
         val key = "rovex-live-wallpaper-" + ThemeManager.get(context) + "-" + first + "-" + second
@@ -113,8 +113,8 @@ class RovexImportedMotionBackgroundDrawable(
     }
 
     override fun setAlpha(alpha: Int) {
-        base.alpha = alpha
-        motion.alpha = (alpha * motionAlpha / 255).coerceIn(0, 255)
+        base.setAlpha(alpha)
+        motion.setAlpha((alpha * motionAlpha / 255).coerceIn(0, 255))
         invalidateSelf()
     }
 
