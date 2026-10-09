@@ -293,6 +293,23 @@ replacements = [
 ]
 for old, new, label in replacements:
     replace(p, old, new, label)
+replace(p, """                }
+            }
+            }
+        }
+    }
+    private fun refreshDynamic""",
+        """                }
+                hr.setTag(R.id.rovexMotionSurfaceScan, false)
+                installMotionSurfaces(hr, a)
+                AliveMotion.installTree(hr)
+                updateMotionTree(hr, a)
+            }
+            }
+        }
+    }
+    private fun refreshDynamic""",
+        "rescan asynchronous Continue Learning cards after population")
 replace(p, "            val clip = FrameLayout(a).apply {\n                background = GradientDrawable().apply { cornerRadius = d(22,a).toFloat(); setColor(Color.TRANSPARENT) }",
         "            val clip = FrameLayout(a).apply {\n                tag = \"rovex_motion_clip\"\n                background = GradientDrawable().apply { cornerRadius = d(22,a).toFloat(); setColor(Color.TRANSPARENT) }",
         "clip feature-card motion to exact card bounds")
@@ -372,9 +389,16 @@ replace(p, "if (soundOnTouch) RovexSoundFeedback.playDeepTouch(v.context)",
 replace(p, "            if (!complex && (view.isClickable || view.hasOnClickListeners())) {",
         "            if (!complex && view.tag?.toString() != \"rovex_motion_wrapped_content\" && (view.isClickable || view.hasOnClickListeners())) {",
         "do not rebind wrapped click content")
+replace(p, """        walk(root)""",
+        """        if (root is ViewGroup && root.id == android.R.id.content && root.getTag(R.id.rovexTouchTreeWatcher) != true) {
+            root.setTag(R.id.rovexTouchTreeWatcher, true)
+            root.viewTreeObserver.addOnGlobalLayoutListener { if (root.isAttachedToWindow) walk(root) }
+        }
+        walk(root)""",
+        "bind dynamically added clickable views across every Activity")
 
 ids = P / "app/src/main/res/values/ids.xml"
-replace(ids, "</resources>", "    <item name=\"rovexMotionPaletteKey\" type=\"id\" />\n    <item name=\"rovexMotionSurfaceScan\" type=\"id\" />\n</resources>", "motion palette and surface scan tags")
+replace(ids, "</resources>", "    <item name=\"rovexMotionPaletteKey\" type=\"id\" />\n    <item name=\"rovexMotionSurfaceScan\" type=\"id\" />\n    <item name=\"rovexTouchTreeWatcher\" type=\"id\" />\n</resources>", "motion palette, surface scan, and touch watcher tags")
 p = file("RovexHomeRevolution.kt")
 replace(p, "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"",
         "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"\n    private const val MOTION_LOGO_TAG = \"rovex_home_motion_logo\"",
