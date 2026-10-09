@@ -7,7 +7,8 @@ import sys
 import urllib.request
 
 ROOT = Path(sys.argv[2] if len(sys.argv) > 2 else ".").resolve()
-APP = Path(sys.argv[1]).resolve()
+PROJECT = Path(sys.argv[1]).resolve()
+APP = PROJECT / "app"
 PKG = APP / "src/main/java/com/localqbank/library"
 RES = APP / "src/main/res"
 ASSETS = APP / "src/main/assets/rovex/motion"
@@ -23,8 +24,8 @@ NEW_CODE = "720"
 def fail(msg):
     raise SystemExit(f"[634] FATAL: {msg}")
 
-if not APP.is_dir():
-    fail(f"Android project missing: {APP}")
+if not PROJECT.is_dir() or not APP.is_dir():
+    fail(f"Android project/app module missing: project={PROJECT} app={APP}")
 if not GRADLE.exists():
     fail(f"Gradle file missing: {GRADLE}")
 
