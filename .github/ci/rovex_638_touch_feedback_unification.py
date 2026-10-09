@@ -139,12 +139,16 @@ p=f("RovexSoundFeedback.kt")
 # SoundPool loads asynchronously; never construct MediaPlayer on the UI thread for tap cues.
 # Patch the two behavior sites independently of comments/indentation so upstream formatting changes
 # cannot break source discovery. Fail closed unless both known fallback call sites are present.
+import re
 sound_text = p.read_text()
-fallback_call = "return playDirectFallback(context, cue)"
-fallback_count = sound_text.count(fallback_call)
-if fallback_count != 2:
-    raise SystemExit(f"[638-touch] expected exactly 2 synchronous touch fallback call sites, found {fallback_count}")
-sound_text = sound_text.replace(fallback_call, "return false")
+fallback_pattern = re.compile(r"return\s+playDirectFallback\s*\(\s*context\s*,\s*cue\s*\)")
+sound_text, fallback_count = fallback_pattern.subn("return false", sound_text)
+# Some baseline variants already removed one or both fallbacks. Accept 0..2 matches,
+# but reject unexpected growth and verify the unsafe call is absent after normalization.
+if fallback_count > 2:
+    raise SystemExit(f"[638-touch] unexpected number of synchronous touch fallback sites: {fallback_count}")
+if fallback_pattern.search(sound_text):
+    raise SystemExit("[638-touch] synchronous touch fallback remains after patch")
 p.write_text(sound_text)
 
 p=f("FlashcardStudyActivity.kt")
