@@ -80,6 +80,10 @@ jobs:
         shell: bash
         run: bash .github/ci/adaptive-gradle-tasks.sh
 
+      - name: Validate benchmark lane separation
+        shell: bash
+        run: python3 .github/ci/test_benchmark_lane_separation.py
+
       - name: Run discovered JVM tests
         if: steps.tasks.outputs.unit_task != ''
         shell: bash
