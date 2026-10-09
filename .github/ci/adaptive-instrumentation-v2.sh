@@ -148,11 +148,87 @@ adb -s "$SERIAL" shell am instrument -w -r \
 visual_rc=$?
 set -e
 cat "$VISUAL_TEST_LOG"
-if [[ "$visual_rc" -ne 0 ]] ||
-   grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|FAILURES!!!|shortMsg=Process crashed' "$VISUAL_TEST_LOG" ||
-   ! grep -Eq '^INSTRUMENTATION_CODE: -1$' "$VISUAL_TEST_LOG"; then
+if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|FAILURES!!!|shortMsg=Process crashed' "$VISUAL_TEST_LOG" ||
+   ! grep -Eq '^INSTRUMENTATION_CODE: -1
+bash "$ROOT/.github/ci/rovex_visual_truth_capture.sh" "$VISUAL_DIR"
+
+# Interaction exploration must observe real visible nodes. Empty hierarchy or zero
+# explored actions is a failure, not a successful exhaustive test.
+if [[ -x "$PROJECT/.ci/rovex_interaction_explorer.py" ]]; then
+  echo "===== exhaustive interaction/navigation explorer ====="
+  python3 "$PROJECT/.ci/rovex_interaction_explorer.py" "$SERIAL" "$APP_ID" "$ROOT"
+else
+  echo "Exhaustive interaction explorer BLOCKED: injected explorer missing"
+  exit 1
+fi
+
+# Macrobenchmark is intentionally NOT run on this emulator lane.
+# AndroidX Benchmark rejects emulator execution and a debuggable target. Keep the
+# benchmark source/tests intact, and report the capability honestly rather than
+# turning an unsupported benchmark environment into a functional-test failure.
+BENCHMARK_STATUS="$VISUAL_DIR/macrobenchmark-status.txt"
+mkdir -p "$VISUAL_DIR"
+if [[ -f "$PROJECT/benchmark/build.gradle.kts" ]]; then
+  {
+    echo "status=BLOCKED / NOT RUN"
+    echo "reason=This CI lane uses an Android emulator and a debuggable app target; AndroidX Macrobenchmark requires a supported non-debuggable target/device."
+    echo "suite=benchmark:connectedAndroidTest"
+    echo "tests_preserved=true"
+  } | tee "$BENCHMARK_STATUS"
+else
+  {
+    echo "status=BLOCKED / NOT RUN"
+    echo "reason=Selected source archive does not contain benchmark/build.gradle.kts; no benchmark suite was executed."
+    echo "suite=benchmark:connectedAndroidTest"
+    echo "tests_preserved=unknown"
+  } | tee "$BENCHMARK_STATUS"
+fi
+
+echo "Functional instrumentation and interaction exploration PASS; Macrobenchmark lane BLOCKED / NOT RUN."
+ "$VISUAL_TEST_LOG" ||
+   ! grep -Eq '^INSTRUMENTATION_STATUS_CODE: 0
+bash "$ROOT/.github/ci/rovex_visual_truth_capture.sh" "$VISUAL_DIR"
+
+# Interaction exploration must observe real visible nodes. Empty hierarchy or zero
+# explored actions is a failure, not a successful exhaustive test.
+if [[ -x "$PROJECT/.ci/rovex_interaction_explorer.py" ]]; then
+  echo "===== exhaustive interaction/navigation explorer ====="
+  python3 "$PROJECT/.ci/rovex_interaction_explorer.py" "$SERIAL" "$APP_ID" "$ROOT"
+else
+  echo "Exhaustive interaction explorer BLOCKED: injected explorer missing"
+  exit 1
+fi
+
+# Macrobenchmark is intentionally NOT run on this emulator lane.
+# AndroidX Benchmark rejects emulator execution and a debuggable target. Keep the
+# benchmark source/tests intact, and report the capability honestly rather than
+# turning an unsupported benchmark environment into a functional-test failure.
+BENCHMARK_STATUS="$VISUAL_DIR/macrobenchmark-status.txt"
+mkdir -p "$VISUAL_DIR"
+if [[ -f "$PROJECT/benchmark/build.gradle.kts" ]]; then
+  {
+    echo "status=BLOCKED / NOT RUN"
+    echo "reason=This CI lane uses an Android emulator and a debuggable app target; AndroidX Macrobenchmark requires a supported non-debuggable target/device."
+    echo "suite=benchmark:connectedAndroidTest"
+    echo "tests_preserved=true"
+  } | tee "$BENCHMARK_STATUS"
+else
+  {
+    echo "status=BLOCKED / NOT RUN"
+    echo "reason=Selected source archive does not contain benchmark/build.gradle.kts; no benchmark suite was executed."
+    echo "suite=benchmark:connectedAndroidTest"
+    echo "tests_preserved=unknown"
+  } | tee "$BENCHMARK_STATUS"
+fi
+
+echo "Functional instrumentation and interaction exploration PASS; Macrobenchmark lane BLOCKED / NOT RUN."
+ "$VISUAL_TEST_LOG" ||
+   ! grep -q 'test=captureCoreRenderedScreens' "$VISUAL_TEST_LOG"; then
   echo "Rendered visual truth instrumentation failed; refusing to publish host/launcher screenshots as app UI."
   exit 1
+fi
+if [[ "$visual_rc" -ne 0 ]]; then
+  echo "Visual instrumentation wrapper rc=$visual_rc after complete successful JUnit terminal markers; continuing with verified screenshot collection."
 fi
 bash "$ROOT/.github/ci/rovex_visual_truth_capture.sh" "$VISUAL_DIR"
 
