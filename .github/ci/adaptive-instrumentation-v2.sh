@@ -162,6 +162,9 @@ capture_exact_activity() {
 capture_visual "home-production"
 capture_exact_activity "qbank-production" "com.localqbank.library.RovexSectionDashboardActivity" --es section qbank
 capture_exact_activity "ren-production" "com.localqbank.library.RenActivity"
+capture_exact_activity "flashcards-production" "com.localqbank.library.RovexSectionDashboardActivity" --es section flashcards
+capture_exact_activity "settings-production" "com.localqbank.library.SettingsActivity"
+capture_exact_activity "visual-lab-production" "com.localqbank.library.VisualLabActivity"
 
 # Interaction exploration is separate from the JUnit result. A control that
 # intentionally closes an Activity is classified as expected navigation by the
