@@ -15,6 +15,8 @@ assert "rovex_visual_truth_capture.sh" in runner
 assert "capture_exact_activity" not in runner, "Host-side am start cannot prove non-exported Activity rendering."
 assert 'capture_visual "home-production"' not in runner, "Unvalidated host screenshots must not be called visual truth."
 assert "INSTRUMENTATION_CODE: -1" in runner
+assert "INSTRUMENTATION_STATUS_CODE: 0" in runner
+assert "test=captureCoreRenderedScreens" in runner
 assert "Required rendered screenshot missing" in helper
 assert 'InstrumentationRegistry.getArguments().getString("rovexVisualTruth")' in overlay
 assert "no visible interactive app hierarchy" in overlay
