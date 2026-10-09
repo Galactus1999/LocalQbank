@@ -136,68 +136,28 @@ VISUAL_DIR="$ROOT/.adaptive-visual"
 mkdir -p "$VISUAL_DIR"
 APP_ID="${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}"
 
+# Non-exported Activities cannot be launched reliably with host-side am start.
+# Run the dedicated instrumentation test so AndroidX launches each real Activity
+# under the test UID, then validate the actual rendered screenshots and uniqueness.
 adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
-adb -s "$SERIAL" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
-sleep 3
+VISUAL_TEST_LOG="$VISUAL_DIR/visual-truth-instrumentation.log"
+set +e
+adb -s "$SERIAL" shell am instrument -w -r \
+  -e class com.localqbank.library.RovexVisualTruthCaptureTest \
+  -e rovexVisualTruth true "$runner" > "$VISUAL_TEST_LOG" 2>&1
+visual_rc=$?
+set -e
+cat "$VISUAL_TEST_LOG"
+if [[ "$visual_rc" -ne 0 ]] ||
+   grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|FAILURES!!!|shortMsg=Process crashed' "$VISUAL_TEST_LOG" ||
+   ! grep -Eq '^INSTRUMENTATION_CODE: -1$' "$VISUAL_TEST_LOG"; then
+  echo "Rendered visual truth instrumentation failed; refusing to publish host/launcher screenshots as app UI."
+  exit 1
+fi
+bash "$ROOT/.github/ci/rovex_visual_truth_capture.sh" "$VISUAL_DIR"
 
-capture_visual() {
-  local name="$1"
-  local target="$VISUAL_DIR/$name.png"
-  local tmp="$target.tmp"
-  local err="$VISUAL_DIR/$name-capture.stderr"
-  local captured=false
-
-  # Emulator/Play-services Binder pressure can briefly break exec-out immediately
-  # after a passing instrumentation suite. Retry the capture itself instead of
-  # aborting the entire release workflow on the first transient shell exit 126.
-  for attempt in 1 2 3 4 5; do
-    rm -f "$tmp"
-    if adb -s "$SERIAL" exec-out screencap -p > "$tmp" 2>"$err" && [[ -s "$tmp" ]]; then
-      mv -f "$tmp" "$target"
-      captured=true
-      break
-    fi
-    echo "Visual capture attempt $attempt/5 failed for $name: $(tail -n 3 "$err" 2>/dev/null | tr '\\n' ' ')" >&2
-    adb start-server >/dev/null 2>&1 || true
-    adb reconnect device >/dev/null 2>&1 || true
-    adb -s "$SERIAL" wait-for-device >/dev/null 2>&1 || true
-    sleep 2
-  done
-  if [[ "$captured" != true ]]; then
-    echo "Visual truth capture FAILED after 5 attempts: $name"
-    cat "$err" 2>/dev/null || true
-    return 1
-  fi
-
-  adb -s "$SERIAL" shell uiautomator dump /sdcard/rovex-window.xml >/dev/null 2>&1 || true
-  adb -s "$SERIAL" exec-out cat /sdcard/rovex-window.xml > "$VISUAL_DIR/$name-window.xml" 2>/dev/null || true
-  rm -f "$err"
-  echo "Visual truth capture PASS: $name"
-}
-
-capture_exact_activity() {
-  local name="$1"
-  local component="$2"
-  shift 2
-  adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
-  adb -s "$SERIAL" shell am start -W -n "$APP_ID/$component" "$@" >/dev/null 2>&1 || true
-  sleep 3
-  local resumed
-  resumed="$(adb -s "$SERIAL" shell dumpsys activity activities 2>/dev/null | tr -d '\r' | grep -m1 "$component" || true)"
-  printf '%s resumed=%s\n' "$name" "$resumed" > "$VISUAL_DIR/$name-activity.txt"
-  capture_visual "$name"
-}
-
-capture_visual "home-production"
-capture_exact_activity "qbank-production" "com.localqbank.library.RovexSectionDashboardActivity" --es section qbank
-capture_exact_activity "ren-production" "com.localqbank.library.RenActivity"
-capture_exact_activity "flashcards-production" "com.localqbank.library.RovexSectionDashboardActivity" --es section flashcards
-capture_exact_activity "settings-production" "com.localqbank.library.SettingsActivity"
-capture_exact_activity "visual-lab-production" "com.localqbank.library.VisualLabActivity"
-
-# Interaction exploration is separate from the JUnit result. A control that
-# intentionally closes an Activity is classified as expected navigation by the
-# explorer rather than as an app crash.
+# Interaction exploration must observe real visible nodes. Empty hierarchy or zero
+# explored actions is a failure, not a successful exhaustive test.
 if [[ -x "$PROJECT/.ci/rovex_interaction_explorer.py" ]]; then
   echo "===== exhaustive interaction/navigation explorer ====="
   python3 "$PROJECT/.ci/rovex_interaction_explorer.py" "$SERIAL" "$APP_ID" "$ROOT"
