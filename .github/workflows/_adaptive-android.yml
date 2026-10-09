@@ -84,6 +84,10 @@ jobs:
         shell: bash
         run: python3 .github/ci/test_benchmark_lane_separation.py
 
+      - name: Validate rendered visual truth capture contract
+        shell: bash
+        run: python3 .github/ci/test_visual_truth_capture.py
+
       - name: Run discovered JVM tests
         if: steps.tasks.outputs.unit_task != ''
         shell: bash
