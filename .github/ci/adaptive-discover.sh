@@ -91,6 +91,9 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   python3 "$ROOT/.github/ci/rovex_647_root_insets_audio_source_policy.py" "$project"
  fi
 fi
+if [[ -f "$project/app/src/main/assets/rovex/RovexVisualAssetManifest.json" ]]; then
+ python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
+fi
 visual_report="$WORK/reports/rovex-visual-audit.json"
 if [[ -f "$ROOT/tools/rovex_visual_audit.py" ]];then python3 "$ROOT/tools/rovex_visual_audit.py" --project "$project" --output "$visual_report";else fail "Visual audit tool missing: $ROOT/tools/rovex_visual_audit.py";fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
