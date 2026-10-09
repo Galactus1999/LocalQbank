@@ -128,7 +128,7 @@ class RovexImportedMotionBackgroundDrawable(
 
     override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
         val changed = super.setVisible(visible, restart)
-        motion.isVisible = visible
+        motion.setVisible(visible, restart)
         if (visible && allowed()) {
             if (restart) motion.progress = 0f
             if (motion.composition != null && !motion.isAnimating) motion.playAnimation()
