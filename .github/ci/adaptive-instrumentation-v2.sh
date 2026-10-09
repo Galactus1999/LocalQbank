@@ -142,7 +142,7 @@ APP_ID="${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}"
 adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
 VISUAL_TEST_LOG="$VISUAL_DIR/visual-truth-instrumentation.log"
 set +e
-adb -s "$SERIAL" shell am instrument -w -r \
+timeout 300s adb -s "$SERIAL" shell am instrument -w -r \
   -e class com.localqbank.library.RovexVisualTruthCaptureTest \
   -e rovexVisualTruth true "$runner" > "$VISUAL_TEST_LOG" 2>&1
 visual_rc=$?
