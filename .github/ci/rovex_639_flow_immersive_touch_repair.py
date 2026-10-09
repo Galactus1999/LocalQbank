@@ -396,9 +396,113 @@ replace(p, """        walk(root)""",
         }
         walk(root)""",
         "bind dynamically added clickable views across every Activity")
+(K / "RovexTouchFeedback.kt").write_text("""package com.localqbank.library
+
+import android.app.Activity
+import android.graphics.Rect
+import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.widget.AbsListView
+import android.widget.EditText
+import android.widget.HorizontalScrollView
+import android.widget.ScrollView
+import android.webkit.WebView
+import androidx.recyclerview.widget.RecyclerView
+import java.lang.ref.WeakReference
+
+/**
+ * App-wide touch contract. The Window.Callback observes touches before dispatch without replacing
+ * individual OnTouchListeners, so custom gestures remain intact and dynamically-added controls work.
+ */
+object RovexTouchFeedback {
+    fun installWindow(activity: Activity) {
+        val window = activity.window
+        if (window.callback !is RovexTouchWindowCallback) {
+            window.callback = RovexTouchWindowCallback(activity, window.callback)
+        }
+    }
+
+    /** Compatibility hook for existing UI builders; never replaces a view's own touch listener. */
+    fun bind(view: View, soundOnTouch: Boolean = true) {
+        view.setTag(R.id.rovex_touch_feedback_bound, true)
+        view.setTag(R.id.rovexMotionInstalled, true)
+    }
+
+    fun bindTree(root: View) {
+        fun walk(view: View) {
+            if (view.isClickable || view.hasOnClickListeners()) bind(view)
+            if (view is ViewGroup) for (i in 0 until view.childCount) walk(view.getChildAt(i))
+        }
+        walk(root)
+    }
+
+    private class RovexTouchWindowCallback(
+        private val activity: Activity,
+        private val delegate: Window.Callback
+    ) : Window.Callback by delegate {
+        private val hitRect = Rect()
+        private var pressedTarget: WeakReference<View>? = null
+
+        override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    val target = findTarget(activity.window.decorView, event.rawX, event.rawY)
+                    pressedTarget = target?.let { WeakReference(it) }
+                    if (target != null) {
+                        RovexSoundFeedback.playDeepTouch(target.context)
+                        runCatching { target.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY) }
+                        if (AnimationPolicy.enabled(target.context)) {
+                            target.animate().cancel()
+                            target.animate().scaleX(.985f).scaleY(.985f).setDuration(70L)
+                                .setInterpolator(android.view.animation.OvershootInterpolator(1.08f)).start()
+                        }
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    val target = pressedTarget?.get()
+                    if (target != null && AnimationPolicy.enabled(target.context)) {
+                        target.animate().cancel()
+                        target.animate().scaleX(1f).scaleY(1f).setDuration(110L)
+                            .setInterpolator(android.view.animation.OvershootInterpolator(1.08f)).start()
+                    }
+                    pressedTarget = null
+                }
+            }
+            return delegate.dispatchTouchEvent(event)
+        }
+
+        private fun findTarget(view: View, x: Float, y: Float): View? {
+            if (!view.isShown || !view.isEnabled) return null
+            if (!view.getGlobalVisibleRect(hitRect) || !hitRect.contains(x.toInt(), y.toInt())) return null
+            if (view is ViewGroup) {
+                for (i in view.childCount - 1 downTo 0) {
+                    val found = findTarget(view.getChildAt(i), x, y)
+                    if (found != null) return found
+                }
+            }
+            val complex = view is WebView || view is RecyclerView || view is ScrollView ||
+                view is HorizontalScrollView || view is AbsListView || view is EditText
+            return if (!complex && (view.isClickable || view.hasOnClickListeners())) view else null
+        }
+    }
+}
+""")
+
+p = file("ResilienceManager.kt")
+replace(p, "            override fun onActivityResumed(activity: Activity) {\n                ResilienceManager.activityStarted(this@LocalQBankApplication, activity)",
+        "            override fun onActivityResumed(activity: Activity) {\n                RovexTouchFeedback.installWindow(activity)\n                ResilienceManager.activityStarted(this@LocalQBankApplication, activity)",
+        "install global touch contract on every resumed Activity")
+replace(p, "            override fun onActivityCreated(a: Activity, b: android.os.Bundle?) {\n                a.window.decorView.post",
+        "            override fun onActivityCreated(a: Activity, b: android.os.Bundle?) {\n                RovexTouchFeedback.installWindow(a)\n                a.window.decorView.post",
+        "install global touch contract at Activity creation")
+
+
 
 ids = P / "app/src/main/res/values/ids.xml"
-replace(ids, "</resources>", "    <item name=\"rovexMotionPaletteKey\" type=\"id\" />\n    <item name=\"rovexMotionSurfaceScan\" type=\"id\" />\n    <item name=\"rovexTouchTreeWatcher\" type=\"id\" />\n</resources>", "motion palette, surface scan, and touch watcher tags")
+replace(ids, "</resources>", "    <item name=\"rovexMotionPaletteKey\" type=\"id\" />\n    <item name=\"rovexMotionSurfaceScan\" type=\"id\" />\n</resources>", "motion palette and surface scan tags")
 p = file("RovexHomeRevolution.kt")
 replace(p, "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"",
         "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"\n    private const val MOTION_LOGO_TAG = \"rovex_home_motion_logo\"",
