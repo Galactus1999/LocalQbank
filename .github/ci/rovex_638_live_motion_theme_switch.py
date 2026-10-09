@@ -86,8 +86,8 @@ new="""        val motion = LottieAnimationView(a).apply {
             contentDescription = null
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(v: View) { v.post { updateMotionView(motion, a) } }
-                override fun onViewDetachedFromWindow(v: View) { runCatching { motion.cancelAnimation() } }
+                override fun onViewAttachedToWindow(v: View) { v.post { (v as? LottieAnimationView)?.let { updateMotionView(it, a) } } }
+                override fun onViewDetachedFromWindow(v: View) { runCatching { (v as? LottieAnimationView)?.cancelAnimation() } }
             })
         }
         header.addView(motion, FrameLayout.LayoutParams(-1, d(11,a), Gravity.BOTTOM).apply {
