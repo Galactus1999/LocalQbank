@@ -149,7 +149,15 @@ visual_rc=$?
 set -e
 cat "$VISUAL_TEST_LOG"
 if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|FAILURES!!!|shortMsg=Process crashed' "$VISUAL_TEST_LOG" ||
-   ! grep -Eq '^INSTRUMENTATION_CODE: -1
+   ! grep -Fq 'INSTRUMENTATION_CODE: -1' "$VISUAL_TEST_LOG" ||
+   ! grep -Fq 'INSTRUMENTATION_STATUS_CODE: 0' "$VISUAL_TEST_LOG" ||
+   ! grep -q 'test=captureCoreRenderedScreens' "$VISUAL_TEST_LOG"; then
+  echo "Rendered visual truth instrumentation failed; refusing to publish host/launcher screenshots as app UI."
+  exit 1
+fi
+if [[ "$visual_rc" -ne 0 ]]; then
+  echo "Visual instrumentation wrapper rc=$visual_rc after complete successful JUnit terminal markers; continuing with verified screenshot collection."
+fi
 bash "$ROOT/.github/ci/rovex_visual_truth_capture.sh" "$VISUAL_DIR"
 
 # Interaction exploration must observe real visible nodes. Empty hierarchy or zero
