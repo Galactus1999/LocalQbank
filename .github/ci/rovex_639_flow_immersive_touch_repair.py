@@ -174,7 +174,17 @@ replace(p, "buttons.addView(TextView(activity).apply{text=\"SAVE\";textSize=12f;
 # Fix the square inset overlay and colourize the imported Lottie with the actual selected palette.
 p = file("RovexHomeRevolution.kt")
 replace(p, "        } else motionAlpha(c, tag == MOTION_BG_TAG)", "        } else if (tag.startsWith(MOTION_CARD_PREFIX)) motionAlpha(c, false).coerceAtMost(0.12f) else motionAlpha(c, tag == MOTION_BG_TAG)", "theme-safe card alpha in refresh path")
-replace(p, "        view.visibility = if (motionPolicyAllowed) View.VISIBLE else View.GONE",
+replace(p, "        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) || RovexLiveMotionSettings.surfaceFlowEnabled(c)
+        if (tag == MOTION_BG_TAG || tag.startsWith(MOTION_CARD_PREFIX) || tag == MOTION_LOGO_TAG) {
+            val first = RovexColorFlowTextView.colorOne(c)
+            val second = RovexColorFlowTextView.colorTwo(c)
+            val paletteKey = "$first:$second"
+            if (view.getTag(R.id.rovexMotionPaletteKey) != paletteKey) {
+                view.setTag(R.id.rovexMotionPaletteKey, paletteKey)
+                view.setAnimationFromJson(RovexMotionAssetLoader.themedJson(c, first, second), "rovex_home_gradient_${first}_${second}")
+            }
+        }
+        view.visibility = if (motionPolicyAllowed && cardMotionAllowed) View.VISIBLE else View.GONE",
         "        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) || RovexLiveMotionSettings.surfaceFlowEnabled(c)\n        view.visibility = if (motionPolicyAllowed && cardMotionAllowed) View.VISIBLE else View.GONE",
         "surface flow visibility policy")
 replace(p, "            setAnimation(\"rovex/motion/gradient_animated_background.json\")",
@@ -204,8 +214,11 @@ helper = """
         val surface = view.background
         view.tag = "rovex_motion_wrapped_content"
         view.background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
-        val wrapper = FrameLayout(a).apply { background = surface; clipChildren = true; clipToPadding = true }
+        val oldElevation = view.elevation
+        view.elevation = 0f
+        val wrapper = FrameLayout(a).apply { tag = "rovex_motion_surface:" + name; background = surface; elevation = oldElevation; clipChildren = true; clipToPadding = true }
         val clip = FrameLayout(a).apply {
+            tag = "rovex_motion_clip"
             background = GradientDrawable().apply { cornerRadius = d(radiusDp.toInt(),a).toFloat(); setColor(Color.WHITE) }
             clipToOutline = true; clipChildren = true; clipToPadding = true
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
@@ -225,8 +238,35 @@ helper = """
     }
 
 """
+scan = """
+    private fun installMotionSurfaces(root:ViewGroup, a:MainActivity) {
+        if (root.getTag(R.id.rovexMotionSurfaceScan) == true) return
+        root.setTag(R.id.rovexMotionSurfaceScan, true)
+        fun scan(parent:ViewGroup) {
+            val children = (0 until parent.childCount).map { parent.getChildAt(it) }
+            for (child in children) {
+                if (child.parent !== parent) continue
+                if (child is ViewGroup) scan(child)
+                val tag = child.tag?.toString()
+                if (tag != null) continue
+                val bg = child.background
+                if (bg !is GradientDrawable && bg !is android.graphics.drawable.LayerDrawable && bg !is RovexClinicalSurfaceDrawable) continue
+                val density = a.resources.displayMetrics.density
+                if (child.width < (120f * density).toInt() || child.height < (52f * density).toInt()) continue
+                val lp = child.layoutParams ?: continue
+                val index = parent.indexOfChild(child)
+                if (index < 0) continue
+                parent.removeViewAt(index)
+                val wrapper = withMotionSurface(child, a, "auto-" + child.javaClass.simpleName + "-" + index, 22f, lp.height != ViewGroup.LayoutParams.WRAP_CONTENT)
+                parent.addView(wrapper, index, lp)
+            }
+        }
+        scan(root)
+    }
+
+"""
 anchor = "    private fun feature(a:MainActivity,title:String,sub:String,icon:String,index:Int,target:()->Unit):View{"
-replace(p, anchor, helper + anchor, "shared card motion wrapper")
+replace(p, anchor, helper + scan + anchor, "shared card motion surface scanner")
 replacements = [
 ("content.addView(hero,LinearLayout.LayoutParams(-1,d(126,a)).apply{bottomMargin=d(13,a)})",
  "content.addView(withMotionSurface(hero,a,\"clinical-hero\",24f,true),LinearLayout.LayoutParams(-1,d(126,a)).apply{bottomMargin=d(13,a)})", "clinical hero"),
@@ -253,6 +293,11 @@ replacements = [
 ]
 for old, new, label in replacements:
     replace(p, old, new, label)
+replace(p, "            val clip = FrameLayout(a).apply {\n                background = GradientDrawable().apply { cornerRadius = d(22,a).toFloat(); setColor(Color.TRANSPARENT) }",
+        "            val clip = FrameLayout(a).apply {\n                tag = \"rovex_motion_clip\"\n                background = GradientDrawable().apply { cornerRadius = d(22,a).toFloat(); setColor(Color.TRANSPARENT) }",
+        "clip feature-card motion to exact card bounds")
+replace(p, "        root.addView(shell,ViewGroup.LayoutParams(-1,-1))\n        shell.post { updateMotionTree(shell, a) }",
+        "        root.addView(shell,ViewGroup.LayoutParams(-1,-1))\n        shell.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {\n            override fun onLayoutChange(v:View,l:Int,t:Int,r:Int,b:Int,ol:Int,ot:Int,oright:Int,ob:Int) {\n                if (shell.width <= 0 || shell.height <= 0) return\n                shell.removeOnLayoutChangeListener(this)\n                installMotionSurfaces(shell, a)\n                AliveMotion.installTree(shell)\n                updateMotionTree(shell, a)\n            }\n        })\n        shell.post { updateMotionTree(shell, a) }", "scan all Home pastel card surfaces after first layout")
 
 # Use the real app logo bitmap with imported Lottie motion, removing the generated lightning paths.
 (K / "RovexHeaderCosmicView.kt").write_text("""package com.localqbank.library
@@ -328,6 +373,8 @@ replace(p, "            if (!complex && (view.isClickable || view.hasOnClickList
         "            if (!complex && view.tag?.toString() != \"rovex_motion_wrapped_content\" && (view.isClickable || view.hasOnClickListeners())) {",
         "do not rebind wrapped click content")
 
+ids = P / "app/src/main/res/values/ids.xml"
+replace(ids, "</resources>", "    <item name=\"rovexMotionPaletteKey\" type=\"id\" />\n    <item name=\"rovexMotionSurfaceScan\" type=\"id\" />\n</resources>", "motion palette and surface scan tags")
 p = file("RovexHomeRevolution.kt")
 replace(p, "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"",
         "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"\n    private const val MOTION_LOGO_TAG = \"rovex_home_motion_logo\"",
