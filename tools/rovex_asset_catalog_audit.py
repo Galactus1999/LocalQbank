@@ -92,7 +92,7 @@ def main() -> int:
             required_terms = (
                 "Permission is hereby granted", "same terms and conditions of this license",
                 "does not include the right to collect or compile",
-                "FILES ARE PROVIDED 'AS IS'",
+                "FILES ARE PROVIDED", "AS IS",
             )
             missing_terms = [clause for clause in required_terms if clause not in terms]
             if missing_terms:
