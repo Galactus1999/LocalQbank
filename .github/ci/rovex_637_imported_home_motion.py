@@ -97,10 +97,10 @@ helpers = """    private const val MOTION_BG_TAG = "rovex_home_motion_background
         }
         view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v:View) {
-                v.post { updateMotionView(view, c) }
+                v.post { (v as? LottieAnimationView)?.let { updateMotionView(it, c) } }
             }
             override fun onViewDetachedFromWindow(v:View) {
-                runCatching { view.cancelAnimation() }
+                runCatching { (v as? LottieAnimationView)?.cancelAnimation() }
             }
         })
         return view
