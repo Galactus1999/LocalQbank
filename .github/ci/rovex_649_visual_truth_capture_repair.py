@@ -100,7 +100,7 @@ e = e.replace(old_home, new_home, 1)
 e = e.replace('print("EXHAUSTIVE_INTERACTION_EXPLORER_PASS")','''if index == 0:
     raise SystemExit("Interaction explorer FAILED: no clickable/scrollable actions were explored.")
 print("EXHAUSTIVE_INTERACTION_EXPLORER_PASS: actions=%d states=%d" % (index, len(seen_states)))''')
-if "no visible interactive app hierarchy" not in e or "actions=%d states=%d" not in e:
+if "no foreground Rovex Activity with visible interactive nodes" not in e or "actions=%d states=%d" not in e:
     raise SystemExit("[649] fail-closed interaction postconditions missing")
 explorer.write_text(e, encoding="utf-8")
 
