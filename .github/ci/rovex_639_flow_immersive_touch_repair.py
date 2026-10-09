@@ -173,6 +173,7 @@ replace(p, "buttons.addView(TextView(activity).apply{text=\"SAVE\";textSize=12f;
 
 # Fix the square inset overlay and colourize the imported Lottie with the actual selected palette.
 p = file("RovexHomeRevolution.kt")
+replace(p, "        } else motionAlpha(c, tag == MOTION_BG_TAG)", "        } else if (tag.startsWith(MOTION_CARD_PREFIX)) motionAlpha(c, false).coerceAtMost(0.12f) else motionAlpha(c, tag == MOTION_BG_TAG)", "theme-safe card alpha in refresh path")
 replace(p, "        view.visibility = if (motionPolicyAllowed) View.VISIBLE else View.GONE",
         "        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) || RovexLiveMotionSettings.surfaceFlowEnabled(c)\n        view.visibility = if (motionPolicyAllowed && cardMotionAllowed) View.VISIBLE else View.GONE",
         "surface flow visibility policy")
