@@ -59,7 +59,7 @@ Measure cold/warm/hot startup and time to initial/full display; Home refresh; Ho
 
 Collect Macrobenchmark results, P50/P90/P95/P99 where meaningful, frame timing/jank, main-thread stalls, CPU scheduling, database/FTS timings, image decode/crop/cache activity, heap/native memory, GC, WebView memory, inference latency, thermal state, and battery behaviour. Use Perfetto traces for suspected bottlenecks and physical-device measurements for representative graphics/thermal results.
 
-Capture comparable screenshots for every theme and target screen. Record source asset dimensions, decoded bitmap dimensions, crop, alpha, overlays, and resource mapping. Distinguish confirmed root causes from hypotheses.
+Capture comparable screenshots for every theme and target screen, explicitly including the Flashcards library and the question-screen Bookmark/Flashcard header controls. The known header defect is Pastel Prism only: compare it against the same screens in other themes, but do not generalize the fix or alter other themes unless independent evidence shows a separate defect. Record source asset dimensions, decoded bitmap dimensions, crop, alpha, overlays, and resource mapping. Distinguish confirmed root causes from hypotheses.
 
 **Exit gate:** Baseline report and reproducible journeys exist; no optimization is accepted without a before/after comparison.
 
@@ -114,6 +114,7 @@ Capture comparable screenshots for every theme and target screen. Record source 
 - Use Perfetto to identify critical-path I/O, lock/IPC waits, expensive initializers, view inflation, synchronous audio/image operations, and repeated layout passes.
 - Defer nonessential initialization until after first usable frame; keep critical study data available.
 - Fix oversized/incorrect layout bounds, inset ownership, overdraw, unnecessary translucent full-screen layers, and repeated theme application only after reproducing the problem.
+- Pastel Prism-only header repair: trace the Bookmark/Flashcard header's theme tokens, sizing, insets, and composition; make the smallest Pastel-specific correction supported by screenshots/tests, and add cross-theme regression assertions proving the other themes are unchanged.
 - Keep sound and haptic feedback; never block touch on audio decoding or a synchronous fallback.
 - Measure input-to-visible-response and navigation latency at realistic refresh rates.
 - Add/adjust Baseline Profiles and startup profiles only after measured journeys and stable Macrobenchmark tests exist.
