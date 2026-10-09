@@ -174,7 +174,6 @@ replace(p, "buttons.addView(TextView(activity).apply{text=\"SAVE\";textSize=12f;
 # Fix the square inset overlay and colourize the imported Lottie with the actual selected palette.
 p = file("RovexHomeRevolution.kt")
 replace(p, "        } else motionAlpha(c, tag == MOTION_BG_TAG)", "        } else if (tag.startsWith(MOTION_CARD_PREFIX)) motionAlpha(c, false).coerceAtMost(0.12f) else motionAlpha(c, tag == MOTION_BG_TAG)", "theme-safe card alpha in refresh path")
-replace(p, "        } else motionAlpha(c, tag == MOTION_BG_TAG)", "        } else if (tag.startsWith(MOTION_CARD_PREFIX)) motionAlpha(c, false).coerceAtMost(0.12f) else motionAlpha(c, tag == MOTION_BG_TAG)", "theme-safe card alpha in refresh path")
 replace(p, "        view.visibility = if (motionPolicyAllowed) View.VISIBLE else View.GONE",
         "        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) || RovexLiveMotionSettings.surfaceFlowEnabled(c)\n        view.visibility = if (motionPolicyAllowed && cardMotionAllowed) View.VISIBLE else View.GONE",
         "surface flow visibility policy")
@@ -286,7 +285,7 @@ class RovexHeaderCosmicView @JvmOverloads constructor(context: Context, attrs: A
                 "rovex_logo_flow_${RovexColorFlowTextView.colorOne(context)}_${RovexColorFlowTextView.colorTwo(context)}")
             repeatCount = LottieDrawable.INFINITE; repeatMode = LottieDrawable.RESTART; speed = 0.42f
             alpha = 0.18f; renderMode = RenderMode.HARDWARE
-            contentDescription = null; importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+            contentDescription = null; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             isClickable = false; isFocusable = false
         }
         clip.addView(motion, FrameLayout.LayoutParams(-1,-1))
