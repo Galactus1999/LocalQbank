@@ -185,13 +185,13 @@ if [[ -f "$PROJECT/benchmark/build.gradle.kts" ]]; then
   BENCHMARK_OUTPUT="$PROJECT/benchmark/build/outputs"
   if [[ -d "$BENCHMARK_OUTPUT" ]]; then
     mkdir -p "$VISUAL_DIR/macrobenchmark"
-    find "$BENCHMARK_OUTPUT" -type f \\( -path '*connected_android_test_additional_output*' -o -path '*connectedAndroidTest*' \\) -print
+    find "$BENCHMARK_OUTPUT" -type f \( -path '*connected_android_test_additional_output*' -o -path '*connectedAndroidTest*' \) -print
     while IFS= read -r report; do
       [[ -f "$report" ]] || continue
       rel="${report#"$BENCHMARK_OUTPUT"/}"
       mkdir -p "$VISUAL_DIR/macrobenchmark/$(dirname "$rel")"
       cp -f "$report" "$VISUAL_DIR/macrobenchmark/$rel"
-    done < <(find "$BENCHMARK_OUTPUT" -type f \\( -path '*connected_android_test_additional_output*' -o -path '*connectedAndroidTest*' \\))
+    done < <(find "$BENCHMARK_OUTPUT" -type f \( -path '*connected_android_test_additional_output*' -o -path '*connectedAndroidTest*' \))
   fi
 else
   echo "Macrobenchmark baseline BLOCKED: benchmark/build.gradle.kts missing from selected source."
