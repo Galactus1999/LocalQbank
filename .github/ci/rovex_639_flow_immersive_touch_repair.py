@@ -151,7 +151,7 @@ replace(p, "        val base = RovexLivingBackgroundDrawable(c, profile(c))",
         "        val base: Drawable = if (RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)) RovexImportedMotionBackgroundDrawable(c, profile(c)) else GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(profile(c).backgroundA, profile(c).backgroundB))",
         "use imported Lottie wallpaper across themes")
 replace(p, "        val bundled = if (custom == null && get(c) == PASTEL) RovexBundledVisualAssets.bitmapIfReady(c) else null",
-        "        val bundled = if (custom == null) RovexBundledVisualAssets.bitmapIfReady(c) else null",
+        "        val bundled = if (custom == null && get(c) == PASTEL) RovexBundledVisualAssets.bitmapIfReady(c) else null",
         "allow imported wallpaper in every theme")
 old_wallpaper = "        val alpha = if (custom != null) {\n            if (isDark(c)) 70 else 10\n        } else {\n            46\n        }"
 new_wallpaper = "        val alpha = if (custom != null) { if (isDark(c)) 70 else 12 } else 36"
@@ -619,6 +619,11 @@ replace(p, "            override fun onActivityCreated(a: Activity, b: android.o
 ids = P / "app/src/main/res/values/ids.xml"
 replace(ids, "</resources>", "    <item name=\"rovexMotionPaletteKey\" type=\"id\" />\n    <item name=\"rovexMotionSurfaceScan\" type=\"id\" />\n</resources>", "motion palette and surface scan tags")
 p = file("RovexHomeRevolution.kt")
+replace(p, "            it.background = if (ThemeManager.get(a) == ThemeManager.LIGHT) RovexClinicalDayHomeBackgroundDrawable(a) else ThemeManager.backgroundDrawable(a)",
+        "            it.background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)", "use the Activity root as the single live wallpaper host")
+replace(p, "        val shell=FrameLayout(a).apply{tag=TAG;contentDescription=\"rovexHomeShell\";background=if (ThemeManager.get(a) == ThemeManager.LIGHT) RovexClinicalDayHomeBackgroundDrawable(a) else ThemeManager.backgroundDrawable(a)}",
+        "        val shell=FrameLayout(a).apply{tag=TAG;contentDescription=\"rovexHomeShell\";background=android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)}", "keep Home shell transparent above imported wallpaper")
+replace(p, "        motionBackground(a, MOTION_BG_TAG, true)?.let { shell.addView(it, FrameLayout.LayoutParams(-1,-1)) }\n", "", "avoid duplicate Home wallpaper layer")
 replace(p, "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"",
         "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"\n    private const val MOTION_LOGO_TAG = \"rovex_home_motion_logo\"",
         "logo motion tag")
