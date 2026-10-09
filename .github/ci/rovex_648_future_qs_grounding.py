@@ -17,14 +17,16 @@ matches = [i for i, line in enumerate(lines) if line.lstrip().startswith('FUTURE
 if len(matches) != 1:
     raise SystemExit(f"[648] expected one FUTURE_RELATED prompt, found {len(matches)}")
 start_line = matches[0]
+# Find the next enum entry by its known declaration shape, allowing annotations
+# and blank lines between entries. Restrict the search to the enum body so that
+# wrapped string continuation lines cannot be mistaken for a new declaration.
 end_line = next(
     (i for i in range(start_line + 1, len(lines))
-     if re.match(r"^\s{4}[A-Z][A-Z0-9_]*\(", lines[i])),
-    len(lines),
+     if re.match(r"^\s{4}[A-Z][A-Z0-9_]*\s*\(", lines[i])),
+    None,
 )
-# Prompt entries in the baseline may span multiple physical Kotlin lines. Replace
-# the entire enum entry, not just its opening line, or stale continuation lines
-# remain after the new entry and break Kotlin compilation.
+if end_line is None:
+    raise SystemExit("[648] could not locate the next enum entry boundary")
 lines = lines[:start_line] + [replacement] + lines[end_line:]
 profile.write_text("\n".join(lines) + "\n")
 
