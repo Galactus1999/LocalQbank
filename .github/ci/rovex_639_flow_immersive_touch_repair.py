@@ -174,7 +174,8 @@ replace(p, "buttons.addView(TextView(activity).apply{text=\"SAVE\";textSize=12f;
 # Fix the square inset overlay and colourize the imported Lottie with the actual selected palette.
 p = file("RovexHomeRevolution.kt")
 replace(p, "        } else motionAlpha(c, tag == MOTION_BG_TAG)", "        } else if (tag.startsWith(MOTION_CARD_PREFIX)) motionAlpha(c, false).coerceAtMost(0.12f) else motionAlpha(c, tag == MOTION_BG_TAG)", "theme-safe card alpha in refresh path")
-replace(p, "        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) || RovexLiveMotionSettings.surfaceFlowEnabled(c)
+replace(p, """        view.visibility = if (motionPolicyAllowed) View.VISIBLE else View.GONE""",
+        """        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) || RovexLiveMotionSettings.surfaceFlowEnabled(c)
         if (tag == MOTION_BG_TAG || tag.startsWith(MOTION_CARD_PREFIX) || tag == MOTION_LOGO_TAG) {
             val first = RovexColorFlowTextView.colorOne(c)
             val second = RovexColorFlowTextView.colorTwo(c)
@@ -184,9 +185,8 @@ replace(p, "        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) 
                 view.setAnimationFromJson(RovexMotionAssetLoader.themedJson(c, first, second), "rovex_home_gradient_${first}_${second}")
             }
         }
-        view.visibility = if (motionPolicyAllowed && cardMotionAllowed) View.VISIBLE else View.GONE",
-        "        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) || RovexLiveMotionSettings.surfaceFlowEnabled(c)\n        view.visibility = if (motionPolicyAllowed && cardMotionAllowed) View.VISIBLE else View.GONE",
-        "surface flow visibility policy")
+        view.visibility = if (motionPolicyAllowed && cardMotionAllowed) View.VISIBLE else View.GONE""",
+        "refresh imported palette and enforce motion visibility")
 replace(p, "            setAnimation(\"rovex/motion/gradient_animated_background.json\")",
         "            setAnimationFromJson(RovexMotionAssetLoader.themedJson(c), \"rovex_home_gradient_${RovexColorFlowTextView.colorOne(c)}_${RovexColorFlowTextView.colorTwo(c)}\")",
         "theme-colour imported Lottie")
