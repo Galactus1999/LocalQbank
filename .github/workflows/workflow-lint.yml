@@ -24,11 +24,17 @@ jobs:
           for f in .github/workflows/build-ben-qbank-v3.yml .github/workflows/_adaptive-android.yml .github/workflows/workflow-lint.yml; do
             actionlint -color "$f"
           done
+      - name: Compile CI Python validators and overlays
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/ci/rovex_649_visual_truth_capture_repair.py .github/ci/test_visual_truth_capture.py tools/rovex_visual_truth.py
+
       - name: Lint active adaptive shell scripts
         shell: bash
         run: |
           set -euo pipefail
-          for f in .github/ci/adaptive-discover.sh .github/ci/adaptive-gradle-tasks.sh .github/ci/adaptive-instrumentation.sh .github/ci/rovex_visual_truth_capture.sh; do
+          for f in .github/ci/adaptive-discover.sh .github/ci/adaptive-gradle-tasks.sh .github/ci/adaptive-instrumentation.sh .github/ci/adaptive-instrumentation-v2.sh .github/ci/rovex_visual_truth_capture.sh; do
             bash -n "$f"
             shellcheck -x "$f"
           done
