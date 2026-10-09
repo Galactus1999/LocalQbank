@@ -54,9 +54,18 @@ system_ui.write_text(s)
 # SoundPool loads asynchronously, but the old not-ready/stream-failure path called MediaPlayer.create
 # synchronously from ACTION_DOWN. This is both a delayed cue and a main-thread decode/allocation stall.
 # Phase 638 must remove those fallbacks; fail closed if the generated source regresses.
+import re
 sound_text = sound.read_text()
-if "return playDirectFallback(context, cue)" in sound_text:
-    raise SystemExit("[647] synchronous touch fallback remains; Phase 638 repair did not apply")
+# Inspect executable Kotlin, not comments/documentation that may mention the old call.
+# The previous literal substring check falsely failed when a comment retained the example text.
+sound_code = re.sub(r"/\\*.*?\\*/", "", sound_text, flags=re.S)
+sound_code = re.sub(r"//[^\\n]*", "", sound_code)
+unsafe_touch_call = re.search(
+    r"(?m)^\\s*return\\s+playDirectFallback\\s*\\(\\s*context\\s*,\\s*cue\\s*\\)",
+    sound_code
+)
+if unsafe_touch_call:
+    raise SystemExit("[647] executable synchronous touch fallback remains; Phase 638 repair did not apply")
 if "RovexSoundFeedback.preload(this)" not in (K / "ResilienceManager.kt").read_text():
     raise SystemExit("[647] application-level SoundPool preload is missing")
 if "private fun playDirectFallback" not in sound_text:
