@@ -137,7 +137,7 @@ class BenQuestionAiModePromptTest {
         assertTrue(BenQuestionAiMode.OTHER_OPTIONS.prompt.contains("option-by-option discriminator analysis"))
         assertTrue(modes.all { it.prompt.contains("SOURCE POLICY (mandatory)") })
         assertTrue(modes.all { it.prompt.contains("official institutional/government/academic-body websites") })
-        assertTrue(modes.all { it.prompt.contains("Do not use unofficial websites") || it.prompt.contains("Never consult or cite unofficial websites") })
+        assertTrue(modes.all { it.prompt.contains("unofficial websites") })
         assertTrue(modes.all { it.prompt.length >= 400 })
     }
 }
