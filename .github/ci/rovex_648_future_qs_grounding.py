@@ -33,8 +33,8 @@ profile.write_text("\n".join(lines) + "\n")
 # Validate the generated enum boundary before Gradle sees this file. The replacement must remain
 # a comma-terminated enum entry, and OTHER_OPTIONS must survive as the next declaration.
 generated = profile.read_text()
-future_lines = [line for line in generated.splitlines() if re.match(r"^\\s{4}FUTURE_RELATED\\(", line)]
-other_lines = [line for line in generated.splitlines() if re.match(r"^\\s{4}OTHER_OPTIONS\\(", line)]
+future_lines = [line for line in generated.splitlines() if line.startswith("    FUTURE_RELATED(")]
+other_lines = [line for line in generated.splitlines() if line.startswith("    OTHER_OPTIONS(")]
 if len(future_lines) != 1 or not future_lines[0].rstrip().endswith("),"):
     raise SystemExit("[648] generated FUTURE_RELATED entry must be exactly one comma-terminated Kotlin enum entry")
 if len(other_lines) != 1:
