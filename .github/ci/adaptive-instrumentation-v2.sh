@@ -173,4 +173,29 @@ else
   exit 1
 fi
 
-echo "Adaptive instrumentation suite PASS."
+# Execute the checked-in Macrobenchmark module rather than treating app-module
+# smoke instrumentation as performance evidence. Keep the run on this same emulator
+# and preserve raw AndroidX benchmark output for review before any optimization.
+if [[ -f "$PROJECT/benchmark/build.gradle.kts" ]]; then
+  echo "===== reproducible Macrobenchmark baseline ====="
+  (
+    cd "$PROJECT"
+    ./gradlew :benchmark:connectedAndroidTest --no-daemon --stacktrace
+  )
+  BENCHMARK_OUTPUT="$PROJECT/benchmark/build/outputs"
+  if [[ -d "$BENCHMARK_OUTPUT" ]]; then
+    mkdir -p "$VISUAL_DIR/macrobenchmark"
+    find "$BENCHMARK_OUTPUT" -type f \\( -path '*connected_android_test_additional_output*' -o -path '*connectedAndroidTest*' \\) -print
+    while IFS= read -r report; do
+      [[ -f "$report" ]] || continue
+      rel="${report#"$BENCHMARK_OUTPUT"/}"
+      mkdir -p "$VISUAL_DIR/macrobenchmark/$(dirname "$rel")"
+      cp -f "$report" "$VISUAL_DIR/macrobenchmark/$rel"
+    done < <(find "$BENCHMARK_OUTPUT" -type f \\( -path '*connected_android_test_additional_output*' -o -path '*connectedAndroidTest*' \\))
+  fi
+else
+  echo "Macrobenchmark baseline BLOCKED: benchmark/build.gradle.kts missing from selected source."
+  exit 1
+fi
+
+echo "Adaptive instrumentation and Macrobenchmark baseline PASS."
