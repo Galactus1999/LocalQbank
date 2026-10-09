@@ -485,8 +485,7 @@ class RovexHeaderCosmicView @JvmOverloads constructor(context: Context, attrs: A
 # failed on first use or when the single stream was occupied. Keep a bounded three-stream cue pool.
 p = file("RovexSoundFeedback.kt")
 replace(p, "                if (cue == Cue.CLICK) {\n                    // SoundPool loads asynchronously. A short UI cue must still work on the\n                    // very first tap, so use the same PCM asset through MediaPlayer while the\n                    // pool finishes loading. Do not queue a second click or the user can hear\n                    // two sounds when onLoadComplete fires.\n                    return playDirectFallback(context)\n                }\n                pending = cue\n                return false",
-        "                if (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH) {\n                    // Immediate direct fallback; do not queue a duplicate after playing it.\n                    pending = cue
-                    return false\n                }\n                pending = cue\n                return false", "first-tap fallback for all touch cues")
+        "                if (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH) {\n                    // Immediate direct fallback; do not queue a duplicate after playing it.\n                    pending = cue\n                    return false\n                }\n                pending = cue\n                return false", "first-tap fallback for all touch cues")
 replace(p, "            if (stream == 0 && cue == Cue.CLICK) return playDirectFallback(context)",
         "            if (stream == 0) return false",
         "fallback on rejected stream")
