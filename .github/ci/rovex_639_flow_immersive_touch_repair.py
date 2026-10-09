@@ -485,7 +485,7 @@ object RovexTouchFeedback {
             }
             val complex = view is WebView || view is RecyclerView || view is ScrollView ||
                 view is HorizontalScrollView || view is AbsListView || view is EditText
-            return if (!complex && (view.isClickable || view.hasOnClickListeners())) view else null
+            return if (!complex && view.isClickable) view else null
         }
     }
 }
