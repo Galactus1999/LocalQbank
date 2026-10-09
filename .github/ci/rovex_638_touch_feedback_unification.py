@@ -136,25 +136,16 @@ rep(p,"                    if (nextReady && nextId != 0) {\n                    
 # whenever an asynchronously-loaded SoundPool sample was not ready or play() returned stream 0.
 # SoundPool is preloaded at app startup; skip a rare not-ready cue rather than decode late on tap.
 p=f("RovexSoundFeedback.kt")
-rep(p,"""            if (!ready || id == 0) {
-                if (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH) {
-                    // Immediate direct fallback; do not queue a duplicate after playing it.
-                    return playDirectFallback(context, cue)
-                }
-                pending = cue
-                return false
-            }""","""            if (!ready || id == 0) {
-                if (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH) {
-                    // Never construct MediaPlayer on a tap. SoundPool is preloaded at startup;
-                    // if the sample is not ready, skip it rather than play a delayed cue.
-                    return false
-                }
-                pending = cue
-                return false
-            }""","remove synchronous touch fallback")
-rep(p,"""            if (stream == 0 && (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH)) return playDirectFallback(context, cue)""",
-       """            if (stream == 0 && (cue == Cue.CLICK || cue == Cue.DEEP_TOUCH || cue == Cue.THEME_SWITCH)) return false""",
-       "remove stream-failure synchronous fallback")
+# SoundPool loads asynchronously; never construct MediaPlayer on the UI thread for tap cues.
+# Patch the two behavior sites independently of comments/indentation so upstream formatting changes
+# cannot break source discovery. Fail closed unless both known fallback call sites are present.
+sound_text = p.read_text()
+fallback_call = "return playDirectFallback(context, cue)"
+fallback_count = sound_text.count(fallback_call)
+if fallback_count != 2:
+    raise SystemExit(f"[638-touch] expected exactly 2 synchronous touch fallback call sites, found {fallback_count}")
+sound_text = sound_text.replace(fallback_call, "return false")
+p.write_text(sound_text)
 
 p=f("FlashcardStudyActivity.kt")
 rep(p,"setOnClickListener{RovexSoundFeedback.playClick(this@FlashcardStudyActivity);click(this)}",
