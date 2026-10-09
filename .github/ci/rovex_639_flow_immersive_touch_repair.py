@@ -174,6 +174,7 @@ replace(p, "buttons.addView(TextView(activity).apply{text=\"SAVE\";textSize=12f;
 # Fix the square inset overlay and colourize the imported Lottie with the actual selected palette.
 p = file("RovexHomeRevolution.kt")
 replace(p, "        } else motionAlpha(c, tag == MOTION_BG_TAG)", "        } else if (tag.startsWith(MOTION_CARD_PREFIX)) motionAlpha(c, false).coerceAtMost(0.12f) else motionAlpha(c, tag == MOTION_BG_TAG)", "theme-safe card alpha in refresh path")
+replace(p, "        } else motionAlpha(c, tag == MOTION_BG_TAG)", "        } else if (tag.startsWith(MOTION_CARD_PREFIX)) motionAlpha(c, false).coerceAtMost(0.12f) else motionAlpha(c, tag == MOTION_BG_TAG)", "theme-safe card alpha in refresh path")
 replace(p, "        view.visibility = if (motionPolicyAllowed) View.VISIBLE else View.GONE",
         "        val cardMotionAllowed = !tag.startsWith(MOTION_CARD_PREFIX) || RovexLiveMotionSettings.surfaceFlowEnabled(c)\n        view.visibility = if (motionPolicyAllowed && cardMotionAllowed) View.VISIBLE else View.GONE",
         "surface flow visibility policy")
@@ -202,6 +203,7 @@ replace(p, "            col.addView(FrankensteinLogoView(a),LinearLayout.LayoutP
 helper = """
     private fun withMotionSurface(view:View, a:MainActivity, name:String, radiusDp:Float=22f, fillHeight:Boolean=false):View {
         val surface = view.background
+        view.tag = "rovex_motion_wrapped_content"
         view.background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         val wrapper = FrameLayout(a).apply { background = surface; clipChildren = true; clipToPadding = true }
         val clip = FrameLayout(a).apply {
@@ -260,6 +262,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import com.airbnb.lottie.LottieAnimationView
@@ -275,7 +278,7 @@ class RovexHeaderCosmicView @JvmOverloads constructor(context: Context, attrs: A
         val clip = FrameLayout(context).apply {
             background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.TRANSPARENT) }
             clipToOutline = true; clipChildren = true
-            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
         motion = LottieAnimationView(context).apply {
             tag = "rovex_home_motion_logo"
@@ -286,13 +289,13 @@ class RovexHeaderCosmicView @JvmOverloads constructor(context: Context, attrs: A
             contentDescription = null; importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
             isClickable = false; isFocusable = false
         }
-        clip.addView(motion, LayoutParams(-1,-1))
-        addView(clip, LayoutParams(-1,-1))
+        clip.addView(motion, FrameLayout.LayoutParams(-1,-1))
+        addView(clip, FrameLayout.LayoutParams(-1,-1))
         val logo = ImageView(context).apply {
             setImageResource(R.drawable.rovex_app_logo); scaleType = ImageView.ScaleType.FIT_CENTER
-            contentDescription = "Rovex"; importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+            contentDescription = "Rovex"; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
         }
-        addView(logo, LayoutParams(-1,-1).apply { val inset=(5f*density).toInt(); setMargins(inset,inset,inset,inset) })
+        addView(logo, FrameLayout.LayoutParams(-1,-1).apply { val inset=(5f*density).toInt(); setMargins(inset,inset,inset,inset) })
     }
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -322,6 +325,9 @@ replace(p, "object RovexTouchFeedback {\n    fun bind",
         "single sound for nested click targets")
 replace(p, "if (soundOnTouch) RovexSoundFeedback.playDeepTouch(v.context)",
         "if (soundOnTouch) playTouchCueOnce(v.context)", "debounced touch cue")
+replace(p, "            if (!complex && (view.isClickable || view.hasOnClickListeners())) {",
+        "            if (!complex && view.tag?.toString() != \"rovex_motion_wrapped_content\" && (view.isClickable || view.hasOnClickListeners())) {",
+        "do not rebind wrapped click content")
 
 p = file("RovexHomeRevolution.kt")
 replace(p, "    private const val MOTION_HEADER_TAG = \"rovex_home_motion_header\"",
