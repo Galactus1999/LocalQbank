@@ -105,7 +105,7 @@ if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:' "$LOG"; then
   exit 1
 fi
 
-if grep -Eq '^INSTRUMENTATION_RESULT: shortMsg=Process crashed\\.' "$LOG"; then
+if grep -Eq '^INSTRUMENTATION_RESULT: shortMsg=Process crashed\.' "$LOG"; then
   echo "Instrumented test process crashed before the suite completed; refusing to treat a partial run as PASS."
   exit 1
 fi
