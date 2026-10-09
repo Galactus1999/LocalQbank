@@ -65,22 +65,33 @@ home_xml=dump("000-home.xml")
 clickables=[n for n in nodes(home_xml) if n.get("clickable")=="true"]
 scrollables=[n for n in nodes(home_xml) if n.get("scrollable")=="true"]
 '''
-new_home = '''adb("shell","am","force-stop",app)
+new_home = '''def foreground_app():
+    r = adb("shell", "dumpsys", "activity", "activities")
+    if r.returncode != 0:
+        return False
+    return any(
+        app in line and ("mResumedActivity" in line or "topResumedActivity" in line)
+        for line in r.stdout.splitlines()
+    )
+
+adb("shell","am","force-stop",app)
 adb("shell","monkey","-p",app,"-c","android.intent.category.LAUNCHER","1")
 if not alive(): raise SystemExit("application process died during initial launch")
 home_xml = ""
 clickables = []
 scrollables = []
+foreground = False
 for attempt in range(30):
     home_xml = dump("000-home.xml")
     visible = nodes(home_xml)
     clickables = [n for n in visible if n.get("clickable") == "true"]
     scrollables = [n for n in visible if n.get("scrollable") == "true"]
-    if clickables or scrollables:
+    foreground = foreground_app()
+    if foreground and (clickables or scrollables):
         break
     time.sleep(1)
-if len(home_xml.strip()) < 80 or "<node" not in home_xml or not (clickables or scrollables):
-    raise SystemExit("Interaction explorer BLOCKED/FAILED: no visible interactive app hierarchy after 30 seconds; refusing to report an empty exploration as PASS. Hierarchy=" + home_xml[:500])
+if not foreground or len(home_xml.strip()) < 80 or "<node" not in home_xml or not (clickables or scrollables):
+    raise SystemExit("Interaction explorer BLOCKED/FAILED: no foreground Rovex Activity with visible interactive nodes after 30 seconds; refusing to explore the Android launcher or report an empty exploration as PASS. Hierarchy=" + home_xml[:500])
 capture("000-home")
 '''
 if old_home not in e:
