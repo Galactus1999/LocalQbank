@@ -25,6 +25,7 @@ s = p.read_text()
 field_anchor = "    private lateinit var content: LinearLayout"
 fields = """    private var benAiPanelRoot: View? = null
     private var benAiPanelClose: (() -> Unit)? = null
+    private var benAiBackCallback: androidx.activity.OnBackPressedCallback? = null
     private var benAiPanelOriginalVisibility: List<Pair<View, Int>> = emptyList()
 
     internal fun mountBenAiPanelRoot(panel: View, onClose: () -> Unit) {
@@ -38,6 +39,12 @@ fields = """    private var benAiPanelRoot: View? = null
         benAiPanelOriginalVisibility.forEach { (view, _) -> view.visibility = View.GONE }
         benAiPanelRoot = panel
         benAiPanelClose = onClose
+        benAiBackCallback?.remove()
+        benAiBackCallback = object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                benAiPanelClose?.invoke()
+            }
+        }.also { onBackPressedDispatcher.addCallback(this, it) }
         host.addView(panel, android.widget.FrameLayout.LayoutParams(
             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
             android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -52,6 +59,8 @@ fields = """    private var benAiPanelRoot: View? = null
         val host = findViewById<ViewGroup>(android.R.id.content)
         benAiPanelRoot = null
         benAiPanelClose = null
+        benAiBackCallback?.remove()
+        benAiBackCallback = null
         host?.removeView(panel)
         benAiPanelOriginalVisibility.forEach { (view, visibility) ->
             if (view.parent === host) view.visibility = visibility
