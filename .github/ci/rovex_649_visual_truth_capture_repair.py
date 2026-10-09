@@ -48,7 +48,7 @@ old_capture = '''def capture(name):
 new_capture = '''def capture(name):
     r = subprocess.run(["adb","-s",serial,"exec-out","screencap","-p"],
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if r.returncode != 0 or len(r.stdout) < 1024 or not r.stdout.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+    if r.returncode != 0 or len(r.stdout) < 1024 or not r.stdout.startswith(bytes([137, 80, 78, 71, 13, 10, 26, 10])):
         raise SystemExit("Interaction explorer screenshot is missing/invalid: " + name)
     (out/"screens"/(name+".png")).write_bytes(r.stdout)
 '''
