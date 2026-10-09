@@ -142,10 +142,36 @@ sleep 3
 
 capture_visual() {
   local name="$1"
-  adb -s "$SERIAL" exec-out screencap -p > "$VISUAL_DIR/$name.png"
-  test -s "$VISUAL_DIR/$name.png"
+  local target="$VISUAL_DIR/$name.png"
+  local tmp="$target.tmp"
+  local err="$VISUAL_DIR/$name-capture.stderr"
+  local captured=false
+
+  # Emulator/Play-services Binder pressure can briefly break exec-out immediately
+  # after a passing instrumentation suite. Retry the capture itself instead of
+  # aborting the entire release workflow on the first transient shell exit 126.
+  for attempt in 1 2 3 4 5; do
+    rm -f "$tmp"
+    if adb -s "$SERIAL" exec-out screencap -p > "$tmp" 2>"$err" && [[ -s "$tmp" ]]; then
+      mv -f "$tmp" "$target"
+      captured=true
+      break
+    fi
+    echo "Visual capture attempt $attempt/5 failed for $name: $(tail -n 3 "$err" 2>/dev/null | tr '\\n' ' ')" >&2
+    adb start-server >/dev/null 2>&1 || true
+    adb reconnect device >/dev/null 2>&1 || true
+    adb -s "$SERIAL" wait-for-device >/dev/null 2>&1 || true
+    sleep 2
+  done
+  if [[ "$captured" != true ]]; then
+    echo "Visual truth capture FAILED after 5 attempts: $name"
+    cat "$err" 2>/dev/null || true
+    return 1
+  fi
+
   adb -s "$SERIAL" shell uiautomator dump /sdcard/rovex-window.xml >/dev/null 2>&1 || true
   adb -s "$SERIAL" exec-out cat /sdcard/rovex-window.xml > "$VISUAL_DIR/$name-window.xml" 2>/dev/null || true
+  rm -f "$err"
   echo "Visual truth capture PASS: $name"
 }
 
