@@ -12,6 +12,7 @@ import android.content.Intent
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.BufferedReader
@@ -19,6 +20,7 @@ import java.io.InputStreamReader
 
 /** Captures real rendered activity surfaces for CI visual truth. Never ships in the release APK. */
 @RunWith(AndroidJUnit4::class)
+@Ignore("Rendered screenshots are captured by the host-side visual truth harness; avoid a second multi-Activity launch inside the instrumentation process.")
 class RovexVisualTruthCaptureTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
