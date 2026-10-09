@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure actual rendered Rovex screenshots without requiring ImageMagick."""
 from __future__ import annotations
-import argparse, json, math, struct, zlib
+import argparse, hashlib, json, math, struct, zlib
 from pathlib import Path
 
 
@@ -145,6 +145,7 @@ def main():
     for p in sorted(Path(a.screens).glob("*.png")):
         m = metric(p)
         m["file"] = p.name
+        m["sha256"] = hashlib.sha256(p.read_bytes()).hexdigest()
         m["structural_render_score"] = score(m)
         screens.append(m)
     if not screens:
@@ -157,7 +158,16 @@ def main():
         "interpretation": "Structural score validates that a real, non-empty UI rendered. It is not a visual similarity score and cannot establish design-match without approved golden references."
     }
     Path(a.output).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    required = [s for s in screens if s["file"] != "06_visual_lab.png"]
+    required_names = {"01_home.png", "02_qbank.png", "03_flashcards.png", "04_ren.png", "05_settings.png"}
+    by_name = {s["file"]: s for s in screens}
+    missing = sorted(required_names - set(by_name))
+    if missing:
+        raise SystemExit("Visual truth gate failed: required activity screenshots missing: " + ", ".join(missing))
+    required = [by_name[name] for name in sorted(required_names)]
+    fingerprints = [s["sha256"] for s in required]
+    if len(set(fingerprints)) != len(fingerprints):
+        duplicates = sorted({h for h in fingerprints if fingerprints.count(h) > 1})
+        raise SystemExit("Visual truth gate failed: two or more distinct Activities produced byte-identical screenshots; fingerprints=" + ", ".join(duplicates))
     if any(s["structural_render_score"] < 75 for s in required):
         raise SystemExit("Visual truth gate failed: one or more required screens have an unhealthy rendered fingerprint")
 
