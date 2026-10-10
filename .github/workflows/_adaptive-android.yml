@@ -75,10 +75,30 @@ jobs:
           bash -n .github/ci/adaptive-discover.sh
           bash .github/ci/adaptive-discover.sh
 
+      - name: Inject Phase 1 Home screenshot test into selected source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ADAPTIVE_PROJECT:-}"
+          test -d "$ADAPTIVE_PROJECT/app/src"
+          destination="$ADAPTIVE_PROJECT/app/src/androidTest/java/com/localqbank/library/RovexPhase1HomeScreenshotCaptureTest.kt"
+          mkdir -p "$(dirname "$destination")"
+          cp -f .github/ci/RovexPhase1HomeScreenshotCaptureTest.kt "$destination"
+          grep -q 'class RovexPhase1HomeScreenshotCaptureTest' "$destination"
+          echo "Injected Phase 1 Home screenshot producer into $destination"
+
       - name: Discover Gradle tasks
         id: tasks
         shell: bash
         run: bash .github/ci/adaptive-gradle-tasks.sh
+
+      - name: Validate benchmark lane separation
+        shell: bash
+        run: python3 .github/ci/test_benchmark_lane_separation.py
+
+      - name: Validate rendered visual truth capture contract
+        shell: bash
+        run: python3 .github/ci/test_visual_truth_capture.py
 
       - name: Run discovered JVM tests
         if: steps.tasks.outputs.unit_task != ''
@@ -163,11 +183,30 @@ jobs:
           emulator-boot-timeout: 300
           script: bash "$GITHUB_WORKSPACE/.github/ci/adaptive-instrumentation.sh"
 
+      - name: Final source/error/incompleteness rescan
+        if: always() && steps.discover.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$GITHUB_WORKSPACE/tools/rovex_final_visual_rescan.py" --project "$ADAPTIVE_PROJECT" --output "$RUNNER_TEMP/adaptive-android/reports/final-rescan.json"
+
       - name: Record instrumentation skip
         if: steps.apk.outputs.has_test_apk != 'true'
         shell: bash
         run: |
           echo "CAPABILITY SKIPPED: no Android test APK was discovered."
+
+      - name: Stage adaptive diagnostics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .adaptive-ci-diagnostics
+          mkdir -p .adaptive-ci-diagnostics
+          if [[ -s .adaptive-instrumentation.log ]]; then cp -f .adaptive-instrumentation.log .adaptive-ci-diagnostics/; fi
+          if [[ -d .adaptive-visual ]]; then cp -a .adaptive-visual .adaptive-ci-diagnostics/; fi
+          if [[ -d .adaptive-interaction ]]; then cp -a .adaptive-interaction .adaptive-ci-diagnostics/; fi
+          if [[ -d "$RUNNER_TEMP/adaptive-android/reports" ]]; then cp -a "$RUNNER_TEMP/adaptive-android/reports/." .adaptive-ci-diagnostics/; fi
 
       - name: Upload adaptive diagnostics
         if: always()
@@ -175,8 +214,8 @@ jobs:
         with:
           name: adaptive-android-diagnostics
           path: |
-            .adaptive-instrumentation.log
-            $RUNNER_TEMP/adaptive-android/reports/**
+            .adaptive-ci-diagnostics/**
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 14
 
@@ -245,6 +284,14 @@ jobs:
           size="$(stat -c%s "$RUNNER_TEMP/adaptive-source.zip")"
           echo "Source archive size: $size bytes"
           if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then [[ "$size" -lt 25000000 ]]; fi
+
+      - name: Upload adaptive source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-source-snapshot
+          path: ${{ runner.temp }}/adaptive-source.zip
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload adaptive artifacts
         uses: actions/upload-artifact@v4
