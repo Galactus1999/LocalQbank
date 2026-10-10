@@ -397,7 +397,7 @@ screen_path.write_text(ss, encoding="utf-8")
 home_path = P / "app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
 hs = home_path.read_text(encoding="utf-8")
 start = hs.index("    private fun card(c:Context,index:Int=0):android.graphics.drawable.Drawable {")
-end = hs.index("\\n    private fun withMotionSurface(", start)
+end = hs.index("\n    private fun withMotionSurface(", start)
 card = '''    private fun card(c:Context,index:Int=0):android.graphics.drawable.Drawable {
         // Shared glass already supplies base/highlight/shadow; use one subtle semantic wash and fine rim.
         val accent = ThemeManager.accent(c)
