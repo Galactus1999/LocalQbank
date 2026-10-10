@@ -143,6 +143,7 @@ class RovexHomeThemeFoundationRegressionTest {
         val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
         try {
             val file = java.io.File(directory, "phase1_home_" + name + ".png")
+            android.util.Log.i("RovexVisualTruth", "Saving theme screenshot theme=" + name + " package=" + context.packageName + " path=" + file.absolutePath)
             java.io.FileOutputStream(file).use { output ->
                 check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output)) {
                     "PNG compression failed for theme=" + name
