@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Regression guard for truthful rendered-UI screenshots and interaction exploration."""
 from pathlib import Path
+import runpy
 
 ROOT = Path(__file__).resolve().parents[2]
 runner = (ROOT / ".github/ci/adaptive-instrumentation-v2.sh").read_text(encoding="utf-8")
@@ -25,6 +26,14 @@ assert "def foreground_app()" in overlay
 assert "actions=%d states=%d" in overlay
 assert "sha256" in truth and "byte-identical screenshots" in truth
 assert "01_home.png" in truth and "05_settings.png" in truth
+score = runpy.run_path(str(ROOT / "tools/rovex_visual_truth.py"))["score"]
+# Regression fixture from the real Phase 649 Ren screenshot: it is visibly rendered,
+# but a sparse light-theme screen has lower entropy and >98% bright pixels.
+ren_first_run = {
+    "width": 1080, "height": 1920, "entropy": 0.21913,
+    "edge_density": 0.01015, "bright_pixel_ratio": 0.98968,
+}
+assert score(ren_first_run) >= 75, "A valid sparse light-theme Activity must not fail the structural-render gate."
 assert "rovex_649_visual_truth_capture_repair.py" in discover
 
 print("PASS: visual truth requires dedicated instrumentation, real Activity screenshots, non-duplicate images, and non-empty interaction exploration.")
