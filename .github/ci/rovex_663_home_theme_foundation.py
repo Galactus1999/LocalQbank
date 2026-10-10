@@ -238,6 +238,7 @@ class RovexHomeThemeFoundationRegressionTest {
                             "Home primary/muted text contrast below 4.5:1 for theme=" + theme
                         }
                     }
+                    instrumentation.waitForIdleSync()
                     captureThemeScreenshot(context, themeName)
                 }
             }
