@@ -65,7 +65,6 @@ fixture_visible = [
 ]
 assert fixture_visible == ["LATER", "RESUME"], fixture_visible
 assert "source = source.replace(old, new, 1)" in overlay651
-assert 'a.get("visible-to-user")=="false"' in overlay652
 assert 'a.get("visible-to-user")!="true"' in overlay652
 assert "nodes() and state_key() now use the same visibility semantics" in overlay652
 assert "rovex_652_uiautomator_visibility_fix.py" in discover
