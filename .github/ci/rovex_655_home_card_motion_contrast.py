@@ -70,7 +70,7 @@ new_card = """        if (ThemeManager.get(c) == ThemeManager.PASTEL) {
             val ac=ThemeManager.accent(c)
             setStroke(d(1,c),Color.argb(if(ThemeManager.isDark(c))95 else 70,Color.red(ac),Color.green(ac),Color.blue(ac)))
         }"""
-if (s.count(old_card) !== 1) {
+if s.count(old_card) != 1:
     if (!s.includes("Glass, not opaque pastel")) throw new Error("[655] exact card anchor missing");
 } else {
     s = s.replace(old_card, new_card);
