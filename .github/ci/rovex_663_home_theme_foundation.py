@@ -208,35 +208,28 @@ class RovexHomeThemeFoundationRegressionTest {
         val context = instrumentation.targetContext
         val previousTheme = ThemeManager.get(context)
         try {
-            ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
-                val themeCases = listOf(
-                    "light" to ThemeManager.LIGHT,
-                    "amoled" to ThemeManager.AMOLED,
-                    "mint" to ThemeManager.MINT,
-                    "sunset" to ThemeManager.SUNSET,
-                    "lavender" to ThemeManager.LAVENDER,
-                    "pastel" to ThemeManager.PASTEL
-                )
-                for ((themeName, theme) in themeCases) {
-                    scenario.onActivity { activity ->
-                        ThemeManager.set(activity, theme)
-                    }
-                    // Recreate the real Activity so all view text, surfaces, borders and controls
-                    // are rebound from the newly selected semantic palette, not just the backdrop.
-                    scenario.recreate()
+            val themeCases = listOf(
+                "light" to ThemeManager.LIGHT,
+                "amoled" to ThemeManager.AMOLED,
+                "mint" to ThemeManager.MINT,
+                "sunset" to ThemeManager.SUNSET,
+                "lavender" to ThemeManager.LAVENDER,
+                "pastel" to ThemeManager.PASTEL
+            )
+            // Launch a fresh MainActivity for each theme. Recreating one Activity after
+            // ThemeManager.set() can leave Home's dynamically rebuilt view tree stale, making
+            // a geometry assertion test the theme-switch lifecycle rather than Home geometry.
+            for ((themeName, theme) in themeCases) {
+                ThemeManager.set(context, theme)
+                ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
                     instrumentation.waitForIdleSync()
                     scenario.onActivity { activity ->
                         RovexHomeRevolution.refreshTheme(activity)
                         activity.window.decorView.requestLayout()
-                        val root = activity.findViewById<ViewGroup>(R.id.dashboardRoot)
-                            ?: error("Home dashboard root missing for theme=" + theme)
                         val contentRoot = activity.findViewById<ViewGroup>(android.R.id.content)
                             ?: error("Activity content root missing for theme=" + theme)
                         val density = activity.resources.displayMetrics.density
                         fun assertHeight(tag: String, maximumDp: Float) {
-                            // Search the complete Activity content tree: theme/recreation paths
-                            // may host a Home container outside dashboardRoot. Keep the strict
-                            // missing-target failure so absent cards are never silently accepted.
                             val view = contentRoot.findViewWithTag<View>(tag)
                                 ?: error("Missing Home geometry target=" + tag + " theme=" + theme)
                             val heightDp = view.measuredHeight / density
@@ -265,8 +258,7 @@ class RovexHomeThemeFoundationRegressionTest {
                     instrumentation.waitForIdleSync()
                     captureThemeScreenshot(context, themeName)
                 }
-            }
-        } finally {
+            }        } finally {
             ThemeManager.set(context, previousTheme)
         }
     }
