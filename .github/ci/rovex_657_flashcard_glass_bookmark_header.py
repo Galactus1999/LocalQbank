@@ -458,7 +458,7 @@ print("[658] applied v8.3.656 / versionCode 742")
 
 # Phase 659: source-verified imported Lottie, theme-token palette, no text-flow coupling on cards.
 import hashlib as _hashlib, json as _json, shutil as _shutil
-_src_asset = ROOT / ".github/assets/rovex-motion/gradient_animated_background.json"
+_src_asset = Path(__file__).resolve().parents[2] / ".github/assets/rovex-motion/gradient_animated_background.json"
 _dst_asset = P / "app/src/main/assets/rovex/motion/gradient_animated_background.json"
 _manifest = P / "app/src/main/assets/rovex/RovexVisualAssetManifest.json"
 _home_path = P / "app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
