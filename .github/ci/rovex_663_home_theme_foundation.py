@@ -16,8 +16,8 @@ for path in (gradle, home, compact_test, admission_test):
 g = gradle.read_text(encoding="utf-8")
 if 'versionName = "8.3.658"' not in g or "versionCode = 744" not in g:
     raise SystemExit("[663] wrong baseline; expected v8.3.658 / versionCode 744")
-g = g.replace('versionName = "8.3.658"', 'versionName = "8.3.660"', 1)
-g = g.replace("versionCode = 744", "versionCode = 746", 1)
+g = g.replace('versionName = "8.3.658"', 'versionName = "8.3.659"', 1)
+g = g.replace("versionCode = 744", "versionCode = 745", 1)
 gradle.write_text(g, encoding="utf-8")
 
 tokens = pkg / "RovexHomeThemeTokens.kt"
@@ -256,13 +256,13 @@ elif "Durable recovery work was not admitted; observed state=" not in test:
 admission_test.write_text(test, encoding="utf-8")
 
 g = gradle.read_text(encoding="utf-8")
-if 'versionName = "8.3.660"' not in g or "versionCode = 746" not in g:
+if 'versionName = "8.3.659"' not in g or "versionCode = 745" not in g:
     raise SystemExit("[663] version postcondition failed")
 if "Durable recovery work was not admitted; observed state=" not in admission_test.read_text(encoding="utf-8"):
     raise SystemExit("[663] WorkManager fast-completion regression fix missing")
 if "RovexHomeThemeTokens.text(a)" not in home.read_text(encoding="utf-8"):
     raise SystemExit("[663] semantic text role not integrated into Home")
-print("[663] applied v8.3.660 / versionCode 746")
+print("[663] applied v8.3.659 / versionCode 745")
 print("[663] Home card surfaces now use shared semantic surface/elevation/outline roles; text and accents use semantic palette roles")
 print("[663] compact measured geometry regression covers Light, AMOLED, Space, Mint and Pastel compatibility themes")
 print("[663] palette contrast tests cover eight palette families in light/dark variants")
