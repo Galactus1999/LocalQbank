@@ -36,6 +36,12 @@ if 'applicationId = "com.localqbank.library"' not in g:
     raise SystemExit("[Phase 1] package/applicationId changed unexpectedly")
 
 home = home_path.read_text(encoding="utf-8")
+if (
+    'setPadding(d(12,a),d(6,a),d(12,a),d(6,a))' not in home
+    or 'LinearLayout.LayoutParams(-1,d(72,a)).apply{topMargin=d(4,a)}' not in home
+    or 'includeFontPadding=false' not in home
+):
+    raise SystemExit("[Phase 1] measured Today Progress internal-height correction missing from generated Home source")
 tokens = tokens_path.read_text(encoding="utf-8")
 palette = palette_path.read_text(encoding="utf-8")
 compact = compact_test_path.read_text(encoding="utf-8")
