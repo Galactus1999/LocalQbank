@@ -109,6 +109,7 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   python3 "$ROOT/.github/ci/rovex_662_deletion_admission_state_diagnostic.py" "$project"
   python3 "$ROOT/.github/ci/rovex_663_home_theme_foundation.py" "$project"
   python3 "$ROOT/.github/ci/verify_phase1_home_foundation.py" "$project" "$ROOT"
+  log "Phase 1 generated-source verifier passed after overlays 660-663 on the selected source archive"
  fi
 fi
 if [[ -f "$project/app/src/main/assets/rovex/RovexVisualAssetManifest.json" ]]; then
