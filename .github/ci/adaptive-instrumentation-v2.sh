@@ -158,6 +158,38 @@ fi
 if [[ "$visual_rc" -ne 0 ]]; then
   echo "Visual instrumentation wrapper rc=$visual_rc after complete successful JUnit terminal markers; continuing with verified screenshot collection."
 fi
+
+# Phase 1 Home screenshots are produced by a separate test class. The previous flow ran
+# RovexVisualTruthCaptureTest and immediately called the collector, which requires six
+# phase1_home_*.png files that the first test does not create. Explicitly run the producer.
+THEME_TEST_LOG="$VISUAL_DIR/phase1-theme-capture-instrumentation.log"
+adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+set +e
+timeout 300s adb -s "$SERIAL" shell am instrument -w -r \
+  -e class com.localqbank.library.RovexHomeThemeFoundationRegressionTest#compactHomeGeometryAndSemanticSurfaceColorsSurviveThemeChanges \
+  "$runner" > "$THEME_TEST_LOG" 2>&1
+theme_rc=$?
+set -e
+cat "$THEME_TEST_LOG"
+if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|FAILURES!!!|shortMsg=Process crashed' "$THEME_TEST_LOG" ||
+   ! grep -Fq 'INSTRUMENTATION_CODE: -1' "$THEME_TEST_LOG" ||
+   ! grep -Fq 'INSTRUMENTATION_STATUS_CODE: 0' "$THEME_TEST_LOG" ||
+   ! grep -q 'test=compactHomeGeometryAndSemanticSurfaceColorsSurviveThemeChanges' "$THEME_TEST_LOG"; then
+  echo "Phase 1 screenshot producer failed or is absent from the installed test APK."
+  echo "Expected: com.localqbank.library.RovexHomeThemeFoundationRegressionTest"
+  echo "Do not weaken the screenshot collector; fix test source/build ordering if this class is absent."
+  exit 1
+fi
+if [[ "$theme_rc" -ne 0 ]]; then
+  echo "Theme instrumentation wrapper rc=$theme_rc after successful JUnit terminal markers; continuing."
+fi
+for theme in light amoled mint sunset lavender pastel; do
+  if ! grep -Fq "Saving theme screenshot theme=$theme" "$THEME_TEST_LOG"; then
+    echo "Phase 1 producer did not log screenshot save for theme=$theme."
+    exit 1
+  fi
+done
+
 bash "$ROOT/.github/ci/rovex_visual_truth_capture.sh" "$VISUAL_DIR"
 
 # Interaction exploration must observe real visible nodes. Empty hierarchy or zero
