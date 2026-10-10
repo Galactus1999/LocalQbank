@@ -186,7 +186,14 @@ class RovexHomeThemeFoundationRegressionTest {
         val previousTheme = ThemeManager.get(context)
         try {
             ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
-                val themeCases = listOf(\n                    "light" to ThemeManager.LIGHT,\n                    "amoled" to ThemeManager.AMOLED,\n                    "space" to ThemeManager.SPACE,\n                    "mint" to ThemeManager.MINT,\n                    "pastel" to ThemeManager.PASTEL\n                )\n                for ((themeName, theme) in themeCases) {
+                val themeCases = listOf(
+                    "light" to ThemeManager.LIGHT,
+                    "amoled" to ThemeManager.AMOLED,
+                    "space" to ThemeManager.SPACE,
+                    "mint" to ThemeManager.MINT,
+                    "pastel" to ThemeManager.PASTEL
+                )
+                for ((themeName, theme) in themeCases) {
                     scenario.onActivity { activity ->
                         ThemeManager.set(activity, theme)
                         RovexHomeRevolution.refreshTheme(activity)
@@ -252,5 +259,6 @@ if "RovexHomeThemeTokens.text(a)" not in home.read_text(encoding="utf-8"):
 print("[663] applied v8.3.660 / versionCode 746")
 print("[663] Home card surfaces now use shared semantic surface/elevation/outline roles; text and accents use semantic palette roles")
 print("[663] compact measured geometry regression covers Light, AMOLED, Space, Mint and Pastel compatibility themes")
-print("[663] palette contrast tests cover eight palette families in light/dark variants")\nprint("[663] saved real emulator Home PNG screenshots for Light, AMOLED, Space, Mint and Pastel themes")
+print("[663] palette contrast tests cover eight palette families in light/dark variants")
+print("[663] saved real emulator Home PNG screenshots for Light, AMOLED, Space, Mint and Pastel themes")
 print("[663] corrected WorkManager test race: an already-SUCCEEDED one-time worker is valid admission, while FAILED/BLOCKED/CANCELLED still fail")
