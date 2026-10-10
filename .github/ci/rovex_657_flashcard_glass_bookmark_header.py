@@ -621,6 +621,20 @@ class RovexHomeCardMotionPaletteRegressionTest {
 ''', encoding="utf-8")
 print("[659] instrumented regression test added: flow colors must not affect card motion; theme must")
 
+_settings = P / "app/src/main/java/com/localqbank/library/SettingsScreen.kt"
+if not _settings.is_file():
+    raise SystemExit("[659] SettingsScreen.kt missing during wording audit")
+_settings_text = _settings.read_text(encoding="utf-8")
+_old_label = 'text="Flow these colours across pastel cards (keep text readable)"'
+_new_label = 'text="Theme-adaptive glass card motion (independent of text colours)"'
+if _settings_text.count(_old_label) == 1:
+    _settings_text = _settings_text.replace(_old_label, _new_label, 1)
+elif _new_label not in _settings_text:
+    raise SystemExit("[659] card motion settings label anchor mismatch")
+_settings.write_text(_settings_text, encoding="utf-8")
+print("[659] settings terminology corrected: card motion is independent of text flow")
+
+
 
 # Architecture hardening: bound the themed-JSON cache. A user can change text-flow colours
 # repeatedly; an unbounded cache would retain every generated JSON string for the process lifetime.
