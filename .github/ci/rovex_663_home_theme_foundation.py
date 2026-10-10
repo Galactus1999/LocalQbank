@@ -193,7 +193,7 @@ class RovexHomeThemeFoundationRegressionTest {
             ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
                 val themeCases = listOf(
                     "light" to ThemeManager.LIGHT,
-                    "amoled" to ThemeManager.AMOLED,
+                    "amoled" to ThemeManager.OBSIDIAN_NIGHT,
                     "space" to ThemeManager.SPACE,
                     "mint" to ThemeManager.MINT,
                     "pastel" to ThemeManager.PASTEL
