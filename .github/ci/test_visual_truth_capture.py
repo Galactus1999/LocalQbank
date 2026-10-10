@@ -80,8 +80,11 @@ assert "half-built reviewer Activity" in overlay654
 assert "window.decorView.post { if (!isFinishing && !isDestroyed) finish() }" in overlay654
 assert "versionCode = 738" in overlay654
 assert "rovex_655_home_card_motion_contrast.py" in discover
-assert "ThemeManager.PASTEL -> 0.32f" in overlay655
-assert "Distinct but light card fills" in overlay655
+assert "ThemeManager.PASTEL -> 0.27f" in overlay655
+assert "Glass, not opaque pastel" in overlay655
+assert "RovexVisualSurfaceStyle.glass(c, 22f, true)" in overlay655
+assert "colorRefraction" in overlay655
+assert "neonRim" in overlay655
 assert "versionCode = 739" in overlay655
 assert 'a.get("visible-to-user") == "false"' in overlay652
 assert "state_key() visibility compatibility" in overlay652
