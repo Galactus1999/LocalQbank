@@ -166,8 +166,11 @@ class RovexHomeThemeFoundationRegressionTest {
         for (key in keys) {
             for (dark in listOf(false, true)) {
                 val roles = RovexPremiumPalette.forKey(key, dark)
-                check(contrast(roles.onSurface, roles.surface) >= 4.5) {
-                    "Insufficient normal-text contrast for palette=" + key + " dark=" + dark
+                check(
+                    contrast(roles.onSurface, roles.surfaceContainer) >= 4.5 &&
+                        contrast(roles.onSurface, roles.surfaceElevated) >= 4.5
+                ) {
+                    "Insufficient card-text contrast for palette=" + key + " dark=" + dark
                 }
                 check(roles.surfaceContainer != roles.surfaceElevated) {
                     "Surface hierarchy collapsed for palette=" + key + " dark=" + dark
@@ -221,8 +224,11 @@ class RovexHomeThemeFoundationRegressionTest {
                         assertHeight("modern_feature_qbank", 132f)
                         assertHeight("modern_feature_flashcards", 132f)
                         val roles = RovexHomeThemeTokens.roles(activity)
-                        check(contrast(roles.onSurface, roles.surface) >= 4.5) {
-                            "Home semantic text contrast below 4.5:1 for theme=" + theme
+                        check(
+                            contrast(roles.onSurface, roles.surfaceContainer) >= 4.5 &&
+                                contrast(roles.onSurface, roles.surfaceElevated) >= 4.5
+                        ) {
+                            "Home card text contrast below 4.5:1 for theme=" + theme
                         }
                     }
                     captureThemeScreenshot(context, themeName)
