@@ -89,6 +89,24 @@ s = s.replace(
     "if (cardSurface) ThemeManager.accentSecondary(c) else RovexColorFlowTextView.colorTwo(c)",
     "if (cardSurface) RovexHomeThemeTokens.secondary(c) else RovexColorFlowTextView.colorTwo(c)"
 )
+
+# The measured progress card still overflowed by 13.4dp after the initial compact pass.
+# Reduce its internal vertical stack, not just the regression threshold.
+progress_start = s.index('val progress=LinearLayout(a).apply{tag="rovex_home_today_progress"')
+progress_end = s.index('content.addView(withMotionSurface(progress,a,"today-progress"', progress_start)
+progress_block = s[progress_start:progress_end]
+for old, new in (
+    ("setPadding(d(12,a),d(10,a),d(12,a),d(10,a))", "setPadding(d(12,a),d(6,a),d(12,a),d(6,a))"),
+    ("tv(a,\"Today's Progress\",15.5f,RovexHomeThemeTokens.text(a),true)", "tv(a,\"Today's Progress\",14.5f,RovexHomeThemeTokens.text(a),true).apply{includeFontPadding=false}"),
+    ("tv(a,\"Loading calibrated progress…\",24f,RovexHomeThemeTokens.text(a),true)", "tv(a,\"Loading calibrated progress…\",22f,RovexHomeThemeTokens.text(a),true).apply{includeFontPadding=false}"),
+    ("LinearLayout.LayoutParams(-1,d(76,a)).apply{topMargin=d(5,a)}", "LinearLayout.LayoutParams(-1,d(72,a)).apply{topMargin=d(4,a)}"),
+    ("LinearLayout.LayoutParams(-1,d(34,a)).apply{topMargin=d(6,a)}", "LinearLayout.LayoutParams(-1,d(34,a)).apply{topMargin=d(4,a)}"),
+):
+    if progress_block.count(old) != 1:
+        raise SystemExit("[663] progress-card compact anchor count " + str(progress_block.count(old)) + ": " + old)
+    progress_block = progress_block.replace(old, new, 1)
+s = s[:progress_start] + progress_block + s[progress_end:]
+
 if "private fun card(c:Context,index:Int=0):android.graphics.drawable.Drawable" not in s:
     raise SystemExit("[663] Home card helper missing after edit")
 if "RovexPremiumPalette.forKey(ThemeManager.get(context), ThemeManager.isDark(context))" not in tokens.read_text(encoding="utf-8"):
