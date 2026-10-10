@@ -9,15 +9,19 @@ worker = root / "app/src/main/java/com/localqbank/library/QBankDeletionRecoveryW
 if not test.is_file() or not worker.is_file():
     raise SystemExit("[662] required deletion-admission test/worker source missing")
 source = test.read_text(encoding="utf-8")
-anchor = "        val info = workManager.getWorkInfosForUniqueWork(UNIQUE).get().single()\n"
-log = anchor + '''        println("[662] deletion admission state after enqueueIfNeeded=" + info.state +
+anchor = """        val info = workManager.getWorkInfosForUniqueWork(UNIQUE).get().single()
+        assertTrue(info.state == WorkInfo.State.ENQUEUED || info.state == WorkInfo.State.RUNNING)
+"""
+replacement = """        val info = workManager.getWorkInfosForUniqueWork(UNIQUE).get().single()
+        println("[662] deletion admission state after enqueueIfNeeded=" + info.state +
             "; requiresBatteryNotLow=" + info.constraints.requiresBatteryNotLow() +
             "; requiresDeviceIdle=" + info.constraints.requiresDeviceIdle())
-'''
+        assertTrue(info.state == WorkInfo.State.ENQUEUED || info.state == WorkInfo.State.RUNNING)
+"""
 if source.count(anchor) != 1:
-    raise SystemExit("[662] expected exactly one unique-work admission observation anchor")
+    raise SystemExit("[662] expected exactly one admission-state assertion block")
 if "[662] deletion admission state after enqueueIfNeeded=" not in source:
-    source = source.replace(anchor, log, 1)
+    source = source.replace(anchor, replacement, 1)
     test.write_text(source, encoding="utf-8")
 elif source.count("[662] deletion admission state after enqueueIfNeeded=") != 1:
     raise SystemExit("[662] duplicate runtime state diagnostic")
