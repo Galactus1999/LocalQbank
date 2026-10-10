@@ -166,7 +166,7 @@ THEME_TEST_LOG="$VISUAL_DIR/phase1-theme-capture-instrumentation.log"
 adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
 set +e
 timeout 300s adb -s "$SERIAL" shell am instrument -w -r \
-  -e class com.localqbank.library.RovexHomeThemeFoundationRegressionTest#compactHomeGeometryAndSemanticSurfaceColorsSurviveThemeChanges \
+  -e class com.localqbank.library.RovexPhase1HomeScreenshotCaptureTest#captureSixThemeHomeScreenshots \
   "$runner" > "$THEME_TEST_LOG" 2>&1
 theme_rc=$?
 set -e
@@ -174,9 +174,9 @@ cat "$THEME_TEST_LOG"
 if grep -Eq '^INSTRUMENTATION_FAILED:|^INSTRUMENTATION_ABORTED:|FAILURES!!!|shortMsg=Process crashed' "$THEME_TEST_LOG" ||
    ! grep -Fq 'INSTRUMENTATION_CODE: -1' "$THEME_TEST_LOG" ||
    ! grep -Fq 'INSTRUMENTATION_STATUS_CODE: 0' "$THEME_TEST_LOG" ||
-   ! grep -q 'test=compactHomeGeometryAndSemanticSurfaceColorsSurviveThemeChanges' "$THEME_TEST_LOG"; then
+   ! grep -q 'test=captureSixThemeHomeScreenshots' "$THEME_TEST_LOG"; then
   echo "Phase 1 screenshot producer failed or is absent from the installed test APK."
-  echo "Expected: com.localqbank.library.RovexHomeThemeFoundationRegressionTest"
+  echo "Expected: com.localqbank.library.RovexPhase1HomeScreenshotCaptureTest"
   echo "Do not weaken the screenshot collector; fix test source/build ordering if this class is absent."
   exit 1
 fi
