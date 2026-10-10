@@ -454,3 +454,100 @@ print("[658] import validates dimensions/size, runs off UI thread and transactio
 print("[658] Settings exposes independent wallpaper target for all eight themes")
 print("[658] Home glass uses theme semantic colors and fewer redundant translucent layers")
 print("[658] applied v8.3.656 / versionCode 742")
+
+
+# Phase 659: source-verified imported Lottie, theme-token palette, no text-flow coupling on cards.
+import hashlib as _hashlib, json as _json, shutil as _shutil
+_src_asset = ROOT / ".github/assets/rovex-motion/gradient_animated_background.json"
+_dst_asset = P / "app/src/main/assets/rovex/motion/gradient_animated_background.json"
+_manifest = P / "app/src/main/assets/rovex/RovexVisualAssetManifest.json"
+_home_path = P / "app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+if not all(x.is_file() for x in (_src_asset, _dst_asset, _manifest, _home_path)):
+    raise SystemExit("[659] required upstream asset, manifest, or Home source missing")
+_expected_sha = "5c1c9da77674ce23424cd732ba63d39ed20543f3e529a613024b67cf5850d098"
+_asset_bytes = _src_asset.read_bytes()
+if _hashlib.sha256(_asset_bytes).hexdigest() != _expected_sha:
+    raise SystemExit("[659] upstream Lottie asset hash mismatch")
+_asset_json = _json.loads(_asset_bytes.decode("utf-8"))
+if not all(k in _asset_json for k in ("v", "fr", "ip", "op", "w", "h", "layers")) or not _asset_json["layers"]:
+    raise SystemExit("[659] upstream Lottie asset structure is invalid")
+_shutil.copyfile(_src_asset, _dst_asset)
+
+_home = _home_path.read_text(encoding="utf-8")
+_old_alpha = '''            ThemeManager.LIGHT -> 0.22f
+            ThemeManager.PASTEL -> 0.27f
+            ThemeManager.MINT -> 0.18f
+            ThemeManager.SUNSET -> 0.20f
+            ThemeManager.LAVENDER -> 0.20f
+            ThemeManager.AMOLED -> 0.12f
+            ThemeManager.PANDORA -> 0.14f
+            ThemeManager.SPACE -> 0.12f
+            else -> 0.16f'''
+_new_alpha = '''            ThemeManager.LIGHT -> 0.14f
+            ThemeManager.PASTEL -> 0.12f // compatibility theme; not the design target
+            ThemeManager.MINT -> 0.13f
+            ThemeManager.SUNSET -> 0.14f
+            ThemeManager.LAVENDER -> 0.13f
+            ThemeManager.AMOLED -> 0.09f
+            ThemeManager.PANDORA -> 0.12f
+            ThemeManager.SPACE -> 0.10f
+            else -> 0.12f'''
+if _home.count(_old_alpha) != 1: raise SystemExit("[659] Home motion alpha anchor mismatch")
+_home = _home.replace(_old_alpha, _new_alpha, 1)
+_dollar = chr(36)
+_old_anim = '            setAnimationFromJson(RovexMotionAssetLoader.themedJson(c), "rovex_home_gradient_' + _dollar + '{RovexColorFlowTextView.colorOne(c)}_' + _dollar + '{RovexColorFlowTextView.colorTwo(c)}")'
+_new_anim = '''            // Card animation follows theme tokens; text-flow controls affect text only.
+            val first = if (tagValue.startsWith(MOTION_CARD_PREFIX)) ThemeManager.accent(c) else RovexColorFlowTextView.colorOne(c)
+            val second = if (tagValue.startsWith(MOTION_CARD_PREFIX)) ThemeManager.accentSecondary(c) else RovexColorFlowTextView.colorTwo(c)
+            setAnimationFromJson(RovexMotionAssetLoader.themedJson(c, first, second), "rovex_home_gradient_" + ThemeManager.get(c) + "_" + first + "_" + second)'''
+if _home.count(_old_anim) != 1: raise SystemExit("[659] initial Home motion palette anchor mismatch")
+_home = _home.replace(_old_anim, _new_anim, 1)
+_old_palette = '''            val first = RovexColorFlowTextView.colorOne(c)
+            val second = RovexColorFlowTextView.colorTwo(c)
+            val paletteKey = "$first:$second"
+            if (view.getTag(R.id.rovexMotionPaletteKey) != paletteKey) {
+                view.setTag(R.id.rovexMotionPaletteKey, paletteKey)
+                view.setAnimationFromJson(RovexMotionAssetLoader.themedJson(c, first, second), "rovex_home_gradient_''' + _dollar + '''{first}_''' + _dollar + '''{second}")
+            }'''
+_new_palette = '''            val cardSurface = tag.startsWith(MOTION_CARD_PREFIX)
+            val first = if (cardSurface) ThemeManager.accent(c) else RovexColorFlowTextView.colorOne(c)
+            val second = if (cardSurface) ThemeManager.accentSecondary(c) else RovexColorFlowTextView.colorTwo(c)
+            val paletteKey = ThemeManager.get(c) + ":" + first + ":" + second + ":" + (if (cardSurface) "theme-card" else "flow")
+            if (view.getTag(R.id.rovexMotionPaletteKey) != paletteKey) {
+                view.setTag(R.id.rovexMotionPaletteKey, paletteKey)
+                view.setAnimationFromJson(RovexMotionAssetLoader.themedJson(c, first, second), "rovex_home_gradient_" + ThemeManager.get(c) + "_" + first + "_" + second)
+            }'''
+if _home.count(_old_palette) != 1: raise SystemExit("[659] Home motion theme-switch palette anchor mismatch")
+_home = _home.replace(_old_palette, _new_palette, 1)
+_feature_start = _home.index("    private fun feature(a:MainActivity,title:String,sub:String,icon:String,index:Int,target:()->Unit):View{")
+_feature_end = _home.index("\n    private fun openSection(", _feature_start)
+_feature_source = _home[_feature_start:_feature_end]
+if "RovexColorFlowTextView" in _feature_source: raise SystemExit("[659] Home feature card directly instantiates flowing text")
+if "motionBackground(a, MOTION_CARD_PREFIX + title)" not in _feature_source: raise SystemExit("[659] imported Lottie card layer missing")
+_home_path.write_text(_home, encoding="utf-8")
+
+_manifest_obj = _json.loads(_manifest.read_text(encoding="utf-8"))
+_manifest_found = False
+for _item in _manifest_obj.get("assets", []):
+    if _item.get("file") == "assets/rovex/motion/gradient_animated_background.json":
+        _item.update({"source": "https://raw.githubusercontent.com/xvrh/lottie-flutter/master/example/assets/lottiefiles/gradient_animated_background.json",
+                      "sourcePage": "https://lottiefiles.com/free-animation/gradient-animated-background-Gyh6Lr3KGK",
+                      "creator": "LottieFiles community", "license": "Lottie Simple License",
+                      "sha256": _expected_sha, "modified": False})
+        _manifest_found = True
+if not _manifest_found: raise SystemExit("[659] Lottie provenance missing from asset manifest")
+_manifest.write_text(_json.dumps(_manifest_obj, indent=2) + "\n", encoding="utf-8")
+_license_note = P / "app/src/main/assets/rovex/motion/THIRD_PARTY_ASSETS.md"
+if not _license_note.is_file() or "Lottie Simple License" not in _license_note.read_text(encoding="utf-8"):
+    raise SystemExit("[659] Lottie license notice missing")
+if _hashlib.sha256(_dst_asset.read_bytes()).hexdigest() != _expected_sha:
+    raise SystemExit("[659] copied Lottie asset differs from upstream")
+g = gpath.read_text(encoding="utf-8")
+if 'versionName = "8.3.656"' not in g or "versionCode = 742" not in g:
+    raise SystemExit("[659] expected Phase 658 version 8.3.656 / 742")
+g = g.replace('versionName = "8.3.656"', 'versionName = "8.3.657"', 1).replace("versionCode = 742", "versionCode = 743", 1)
+gpath.write_text(g, encoding="utf-8")
+print("[659] upstream Lottie asset hash and JSON schema verified; original asset copied unchanged")
+print("[659] Home card palette follows theme semantic accents, independent of text-flow settings")
+print("[659] reduced over-bright card motion alpha across themes; Pastel is not the design target")
+print("[659] license/provenance manifest checked; applied v8.3.657 / versionCode 743")
