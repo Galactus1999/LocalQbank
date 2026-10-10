@@ -167,7 +167,7 @@ def main() -> int:
                 if commit not in source:
                     fail(f"{rel}: source URL must pin the exact upstream commit")
                 retrieved = entry.get("retrievedAtUtc")
-                if not isinstance(retrieved, str) or not re.fullmatch(r"20\\d\\d-\\d\\d-\\d\\d", retrieved):
+                if not isinstance(retrieved, str) or not re.fullmatch(r"20\d\d-\d\d-\d\d", retrieved):
                     fail(f"{rel}: retrievedAtUtc must use YYYY-MM-DD")
                 dimensions = jpeg_dimensions(data)
                 if not dimensions:
