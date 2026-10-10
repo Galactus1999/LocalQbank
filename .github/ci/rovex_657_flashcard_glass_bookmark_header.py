@@ -620,3 +620,30 @@ class RovexHomeCardMotionPaletteRegressionTest {
 }
 ''', encoding="utf-8")
 print("[659] instrumented regression test added: flow colors must not affect card motion; theme must")
+
+
+# Architecture hardening: bound the themed-JSON cache. A user can change text-flow colours
+# repeatedly; an unbounded cache would retain every generated JSON string for the process lifetime.
+_loader_path = P / "app/src/main/java/com/localqbank/library/RovexMotionAssetLoader.kt"
+if not _loader_path.is_file():
+    raise SystemExit("[659] RovexMotionAssetLoader.kt missing during architecture audit")
+_loader = _loader_path.read_text(encoding="utf-8")
+_cache_decl = "    private val themedCache = ConcurrentHashMap<String, String>()"
+_cache_decl_new = _cache_decl + "\n    private const val MAX_THEMED_CACHE_ENTRIES = 8"
+if _loader.count(_cache_decl) == 1 and "MAX_THEMED_CACHE_ENTRIES" not in _loader:
+    _loader = _loader.replace(_cache_decl, _cache_decl_new, 1)
+_cache_put = 'json.toString().also { themedCache[key] = it }'
+_cache_put_new = '''json.toString().also {
+                    if (themedCache.size >= MAX_THEMED_CACHE_ENTRIES) {
+                        themedCache.keys.firstOrNull()?.let { stale -> themedCache.remove(stale) }
+                    }
+                    themedCache[key] = it
+                }'''
+if _loader.count(_cache_put) == 1:
+    _loader = _loader.replace(_cache_put, _cache_put_new, 1)
+elif "MAX_THEMED_CACHE_ENTRIES" not in _loader:
+    raise SystemExit("[659] themed Lottie cache insertion anchor mismatch")
+if "MAX_THEMED_CACHE_ENTRIES = 8" not in _loader or "themedCache.size >= MAX_THEMED_CACHE_ENTRIES" not in _loader:
+    raise SystemExit("[659] bounded Lottie cache postcondition failed")
+_loader_path.write_text(_loader, encoding="utf-8")
+print("[659] architecture audit: capped recoloured Lottie JSON cache at eight entries")
