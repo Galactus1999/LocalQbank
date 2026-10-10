@@ -136,6 +136,22 @@ VISUAL_DIR="$ROOT/.adaptive-visual"
 mkdir -p "$VISUAL_DIR"
 APP_ID="${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}"
 
+# Phase 1 acceptance evidence: collect screenshots captured inside the instrumented app
+# after changing the real ThemeManager setting. Never substitute a design mock or launcher image.
+PHASE1_REMOTE_DIR="/sdcard/Android/data/$APP_ID/files/rovex-phase1"
+for theme in light amoled space mint pastel; do
+  remote="$PHASE1_REMOTE_DIR/phase1_home_${theme}.png"
+  local="$VISUAL_DIR/phase1_home_${theme}.png"
+  if ! adb -s "$SERIAL" shell test -s "$remote"; then
+    echo "Phase 1 rendered screenshot missing for theme=$theme at $remote"
+    exit 1
+  fi
+  adb -s "$SERIAL" pull "$remote" "$local" >/dev/null
+  test -s "$local"
+  printf '[phase1-visual] captured theme=%s bytes=%s sha256=' "$theme" "$(stat -c%s "$local")"
+  sha256sum "$local" | awk '{print $1}'
+done
+
 # Non-exported Activities cannot be launched reliably with host-side am start.
 # Run the dedicated instrumentation test so AndroidX launches each real Activity
 # under the test UID, then validate the actual rendered screenshots and uniqueness.
