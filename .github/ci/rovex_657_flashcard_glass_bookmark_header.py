@@ -405,7 +405,7 @@ card = '''    private fun card(c:Context,index:Int=0):android.graphics.drawable.
         val dark = ThemeManager.isDark(c)
         val radius = d(22,c).toFloat()
         val glass = RovexVisualSurfaceStyle.glass(c,22f,true)
-        val washAlpha = if (dark) 14 else 11
+        val washAlpha = if (dark) 20 else 18
         val colorWash = GradientDrawable(GradientDrawable.Orientation.TL_BR,intArrayOf(
             Color.argb(washAlpha+5,Color.red(accent),Color.green(accent),Color.blue(accent)),
             Color.argb(washAlpha,Color.red(secondary),Color.green(secondary),Color.blue(secondary)),
@@ -414,7 +414,7 @@ card = '''    private fun card(c:Context,index:Int=0):android.graphics.drawable.
         val rim = GradientDrawable().apply {
             setColor(Color.TRANSPARENT)
             cornerRadius=radius
-            setStroke(d(1,c).coerceAtLeast(1),Color.argb(if(dark)54 else 42,Color.red(accent),Color.green(accent),Color.blue(accent)))
+            setStroke(d(1,c).coerceAtLeast(1),Color.argb(if(dark)64 else 58,Color.red(accent),Color.green(accent),Color.blue(accent)))
         }
         return android.graphics.drawable.LayerDrawable(arrayOf(glass,colorWash,rim))
     }
@@ -426,7 +426,26 @@ for marker in ("PREVIEW_EDGE = 2048", "MAX_IMPORT_BYTES = 100L * 1024L * 1024L",
     if marker not in wall: raise SystemExit("[658] wallpaper invariant missing: "+marker)
 if "Color.rgb(255, 78, 164)" in hs:
     raise SystemExit("[658] fixed neon Home palette remains")
-home_path.write_text(hs, encoding="utf-8")
+# Root-cause Home repair: these text rows are children of a VERTICAL LinearLayout, so width=0/weight=1
+# applied weight to height and collapsed the two cockpit copy rows to zero width.
+hs2 = home_path.read_text(encoding="utf-8")
+hero_start = hs2.index('copy.addView(tv(a,"TODAY • STUDY COCKPIT"')
+hero_end = hs2.index('content.addView(withMotionSurface(hero', hero_start)
+hero = hs2[hero_start:hero_end]
+hero_old = 'LinearLayout.LayoutParams(0,-2,1f).apply{topMargin=d(5,a)}'
+if hero.count(hero_old) != 1: raise SystemExit("[658] hero title/body width-collapse anchor mismatch")
+hero = hero.replace(hero_old, 'LinearLayout.LayoutParams(-1,-2).apply{topMargin=d(5,a)}', 1)
+hero_old2 = 'LinearLayout.LayoutParams(0,-2,1f).apply{topMargin=d(4,a)}'
+if hero.count(hero_old2) != 1: raise SystemExit("[658] hero description width-collapse anchor mismatch")
+hero = hero.replace(hero_old2, 'LinearLayout.LayoutParams(-1,-2).apply{topMargin=d(4,a)}', 1)
+hs2 = hs2[:hero_start] + hero + hs2[hero_end:]
+if 'LinearLayout.LayoutParams(0,-2,1f).apply{topMargin=d(5,a)}' in hero or 'LinearLayout.LayoutParams(0,-2,1f).apply{topMargin=d(4,a)}' in hero:
+    raise SystemExit("[658] hero copy remains zero-width")
+old_graph = 'progress.addView(progressTitle);progress.addView(progressValue,LinearLayout.LayoutParams(-1,-2).apply{topMargin=d(2,a)});progress.addView(progressGraph,LinearLayout.LayoutParams(-1,d(168,a)).apply{topMargin=d(7,a)})'
+new_graph = 'progress.addView(progressTitle);progress.addView(progressValue,LinearLayout.LayoutParams(-1,-2).apply{topMargin=d(2,a)});progress.addView(progressGraph,LinearLayout.LayoutParams(-1,d(120,a)).apply{topMargin=d(7,a)})'
+if hs2.count(old_graph) != 1: raise SystemExit("[658] progress graph height anchor mismatch")
+hs2 = hs2.replace(old_graph,new_graph,1)
+home_path.write_text(hs2, encoding="utf-8")
 
 g = g.replace('versionName = "8.3.655"', 'versionName = "8.3.656"', 1).replace("versionCode = 741", "versionCode = 742", 1)
 gpath.write_text(g, encoding="utf-8")
