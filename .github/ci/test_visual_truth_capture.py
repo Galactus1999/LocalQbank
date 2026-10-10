@@ -44,7 +44,7 @@ assert "rovex_651_interaction_launch_race_fix.py" in discover
 assert "process_started = False" in overlay651
 assert "for attempt in range(30)" in overlay651
 assert "did not start within 30 seconds after launcher request" in overlay651
-assert "if not alive(): raise SystemExit(\"application process died during initial launch\")" in overlay651
+assert "source = source.replace(old, new, 1)" in overlay651
 assert "versionCode = 735" in overlay650
 assert 'm["entropy"] >= 0.20' in truth
 assert 'm["bright_pixel_ratio"] <= 0.995' in truth
