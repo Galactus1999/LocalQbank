@@ -9,6 +9,7 @@ overlay = (ROOT / ".github/ci/rovex_649_visual_truth_capture_repair.py").read_te
 overlay650 = (ROOT / ".github/ci/rovex_650_sparse_screen_score_fix.py").read_text(encoding="utf-8")
 overlay651 = (ROOT / ".github/ci/rovex_651_interaction_launch_race_fix.py").read_text(encoding="utf-8")
 overlay652 = (ROOT / ".github/ci/rovex_652_uiautomator_visibility_fix.py").read_text(encoding="utf-8")
+overlay653 = (ROOT / ".github/ci/rovex_653_hidden_status_inset_fix.py").read_text(encoding="utf-8")
 helper = (ROOT / ".github/ci/rovex_visual_truth_capture.sh").read_text(encoding="utf-8")
 truth = (ROOT / "tools/rovex_visual_truth.py").read_text(encoding="utf-8")
 discover = (ROOT / ".github/ci/adaptive-discover.sh").read_text(encoding="utf-8")
@@ -68,6 +69,10 @@ assert "source = source.replace(old, new, 1)" in overlay651
 assert 'a.get("visible-to-user")!="true"' in overlay652
 assert "nodes() and state_key() now use the same visibility semantics" in overlay652
 assert "rovex_652_uiautomator_visibility_fix.py" in discover
+assert "rovex_653_hidden_status_inset_fix.py" in discover
+assert "Hidden-status-bar screens must not reserve the hidden status bar's inset." in overlay653
+assert "insets.getInsets(WindowInsetsCompat.Type.displayCutout()).top" in overlay653
+assert "versionCode = 737" in overlay653
 assert 'a.get("visible-to-user") == "false"' in overlay652
 assert "state_key() visibility compatibility" in overlay652
 assert "versionCode = 736" in overlay652
