@@ -339,9 +339,9 @@ class RovexHomeThemeFoundationRegressionTest {
                         // again here races the Activity's own initialization and can detach the
                         // dynamically built Home tree while the regression test is observing it.
                     }
-                    # MainActivity is the Home entry point. Its dashboard is attached asynchronously;
-                    # probing arbitrary navigation controls before that attachment caused a false CI failure.
-                    # The bounded 20s Home-attachment poll immediately below is the authoritative gate.
+                    // MainActivity is the Home entry point. Its dashboard is attached asynchronously;
+                    // probing arbitrary navigation controls before that attachment caused a false CI failure.
+                    // The bounded 20s Home-attachment poll immediately below is the authoritative gate.
                     scenario.onActivity { activity -> activity.window.decorView.requestLayout()
                     }
                     // MainActivity builds Home dynamically. On slower GitHub-hosted emulators,
