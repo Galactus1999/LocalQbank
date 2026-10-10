@@ -269,6 +269,11 @@ class RovexHomeThemeFoundationRegressionTest {
 ''', encoding="utf-8")
 
 test = admission_test.read_text(encoding="utf-8")
+# Preserve the purpose of this regression while allowing a valid one-time worker to
+# finish before WorkManagerTestInitHelper's observer samples it.
+for required_constraint in ("requiresBatteryNotLow()", "requiresDeviceIdle()"):
+    if required_constraint not in test:
+        raise SystemExit("[663] admission regression must continue checking constraint " + required_constraint)
 old = "assertTrue(info.state == WorkInfo.State.ENQUEUED || info.state == WorkInfo.State.RUNNING)"
 new = """println("[663] WorkManager admission observed state=" + info.state +
             "; batteryNotLow=" + info.constraints.requiresBatteryNotLow() +
