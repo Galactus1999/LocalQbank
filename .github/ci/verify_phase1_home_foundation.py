@@ -92,7 +92,7 @@ for marker in (
     "RovexPremiumPalette.forKey",
     "contrast(roles.onSurface, roles.surfaceContainer) >= 4.5",
     "contrast(roles.onSurface, roles.surfaceElevated) >= 4.5",
-    'ThemeManager.AMOLED',
+    'ThemeManager.OBSIDIAN_NIGHT',
     'ThemeManager.SPACE',
     'ThemeManager.MINT',
     'ThemeManager.PASTEL',
