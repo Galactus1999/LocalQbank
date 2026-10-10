@@ -226,6 +226,27 @@ class RovexHomeThemeFoundationRegressionTest {
                     scenario.onActivity { activity ->
                         RovexHomeRevolution.refreshTheme(activity)
                         activity.window.decorView.requestLayout()
+                    }
+                    // MainActivity builds Home dynamically and some theme refreshes post work to
+                    // the UI queue. An idle wait alone does not guarantee that posted view-tree
+                    // replacement has completed. Poll from the instrumentation thread, never block
+                    // the main thread, and fail with a clear message if Home truly never attaches.
+                    var homeAttached = false
+                    for (attempt in 0 until 40) {
+                        instrumentation.waitForIdleSync()
+                        scenario.onActivity { activity ->
+                            val root = activity.findViewById<ViewGroup>(android.R.id.content)
+                                ?: error("Activity content root missing for theme=" + theme)
+                            homeAttached = root.findViewWithTag<View>("rovex_home_clinical_hero") != null
+                        }
+                        if (homeAttached) break
+                        Thread.sleep(50)
+                    }
+                    check(homeAttached) {
+                        "Home clinical hero did not attach within 2s after theme refresh=" + themeName +
+                            " theme=" + theme
+                    }
+                    scenario.onActivity { activity ->
                         val contentRoot = activity.findViewById<ViewGroup>(android.R.id.content)
                             ?: error("Activity content root missing for theme=" + theme)
                         val density = activity.resources.displayMetrics.density
