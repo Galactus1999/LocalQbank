@@ -230,23 +230,30 @@ class RovexHomeThemeFoundationRegressionTest {
                         // dynamically built Home tree while the regression test is observing it.
                         activity.window.decorView.requestLayout()
                     }
-                    // MainActivity builds Home dynamically and may finish initial attachment after
-                    // the first idle barrier. Poll on the instrumentation thread for a bounded
-                    // startup window; never sleep or block the main thread.
+                    // MainActivity builds Home dynamically. On slower GitHub-hosted emulators,
+                    // theme preference I/O and first-run initialization can outlast a short 5s gate.
+                    // Poll from the instrumentation thread for up to 20s; never sleep on the UI thread.
                     var homeAttached = false
-                    for (attempt in 0 until 100) {
+                    var observedRootChildren = "not-observed"
+                    for (attempt in 0 until 400) {
                         instrumentation.waitForIdleSync()
                         scenario.onActivity { activity ->
                             val root = activity.findViewById<ViewGroup>(android.R.id.content)
                                 ?: error("Activity content root missing for theme=" + theme)
                             homeAttached = root.findViewWithTag<View>("rovex_home_clinical_hero") != null
+                            observedRootChildren = (0 until root.childCount).joinToString(",") { index ->
+                                val child = root.getChildAt(index)
+                                child.javaClass.simpleName + "(tag=" + child.tag + ",visibility=" +
+                                    child.visibility + ",measured=" + child.measuredWidth + "x" +
+                                    child.measuredHeight + ")"
+                            }
                         }
                         if (homeAttached) break
                         Thread.sleep(50)
                     }
                     check(homeAttached) {
-                        "Home clinical hero did not attach within 5s after fresh MainActivity launch=" + themeName +
-                            " theme=" + theme
+                        "Home clinical hero did not attach within 20s after fresh MainActivity launch=" + themeName +
+                            " theme=" + theme + "; rootChildren=" + observedRootChildren
                     }
                     scenario.onActivity { activity ->
                         val contentRoot = activity.findViewById<ViewGroup>(android.R.id.content)
