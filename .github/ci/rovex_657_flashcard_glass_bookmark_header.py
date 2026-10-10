@@ -464,7 +464,7 @@ _manifest = P / "app/src/main/assets/rovex/RovexVisualAssetManifest.json"
 _home_path = P / "app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
 if not all(x.is_file() for x in (_src_asset, _dst_asset, _manifest, _home_path)):
     raise SystemExit("[659] required upstream asset, manifest, or Home source missing")
-_expected_sha = "5c1c9da77674ce23424cd732ba63d39ed20543f3e529a613024b67cf5850d098"
+_expected_sha = "45c82306570e1ab4670c5637e80fc0232d57c6cde8ba39fb16732188d5ab1056"
 _asset_bytes = _src_asset.read_bytes()
 if _hashlib.sha256(_asset_bytes).hexdigest() != _expected_sha:
     raise SystemExit("[659] upstream Lottie asset hash mismatch")
