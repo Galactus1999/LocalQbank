@@ -163,8 +163,8 @@ def main():
     Path(a.output).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     core_required_names = {"01_home.png", "02_qbank.png", "03_flashcards.png", "04_ren.png", "05_settings.png"}
     phase1_required_names = {
-        "phase1_home_light.png", "phase1_home_amoled.png", "phase1_home_space.png",
-        "phase1_home_mint.png", "phase1_home_pastel.png"
+        "phase1_home_light.png", "phase1_home_amoled.png", "phase1_home_mint.png",
+        "phase1_home_sunset.png", "phase1_home_lavender.png", "phase1_home_pastel.png"
     }
     by_name = {s["file"]: s for s in screens}
     missing = sorted((core_required_names | phase1_required_names) - set(by_name))
