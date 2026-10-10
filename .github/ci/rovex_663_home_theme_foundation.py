@@ -230,9 +230,14 @@ class RovexHomeThemeFoundationRegressionTest {
                         activity.window.decorView.requestLayout()
                         val root = activity.findViewById<ViewGroup>(R.id.dashboardRoot)
                             ?: error("Home dashboard root missing for theme=" + theme)
+                        val contentRoot = activity.findViewById<ViewGroup>(android.R.id.content)
+                            ?: error("Activity content root missing for theme=" + theme)
                         val density = activity.resources.displayMetrics.density
                         fun assertHeight(tag: String, maximumDp: Float) {
-                            val view = root.findViewWithTag<View>(tag)
+                            // Search the complete Activity content tree: theme/recreation paths
+                            // may host a Home container outside dashboardRoot. Keep the strict
+                            // missing-target failure so absent cards are never silently accepted.
+                            val view = contentRoot.findViewWithTag<View>(tag)
                                 ?: error("Missing Home geometry target=" + tag + " theme=" + theme)
                             val heightDp = view.measuredHeight / density
                             check(heightDp > 0f && heightDp <= maximumDp) {
