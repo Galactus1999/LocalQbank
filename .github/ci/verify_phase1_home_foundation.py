@@ -94,6 +94,9 @@ for marker in (
     if marker not in compact:
         raise SystemExit("[Phase 1] compact measured-geometry regression missing: " + marker)
 
+if "for (attempt in 0 until 400)" not in theme_test or "within 20s after fresh MainActivity launch=" not in theme_test or "rootChildren=" not in theme_test:
+    raise SystemExit("[Phase 1] bounded Home attachment wait/diagnostic missing")
+
 for marker in (
     "RovexPremiumPalette.forKey",
     "contrast(roles.onSurface, roles.surfaceContainer) >= 4.5",
