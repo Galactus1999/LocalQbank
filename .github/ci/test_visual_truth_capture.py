@@ -8,7 +8,6 @@ runner = (ROOT / ".github/ci/adaptive-instrumentation-v2.sh").read_text(encoding
 overlay = (ROOT / ".github/ci/rovex_649_visual_truth_capture_repair.py").read_text(encoding="utf-8")
 overlay650 = (ROOT / ".github/ci/rovex_650_sparse_screen_score_fix.py").read_text(encoding="utf-8")
 overlay651 = (ROOT / ".github/ci/rovex_651_interaction_launch_race_fix.py").read_text(encoding="utf-8")
-overlay652 = (ROOT / ".github/ci/rovex_652_interaction_visibility_attribute_fix.py").read_text(encoding="utf-8")
 overlay652 = (ROOT / ".github/ci/rovex_652_uiautomator_visibility_fix.py").read_text(encoding="utf-8")
 helper = (ROOT / ".github/ci/rovex_visual_truth_capture.sh").read_text(encoding="utf-8")
 truth = (ROOT / "tools/rovex_visual_truth.py").read_text(encoding="utf-8")
@@ -46,9 +45,6 @@ assert "rovex_651_interaction_launch_race_fix.py" in discover
 assert "process_started = False" in overlay651
 assert "for attempt in range(30)" in overlay651
 assert "did not start within 30 seconds after launcher request" in overlay651
-assert "rovex_652_interaction_visibility_attribute_fix.py" in discover
-assert 'a.get("visible-to-user") == "false"' in overlay652
-assert "versionCode = 736" in overlay652
 
 # The captured emulator hierarchy had real clickable LATER/RESUME buttons but omitted
 # visible-to-user on all nodes. The explorer must retain those nodes, while still excluding
@@ -73,6 +69,9 @@ assert 'a.get("visible-to-user")=="false"' in overlay652
 assert 'a.get("visible-to-user")!="true"' in overlay652
 assert "startup recovery dialog buttons remain discoverable" in overlay652
 assert "rovex_652_uiautomator_visibility_fix.py" in discover
+assert 'a.get("visible-to-user") == "false"' in overlay652
+assert "state_key() visibility compatibility" in overlay652
+assert "versionCode = 736" in overlay652
 assert "versionCode = 735" in overlay650
 assert 'm["entropy"] >= 0.20' in truth
 assert 'm["bright_pixel_ratio"] <= 0.995' in truth
