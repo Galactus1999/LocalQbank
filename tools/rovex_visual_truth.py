@@ -130,9 +130,12 @@ def metric(path: Path):
 def score(m):
     score = 0.0
     score += 25.0 if m["width"] >= 700 and m["height"] >= 1100 else 0.0
-    score += 25.0 if m["entropy"] >= 0.35 else 0.0
+    # Sparse but real first-run Activities can have a large empty content panel.
+    # Keep entropy/brightness guardrails, but do not reject valid light-theme screens
+    # solely because most pixels are bright or the UI has a low-complexity initial state.
+    score += 25.0 if m["entropy"] >= 0.20 else 0.0
     score += 25.0 if 0.005 <= m["edge_density"] <= 0.35 else 0.0
-    score += 25.0 if 0.02 <= m["bright_pixel_ratio"] <= 0.98 else 0.0
+    score += 25.0 if 0.02 <= m["bright_pixel_ratio"] <= 0.995 else 0.0
     return round(score, 1)
 
 
