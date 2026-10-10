@@ -20,11 +20,15 @@ done
 
 # Collect Home screenshots captured by the Phase 1 instrumented theme regression test.
 # These are real UIAutomation PNGs after ThemeManager switches the live Activity theme.
-PHASE1_REMOTE_DIR="/sdcard/Android/data/${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}/files/rovex-phase1"
+PHASE1_REMOTE_DIR="/sdcard/Android/data/${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}/files"
 for theme in light amoled mint sunset lavender pastel; do
   remote="$PHASE1_REMOTE_DIR/phase1_home_${theme}.png"
   local="$OUT/screens/phase1_home_${theme}.png"
-  adb -s "$SERIAL" shell test -s "$remote" || fail "Phase 1 rendered Home screenshot missing for theme=$theme"
+  if ! adb -s "$SERIAL" shell test -s "$remote"; then
+    log "Phase 1 capture missing; app-specific screenshot files:"
+    adb -s "$SERIAL" shell "find \"$PHASE1_REMOTE_DIR\" -maxdepth 3 -type f -name \"phase1_home_*.png\" -print 2>/dev/null" || true
+    fail "Phase 1 rendered Home screenshot missing for theme=$theme at $remote"
+  fi
   adb -s "$SERIAL" pull "$remote" "$local" >/dev/null
   test -s "$local" || fail "Phase 1 rendered Home screenshot could not be collected for theme=$theme"
   log "Captured Phase 1 theme=$theme bytes=$(stat -c%s "$local") sha256=$(sha256sum "$local" | awk '{print $1}')"
