@@ -16,8 +16,8 @@ for path in (gradle, home, compact_test, admission_test):
 g = gradle.read_text(encoding="utf-8")
 if 'versionName = "8.3.658"' not in g or "versionCode = 744" not in g:
     raise SystemExit("[663] wrong baseline; expected v8.3.658 / versionCode 744")
-g = g.replace('versionName = "8.3.658"', 'versionName = "8.3.659"', 1)
-g = g.replace("versionCode = 744", "versionCode = 745", 1)
+g = g.replace('versionName = "8.3.658"', 'versionName = "8.3.660"', 1)
+g = g.replace("versionCode = 744", "versionCode = 746", 1)
 gradle.write_text(g, encoding="utf-8")
 
 tokens = pkg / "RovexHomeThemeTokens.kt"
@@ -118,6 +118,23 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class RovexHomeThemeFoundationRegressionTest {
+    private fun captureThemeScreenshot(context: android.content.Context, name: String) {
+        val directory = context.getExternalFilesDir("rovex-phase1")
+            ?: error("External screenshot directory unavailable")
+        check(directory.exists() || directory.mkdirs()) { "Cannot create Phase 1 screenshot directory" }
+        val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+        try {
+            val file = java.io.File(directory, "phase1_home_" + name + ".png")
+            java.io.FileOutputStream(file).use { output ->
+                check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output)) {
+                    "PNG compression failed for theme=" + name
+                }
+            }
+            check(file.length() > 1024L) { "Captured Home screenshot is empty for theme=" + name }
+        } finally {
+            bitmap.recycle()
+        }
+    }
     private fun luminance(color: Int): Double {
         fun channel(value: Int): Double {
             val v = value / 255.0
@@ -169,7 +186,7 @@ class RovexHomeThemeFoundationRegressionTest {
         val previousTheme = ThemeManager.get(context)
         try {
             ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
-                for (theme in listOf(ThemeManager.LIGHT, ThemeManager.SPACE, ThemeManager.PASTEL)) {
+                val themeCases = listOf(\n                    "light" to ThemeManager.LIGHT,\n                    "amoled" to ThemeManager.AMOLED,\n                    "space" to ThemeManager.SPACE,\n                    "mint" to ThemeManager.MINT,\n                    "pastel" to ThemeManager.PASTEL\n                )\n                for ((themeName, theme) in themeCases) {
                     scenario.onActivity { activity ->
                         ThemeManager.set(activity, theme)
                         RovexHomeRevolution.refreshTheme(activity)
@@ -201,6 +218,7 @@ class RovexHomeThemeFoundationRegressionTest {
                             "Home semantic text contrast below 4.5:1 for theme=" + theme
                         }
                     }
+                    captureThemeScreenshot(context, themeName)
                 }
             }
         } finally {
@@ -225,14 +243,14 @@ elif "Durable recovery work was not admitted; observed state=" not in test:
 admission_test.write_text(test, encoding="utf-8")
 
 g = gradle.read_text(encoding="utf-8")
-if 'versionName = "8.3.659"' not in g or "versionCode = 745" not in g:
+if 'versionName = "8.3.660"' not in g or "versionCode = 746" not in g:
     raise SystemExit("[663] version postcondition failed")
 if "Durable recovery work was not admitted; observed state=" not in admission_test.read_text(encoding="utf-8"):
     raise SystemExit("[663] WorkManager fast-completion regression fix missing")
 if "RovexHomeThemeTokens.text(a)" not in home.read_text(encoding="utf-8"):
     raise SystemExit("[663] semantic text role not integrated into Home")
-print("[663] applied v8.3.659 / versionCode 745")
+print("[663] applied v8.3.660 / versionCode 746")
 print("[663] Home card surfaces now use shared semantic surface/elevation/outline roles; text and accents use semantic palette roles")
-print("[663] compact measured geometry regression tightened and extended across light, dark/Space and Pastel compatibility themes")
-print("[663] palette contrast tests cover eight palette families in light/dark variants")
+print("[663] compact measured geometry regression covers Light, AMOLED, Space, Mint and Pastel compatibility themes")
+print("[663] palette contrast tests cover eight palette families in light/dark variants")\nprint("[663] saved real emulator Home PNG screenshots for Light, AMOLED, Space, Mint and Pastel themes")
 print("[663] corrected WorkManager test race: an already-SUCCEEDED one-time worker is valid admission, while FAILED/BLOCKED/CANCELLED still fail")
