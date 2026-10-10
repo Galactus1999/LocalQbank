@@ -183,7 +183,7 @@ object RovexBundledVisualAssets {
     private const val MAX_EDGE = 2048
     private val loading = ConcurrentHashMap.newKeySet<String>()
     private val cache by lazy {
-        val maxKb = (Runtime.getRuntime().maxMemory() / 1024L / 16L).toInt().coerceAtLeast(4096)
+        val maxKb = (Runtime.getRuntime().maxMemory() / 1024L / 12L).toInt().coerceAtLeast(8192)
         object : LruCache<String, Bitmap>(maxKb) {
             override fun sizeOf(key: String, value: Bitmap): Int =
                 (value.byteCount / 1024).coerceAtLeast(1)
@@ -225,7 +225,7 @@ object RovexBundledVisualAssets {
                             resource,
                             BitmapFactory.Options().apply {
                                 inSampleSize = sample
-                                inPreferredConfig = Bitmap.Config.RGB_565
+                                inPreferredConfig = Bitmap.Config.ARGB_8888
                             }
                         )
                         if (bitmap != null) cache.put(key, bitmap)
