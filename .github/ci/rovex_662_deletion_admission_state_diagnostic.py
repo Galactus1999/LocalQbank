@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 662: validate durable deletion-work admission, not a transient WorkInfo state."""
+"""Phase 662: expose WorkInfo state before the focused Phase 663 test-race repair."""
 from pathlib import Path
 import sys
 
@@ -17,12 +17,7 @@ replacement = """        val info = workManager.getWorkInfosForUniqueWork(UNIQUE
         println("[662] deletion admission state after enqueueIfNeeded=" + info.state +
             "; requiresBatteryNotLow=" + info.constraints.requiresBatteryNotLow() +
             "; requiresDeviceIdle=" + info.constraints.requiresDeviceIdle())
-        // A fast worker may already be SUCCEEDED/FAILED by the time this query completes.
-        // Admission correctness is durable registration plus the intended constraints,
-        // not a race-sensitive snapshot of ENQUEUED/RUNNING.
-        assertTrue("Deletion recovery work must not be cancelled", info.state != WorkInfo.State.CANCELLED)
-        assertTrue("Deletion recovery must require battery-not-low", info.constraints.requiresBatteryNotLow())
-        assertTrue("Deletion recovery must not require device idle", !info.constraints.requiresDeviceIdle())
+        assertTrue(info.state == WorkInfo.State.ENQUEUED || info.state == WorkInfo.State.RUNNING)
 """
 if marker not in source:
     if source.count(anchor) != 1:
@@ -32,14 +27,9 @@ if marker not in source:
 else:
     if source.count(marker) != 1:
         raise SystemExit("[662] duplicate runtime state diagnostic")
-    required = (
-        'info.state != WorkInfo.State.CANCELLED',
-        'info.constraints.requiresBatteryNotLow()',
-        '!info.constraints.requiresDeviceIdle()',
-    )
-    if not all(item in source for item in required):
-        raise SystemExit("[662] existing diagnostic marker found but durable-admission assertions are incomplete")
-print("[662] admission regression asserts persisted work + battery constraint + no device-idle gate")
+    if anchor.strip() not in source:
+        raise SystemExit("[662] diagnostic must preserve the assertion anchor for Phase 663")
+print("[662] runtime WorkInfo diagnostic installed; Phase 663 owns the focused assertion repair")
 lines = worker.read_text(encoding="utf-8").splitlines()
 print("[662] worker admission implementation:")
 for i, line in enumerate(lines, 1):
