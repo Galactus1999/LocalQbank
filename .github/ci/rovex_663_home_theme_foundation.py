@@ -231,25 +231,9 @@ class RovexHomeThemeFoundationRegressionTest {
         // Labels may be hidden/localized in the compact emulator layout. Rovex's bottom
         // navigation contract places Home first; explicitly activate that destination before
         // falling back to accessible text/tag matching.
-        val nav = root.findViewWithTag<View>("rovex_bottom_navigation")
-        if (nav is ViewGroup) {
-            fun clickFirstNavigationItem(view: View): Boolean {
-                if (view.visibility != View.VISIBLE || !view.isEnabled) return false
-                if (view.isClickable) return view.performClick()
-                if (view is ViewGroup) {
-                    for (index in 0 until view.childCount) {
-                        if (clickFirstNavigationItem(view.getChildAt(index))) return true
-                    }
-                }
-                return false
-            }
-            for (index in 0 until nav.childCount) {
-                if (clickFirstNavigationItem(nav.getChildAt(index))) {
-                    activity.window.decorView.requestLayout()
-                    return
-                }
-            }
-        }
+        // Prefer the actual Home-labelled/tagged control above. Do not click the first
+        // clickable child of the bottom-navigation container: it can be a wrapper with a
+        // no-op listener and falsely report success while leaving the prior destination active.
         for (candidate in candidates) {
             var clickable: View? = candidate
             while (clickable != null && clickable !== root && !clickable.isClickable) {
