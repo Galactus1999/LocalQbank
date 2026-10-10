@@ -17,8 +17,21 @@ adb -s "$SERIAL" pull /sdcard/RovexVisualTruth/. "$OUT/screens/" >/dev/null
 for required in 01_home.png 02_qbank.png 03_flashcards.png 04_ren.png 05_settings.png; do
   test -s "$OUT/screens/$required" || fail "Required rendered screenshot missing: $required"
 done
+
+# Collect Home screenshots captured by the Phase 1 instrumented theme regression test.
+# These are real UIAutomation PNGs after ThemeManager switches the live Activity theme.
+PHASE1_REMOTE_DIR="/sdcard/Android/data/${ADAPTIVE_APPLICATION_ID:-com.localqbank.library}/files/rovex-phase1"
+for theme in light amoled space mint pastel; do
+  remote="$PHASE1_REMOTE_DIR/phase1_home_${theme}.png"
+  local="$OUT/screens/phase1_home_${theme}.png"
+  adb -s "$SERIAL" shell test -s "$remote" || fail "Phase 1 rendered Home screenshot missing for theme=$theme"
+  adb -s "$SERIAL" pull "$remote" "$local" >/dev/null
+  test -s "$local" || fail "Phase 1 rendered Home screenshot could not be collected for theme=$theme"
+  log "Captured Phase 1 theme=$theme bytes=$(stat -c%s "$local") sha256=$(sha256sum "$local" | awk '{print $1}')"
+done
+
 count="$(find "$OUT/screens" -maxdepth 1 -type f -name '*.png' | wc -l | tr -d ' ')"
-log "Collected $count actual rendered screenshots"
+log "Collected $count actual rendered screenshots including Phase 1 theme variants"
 
 python3 "$ROOT/tools/rovex_visual_truth.py" --screens "$OUT/screens" --output "$OUT/visual-truth.json"
 cat "$OUT/visual-truth.json"
