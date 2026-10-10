@@ -16,8 +16,8 @@ for path in (gradle, home, compact_test, admission_test):
 g = gradle.read_text(encoding="utf-8")
 if 'versionName = "8.3.658"' not in g or "versionCode = 744" not in g:
     raise SystemExit("[663] wrong baseline; expected v8.3.658 / versionCode 744")
-g = g.replace('versionName = "8.3.658"', 'versionName = "8.3.659"', 1)
-g = g.replace("versionCode = 744", "versionCode = 745", 1)
+g = g.replace('versionName = "8.3.658"', 'versionName = "8.3.660"', 1)
+g = g.replace("versionCode = 744", "versionCode = 746", 1)
 gradle.write_text(g, encoding="utf-8")
 
 tokens = pkg / "RovexHomeThemeTokens.kt"
@@ -207,6 +207,12 @@ class RovexHomeThemeFoundationRegressionTest {
      * instrumentation tests. A fresh ActivityScenario alone does not reset that
      * persisted destination. Explicitly select Home before measuring Home geometry.
      */
+    private fun isHomeDashboardAttached(root: ViewGroup): Boolean =
+        root.findViewWithTag<View>("ROVEX_HOME_SHELL") != null &&
+            root.findViewWithTag<View>("ROVEX_HOME_SCROLL") != null &&
+            root.findViewWithTag<View>("rovex_home_motion_header") != null &&
+            root.findViewWithTag<View>("rovex_home_search") != null
+
     private fun selectHomeTab(scenario: ActivityScenario<MainActivity>) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         fun rootAndHomeAttached(): Pair<ViewGroup, Boolean> {
@@ -214,7 +220,7 @@ class RovexHomeThemeFoundationRegressionTest {
             scenario.onActivity { activity ->
                 val root = activity.findViewById<ViewGroup>(android.R.id.content)
                     ?: error("Activity content root missing while selecting Home")
-                result = root to (root.findViewWithTag<View>("rovex_home_clinical_hero") != null)
+                result = root to (isHomeDashboardAttached(root))
             }
             return result ?: error("Could not inspect MainActivity while selecting Home")
         }
@@ -346,7 +352,7 @@ class RovexHomeThemeFoundationRegressionTest {
                         scenario.onActivity { activity ->
                             val root = activity.findViewById<ViewGroup>(android.R.id.content)
                                 ?: error("Activity content root missing for theme=" + theme)
-                            homeAttached = root.findViewWithTag<View>("rovex_home_clinical_hero") != null
+                            homeAttached = isHomeDashboardAttached(root)
                             observedRootChildren = (0 until root.childCount).joinToString(",") { index ->
                                 val child = root.getChildAt(index)
                                 child.javaClass.simpleName + "(tag=" + child.tag + ",visibility=" +
@@ -358,7 +364,7 @@ class RovexHomeThemeFoundationRegressionTest {
                         Thread.sleep(50)
                     }
                     check(homeAttached) {
-                        "Home clinical hero did not attach within 20s after fresh MainActivity launch=" + themeName +
+                        "Home dashboard did not attach within 20s after fresh MainActivity launch=" + themeName +
                             " theme=" + theme + "; rootChildren=" + observedRootChildren
                     }
                     scenario.onActivity { activity ->
@@ -374,7 +380,7 @@ class RovexHomeThemeFoundationRegressionTest {
                                     maximumDp + "dp for theme=" + theme
                             }
                         }
-                        assertHeight("rovex_home_clinical_hero", 96f)
+                        assertHeight("rovex_home_motion_header", 96f)
                         assertHeight("rovex_home_search", 50f)
                         assertHeight("rovex_home_online", 70f)
                         assertHeight("rovex_home_daily_motivation", 88f)
@@ -424,15 +430,15 @@ elif "Durable recovery work was not admitted; observed state=" not in test:
 admission_test.write_text(test, encoding="utf-8")
 
 g = gradle.read_text(encoding="utf-8")
-if 'versionName = "8.3.659"' not in g or "versionCode = 745" not in g:
-    raise SystemExit("[663] version postcondition failed")
+if 'versionName = "8.3.660"' not in g or "versionCode = 746" not in g:
+    raise SystemExit("[663] version postcondition failed; expected v8.3.660 / versionCode 746")
 if "Durable recovery work was not admitted; observed state=" not in admission_test.read_text(encoding="utf-8"):
     raise SystemExit("[663] WorkManager fast-completion regression fix missing")
 if "WorkManager admission observed state=" not in admission_test.read_text(encoding="utf-8"):
     raise SystemExit("[663] WorkManager admission runtime diagnostic missing")
 if "RovexHomeThemeTokens.text(a)" not in home.read_text(encoding="utf-8"):
     raise SystemExit("[663] semantic text role not integrated into Home")
-print("[663] applied v8.3.659 / versionCode 745")
+print("[663] applied v8.3.660 / versionCode 746")
 print("[663] Home card surfaces now use shared semantic surface/elevation/outline roles; text and accents use semantic palette roles")
 print("[663] compact measured geometry regression covers Light, AMOLED, Mint, Sunset, Lavender and Pastel compatibility themes")
 print("[663] palette contrast tests cover eight palette families in light/dark variants")

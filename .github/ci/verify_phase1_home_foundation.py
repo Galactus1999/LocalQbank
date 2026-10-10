@@ -30,8 +30,8 @@ if missing:
     raise SystemExit("[Phase 1] generated source is incomplete; missing: " + ", ".join(missing))
 
 g = gradle.read_text(encoding="utf-8")
-if 'versionName = "8.3.659"' not in g or "versionCode = 745" not in g:
-    raise SystemExit("[Phase 1] wrong generated release version; expected v8.3.659 / versionCode 745")
+if 'versionName = "8.3.660"' not in g or "versionCode = 746" not in g:
+    raise SystemExit("[Phase 1] wrong generated release version; expected v8.3.660 / versionCode 746")
 if 'applicationId = "com.localqbank.library"' not in g:
     raise SystemExit("[Phase 1] package/applicationId changed unexpectedly")
 
@@ -83,7 +83,7 @@ if "FrameLayout.LayoutParams(-1, if (fillHeight) -1 else -2)" in motion or "view
     raise SystemExit("[Phase 1] layout-mutating motion wrapper regression detected")
 
 for marker in (
-    'assertHeight("rovex_home_clinical_hero", 96f)',
+    'assertHeight("rovex_home_motion_header", 96f)',
     'assertHeight("rovex_home_search", 50f)',
     'assertHeight("rovex_home_online", 70f)',
     'assertHeight("rovex_home_daily_motivation", 88f)',
@@ -94,7 +94,7 @@ for marker in (
     if marker not in compact:
         raise SystemExit("[Phase 1] compact measured-geometry regression missing: " + marker)
 
-if "for (attempt in 0 until 400)" not in theme_test or "within 20s after fresh MainActivity launch=" not in theme_test or "rootChildren=" not in theme_test:
+if "for (attempt in 0 until 400)" not in theme_test or "within 20s after fresh MainActivity launch=" not in theme_test or "rootChildren=" not in theme_test or "isHomeDashboardAttached(root)" not in theme_test or '"ROVEX_HOME_SHELL"' not in theme_test or '"rovex_home_motion_header"' not in theme_test:
     raise SystemExit("[Phase 1] bounded Home attachment wait/diagnostic missing")
 
 for marker in (

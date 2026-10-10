@@ -25,7 +25,6 @@ repls = [
 ('LinearLayout.LayoutParams(d(48,a),d(48,a)))', 'LinearLayout.LayoutParams(d(42,a),d(42,a)))'),
 ('content.addView(header,LinearLayout.LayoutParams(-1,d(57,a)).apply{bottomMargin=d(9,a)})', 'content.addView(header,LinearLayout.LayoutParams(-1,d(52,a)).apply{bottomMargin=d(7,a)})'),
 ('setPadding(d(18,a),d(15,a),d(12,a),d(15,a))', 'setPadding(d(14,a),d(9,a),d(10,a),d(9,a))'),
-('contentDescription = "Clinical Day study cockpit"', 'tag = "rovex_home_clinical_hero"\n                contentDescription = "Clinical Day study cockpit"'),
 ('tv(a,"Build momentum, one question at a time.",19f,ThemeManager.text(a),true)', 'tv(a,"Build momentum, one question at a time.",16f,ThemeManager.text(a),true)'),
 ('tv(a,"Your saved answer history drives the dashboard.",11.5f,ThemeManager.muted(a),false)', 'tv(a,"Your saved answer history drives the dashboard.",10.5f,ThemeManager.muted(a),false)'),
 ('rightMargin=d(104,a);gravity=Gravity.START or Gravity.CENTER_VERTICAL', 'rightMargin=d(78,a);gravity=Gravity.START or Gravity.CENTER_VERTICAL'),
@@ -104,7 +103,7 @@ class RovexHomeCompactGeometryRegressionTest {
                                 "dp > " + maximumDp + "dp"
                         }
                     }
-                    assertHeight("rovex_home_clinical_hero", 96f)
+                    assertHeight("rovex_home_motion_header", 96f)
                     assertHeight("rovex_home_search", 50f)
                     assertHeight("rovex_home_online", 70f)
                     assertHeight("rovex_home_daily_motivation", 88f)
