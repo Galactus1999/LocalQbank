@@ -163,7 +163,11 @@ fi
 # RovexVisualTruthCaptureTest and immediately called the collector, which requires six
 # phase1_home_*.png files that the first test does not create. Explicitly run the producer.
 THEME_TEST_LOG="$VISUAL_DIR/phase1-theme-capture-instrumentation.log"
+THEME_LOGCAT_LOG="$VISUAL_DIR/phase1-theme-capture-logcat.log"
 adb -s "$SERIAL" shell am force-stop "$APP_ID" >/dev/null 2>&1 || true
+# android.util.Log.i() emits screenshot markers to device logcat, not am instrument stdout.
+# Clear prior-suite messages so the check proves this dedicated producer emitted each marker.
+adb -s "$SERIAL" logcat -c
 set +e
 timeout 300s adb -s "$SERIAL" shell am instrument -w -r \
   -e class com.localqbank.library.RovexPhase1HomeScreenshotCaptureTest#captureSixThemeHomeScreenshots \
@@ -183,9 +187,12 @@ fi
 if [[ "$theme_rc" -ne 0 ]]; then
   echo "Theme instrumentation wrapper rc=$theme_rc after successful JUnit terminal markers; continuing."
 fi
+# Capture the actual Android log channel after am instrument completes.
+adb -s "$SERIAL" logcat -d -v threadtime -s RovexVisualTruth:I > "$THEME_LOGCAT_LOG" 2>&1
+cat "$THEME_LOGCAT_LOG"
 for theme in light amoled mint sunset lavender pastel; do
-  if ! grep -Fq "Saving theme screenshot theme=$theme" "$THEME_TEST_LOG"; then
-    echo "Phase 1 producer did not log screenshot save for theme=$theme."
+  if ! grep -Fq "Saving theme screenshot theme=$theme" "$THEME_LOGCAT_LOG"; then
+    echo "Phase 1 producer did not log screenshot save to logcat for theme=$theme."
     exit 1
   fi
 done
