@@ -247,11 +247,32 @@ class RovexHomeThemeFoundationRegressionTest {
         }
         // If Home is already selected, the Home hero is the strongest confirmation.
         if (root.findViewWithTag<View>("rovex_home_clinical_hero") != null) return
+
+        // Some compact layouts expose no accessible "Home" label. Use the documented
+        // first destination of the tagged bottom navigation, but click the deepest clickable
+        // descendant first: parent wrappers can be clickable while their listener is a no-op.
+        val nav = root.findViewWithTag<View>("rovex_bottom_navigation")
+        if (nav is ViewGroup && nav.childCount > 0) {
+            fun clickDeepest(view: View): Boolean {
+                if (view.visibility != View.VISIBLE || !view.isEnabled) return false
+                if (view is ViewGroup) {
+                    for (index in 0 until view.childCount) {
+                        if (clickDeepest(view.getChildAt(index))) return true
+                    }
+                }
+                return view.isClickable && view.performClick()
+            }
+            if (clickDeepest(nav.getChildAt(0))) {
+                activity.window.decorView.requestLayout()
+                return
+            }
+        }
         val labels = candidates.joinToString(",") {
             "tag=" + it.tag + ",description=" + it.contentDescription +
                 ",text=" + (if (it is android.widget.TextView) it.text else "")
         }
-        error("Could not select Home tab; matching candidates=[$labels]")
+        error("Could not select Home tab; matching candidates=[$labels]; navFound=" + (nav != null) +
+            "; navChildren=" + ((nav as? ViewGroup)?.childCount ?: 0))
     }
 
     @Test
