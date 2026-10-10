@@ -25,16 +25,19 @@ t = t.replace("import org.junit.Ignore\n", "")
 t = t.replace('@Ignore("Rendered screenshots are captured by the host-side visual truth harness; avoid a second multi-Activity launch inside the instrumentation process.")\n', "")
 needle = "    fun captureCoreRenderedScreens() {\n"
 guard = '''    fun captureCoreRenderedScreens() {
+        // AndroidJUnitRunner reliably exposes its class filter to the test Bundle.
+        // The extra custom argument was not consistently surfaced on the CI emulator.
         org.junit.Assume.assumeTrue(
-            "Run only in the dedicated rendered-visual-truth lane",
-            InstrumentationRegistry.getArguments().getString("rovexVisualTruth") == "true"
+            "Run only when this test class is explicitly selected",
+            InstrumentationRegistry.getArguments().getString("class")
+                ?.contains("RovexVisualTruthCaptureTest") == true
         )
 '''
 if needle in t and "Run only in the dedicated rendered-visual-truth lane" not in t:
     t = t.replace(needle, guard, 1)
 if "import org.junit.Ignore" in t or "@Ignore(" in t:
     raise SystemExit("[649] capture test remains ignored")
-if "Run only in the dedicated rendered-visual-truth lane" not in t:
+if "Run only when this test class is explicitly selected" not in t:
     raise SystemExit("[649] dedicated instrumentation argument guard missing")
 if 'fun captureCoreRenderedScreens()' not in t or 'capture("01_home")' not in t or 'capture("05_settings")' not in t:
     raise SystemExit("[649] expected core Activity capture sequence missing")
