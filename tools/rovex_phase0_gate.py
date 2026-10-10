@@ -218,9 +218,13 @@ def db_construction_diff(current: Path, baseline: Path):
         rel, limit = line.split("\t", 1)
         approved[rel] = int(limit)
 
+    # Source archives may be wrapped in a single top-level directory (for example
+    # visual615/app/...). The allowlist is intentionally project-relative, so
+    # anchor the scan at the extracted Gradle project root instead of the ZIP root.
+    current_project = find_project(current)
     cur = {}
-    for p in current.rglob("*.kt"):
-        rel = str(p.relative_to(current))
+    for p in current_project.rglob("*.kt"):
+        rel = str(p.relative_to(current_project))
         if "/src/main/" not in rel or rel.endswith("/QBankDb.kt"):
             continue
         count = len(pattern.findall(read_text(p)))
