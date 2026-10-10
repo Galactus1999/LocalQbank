@@ -1,0 +1,29 @@
+name: Rovex Green Verification Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  phase0:
+    name: Phase 0 static + regression gate
+    uses: ./.github/workflows/phase0-verification.yml
+
+  android:
+    name: Android unit + emulator gate
+    needs: phase0
+    uses: ./.github/workflows/_adaptive-android.yml
+    with:
+      # Blank source_file: adaptive discovery selects the current repository source/archive.
+      # Core CI must not depend on optional signing or Qualcomm/NPU capabilities.
+      strict: false
+      require_jvm: true
+      require_instrumented: true
+    secrets: inherit
