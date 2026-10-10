@@ -21,10 +21,13 @@ if 'versionName = "8.3.653"' not in g or "versionCode = 739" not in g:
 # used keepStatusBarVisible=true by default. AdaptiveLayoutManager then showed the bar
 # again and applied a status-bar-sized top inset above the already compact quiz header.
 qs = quiz.read_text(encoding="utf-8")
-old = "AdaptiveLayoutManager.install(this@QuizActivity, built, topExtraDp = 0, bottomExtraDp = 0) { _ ->"
+old = "AdaptiveLayoutManager.install(this@QuizActivity, built, topExtraDp = 0, bottomExtraDp = 0, keepStatusBarVisible = false) { _ ->"
 new = "AdaptiveLayoutManager.install(this@QuizActivity, built, topExtraDp = 0, bottomExtraDp = 0, keepStatusBarVisible = false, protectDisplayCutout = true) { _ ->"
+legacy = "AdaptiveLayoutManager.install(this@QuizActivity, built, topExtraDp = 0, bottomExtraDp = 0) { _ ->"
 if qs.count(old) == 1:
     qs = qs.replace(old, new, 1)
+elif qs.count(legacy) == 1:
+    qs = qs.replace(legacy, new, 1)
 elif "keepStatusBarVisible = false, protectDisplayCutout = true" not in qs:
     raise SystemExit("[656] QuizActivity adaptive inset installation anchor missing")
 if "keepStatusBarVisible = false, protectDisplayCutout = true" not in qs:
