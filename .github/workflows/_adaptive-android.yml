@@ -75,6 +75,18 @@ jobs:
           bash -n .github/ci/adaptive-discover.sh
           bash .github/ci/adaptive-discover.sh
 
+      - name: Inject Phase 1 Home screenshot test into selected source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ADAPTIVE_PROJECT:-}"
+          test -d "$ADAPTIVE_PROJECT/app/src"
+          destination="$ADAPTIVE_PROJECT/app/src/androidTest/java/com/localqbank/library/RovexPhase1HomeScreenshotCaptureTest.kt"
+          mkdir -p "$(dirname "$destination")"
+          cp -f .github/ci/RovexPhase1HomeScreenshotCaptureTest.kt "$destination"
+          grep -q 'class RovexPhase1HomeScreenshotCaptureTest' "$destination"
+          echo "Injected Phase 1 Home screenshot producer into $destination"
+
       - name: Discover Gradle tasks
         id: tasks
         shell: bash
