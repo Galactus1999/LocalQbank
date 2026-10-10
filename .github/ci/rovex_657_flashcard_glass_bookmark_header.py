@@ -551,3 +551,72 @@ print("[659] upstream Lottie asset hash and JSON schema verified; original asset
 print("[659] Home card palette follows theme semantic accents, independent of text-flow settings")
 print("[659] reduced over-bright card motion alpha across themes; Pastel is not the design target")
 print("[659] license/provenance manifest checked; applied v8.3.657 / versionCode 743")
+
+
+# Final Phase 659 regression contract: text-flow preference changes must not recolour card motion;
+# theme changes must. Keep a real instrumented test so this cannot regress silently.
+_test = P / "app/src/androidTest/java/com/localqbank/library/RovexHomeCardMotionPaletteRegressionTest.kt"
+_test.parent.mkdir(parents=True, exist_ok=True)
+_test.write_text(r'''package com.localqbank.library
+
+import android.content.Intent
+import android.graphics.Color
+import android.view.View
+import android.view.ViewGroup
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.airbnb.lottie.LottieAnimationView
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class RovexHomeCardMotionPaletteRegressionTest {
+    @Test
+    fun cardMotionUsesThemeTokensNotTextFlowPreferences() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val oldTheme = ThemeManager.get(context)
+        val prefs = context.getSharedPreferences("ui", android.content.Context.MODE_PRIVATE)
+        val hadOne = prefs.contains("flow_text_color_1")
+        val hadTwo = prefs.contains("flow_text_color_2")
+        val oldOne = prefs.getInt("flow_text_color_1", 0)
+        val oldTwo = prefs.getInt("flow_text_color_2", 0)
+        try {
+            ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity ->
+                    val root = activity.findViewById<ViewGroup>(R.id.dashboardRoot)
+                        ?: error("Home dashboard root missing")
+                    val motions = mutableListOf<LottieAnimationView>()
+                    fun walk(view: View) {
+                        if (view is LottieAnimationView && view.tag?.toString()?.startsWith("rovex_home_motion_card:") == true) motions.add(view)
+                        if (view is ViewGroup) for (i in 0 until view.childCount) walk(view.getChildAt(i))
+                    }
+                    walk(root)
+                    check(motions.size >= 5) { "Expected at least five Home card motion layers; found " + motions.size }
+                    val before = motions.map { it.getTag(R.id.rovexMotionPaletteKey)?.toString() }
+                    check(before.all { !it.isNullOrBlank() }) { "Home card theme palette keys were not initialized" }
+                    prefs.edit().putInt("flow_text_color_1", Color.RED).putInt("flow_text_color_2", Color.YELLOW).commit()
+                    RovexHomeRevolution.refreshTheme(activity)
+                    val afterFlowChange = motions.map { it.getTag(R.id.rovexMotionPaletteKey)?.toString() }
+                    check(before == afterFlowChange) { "Changing text-flow colours changed Home card motion palette" }
+                    check(motions.all { it.alpha in 0.08f..0.15f }) { "Home card motion opacity is too strong or too faint" }
+                    val alternate = if (oldTheme == ThemeManager.SPACE) ThemeManager.LIGHT else ThemeManager.SPACE
+                    ThemeManager.set(activity, alternate)
+                    RovexHomeRevolution.refreshTheme(activity)
+                    val afterThemeChange = motions.map { it.getTag(R.id.rovexMotionPaletteKey)?.toString() }
+                    check(afterThemeChange != afterFlowChange) { "Home card motion palette did not adapt to theme changes" }
+                }
+            }
+        } finally {
+            prefs.edit().apply {
+                if (hadOne) putInt("flow_text_color_1", oldOne) else remove("flow_text_color_1")
+                if (hadTwo) putInt("flow_text_color_2", oldTwo) else remove("flow_text_color_2")
+            }.commit()
+            ThemeManager.set(context, oldTheme)
+        }
+    }
+}
+''', encoding="utf-8")
+print("[659] instrumented regression test added: flow colors must not affect card motion; theme must")
