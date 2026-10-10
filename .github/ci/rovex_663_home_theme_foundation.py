@@ -207,72 +207,103 @@ class RovexHomeThemeFoundationRegressionTest {
      * instrumentation tests. A fresh ActivityScenario alone does not reset that
      * persisted destination. Explicitly select Home before measuring Home geometry.
      */
-    private fun selectHomeTab(activity: MainActivity) {
-        val root = activity.findViewById<ViewGroup>(android.R.id.content)
-            ?: error("Activity content root missing while selecting Home")
-        val candidates = ArrayList<View>()
-        fun visit(view: View) {
+    private fun selectHomeTab(scenario: ActivityScenario<MainActivity>) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        fun rootAndHomeAttached(): Pair<ViewGroup, Boolean> {
+            var result: Pair<ViewGroup, Boolean>? = null
+            scenario.onActivity { activity ->
+                val root = activity.findViewById<ViewGroup>(android.R.id.content)
+                    ?: error("Activity content root missing while selecting Home")
+                result = root to (root.findViewWithTag<View>("rovex_home_clinical_hero") != null)
+            }
+            return result ?: error("Could not inspect MainActivity while selecting Home")
+        }
+        if (rootAndHomeAttached().second) return
+
+        // Do not assume the first navigation item is Home. Destination order can change, and
+        // performClick() returning true only means a listener ran—not that Home was selected.
+        // Probe candidate navigation controls one at a time from the instrumentation thread and
+        // verify the actual Home hero after each click.
+        val clickCandidates = ArrayList<View>()
+        var navDescription = "missing"
+        scenario.onActivity { activity ->
+            val root = activity.findViewById<ViewGroup>(android.R.id.content)
+                ?: error("Activity content root missing while selecting Home")
+            val nav = root.findViewWithTag<View>("rovex_bottom_navigation")
+            navDescription = if (nav is ViewGroup) {
+                "children=" + nav.childCount + "; " + (0 until nav.childCount).joinToString(",") { index ->
+                    val child = nav.getChildAt(index)
+                    child.javaClass.simpleName + "(tag=" + child.tag + ",clickable=" + child.isClickable +
+                        ",description=" + child.contentDescription + ")"
+                }
+            } else {
+                "found=" + (nav != null) + "; not a ViewGroup"
+            }
+            fun collectClickable(view: View) {
+                if (view.visibility != View.VISIBLE || !view.isEnabled) return
+                if (view.isClickable) clickCandidates.add(view)
+                if (view is ViewGroup) {
+                    for (index in 0 until view.childCount) collectClickable(view.getChildAt(index))
+                }
+            }
+            if (nav is ViewGroup) collectClickable(nav)
+            fun visitHomeLabels(view: View) {
+                if (view.visibility == View.VISIBLE && view.isEnabled) {
+                    val label = view.contentDescription?.toString().orEmpty()
+                    val text = if (view is android.widget.TextView) view.text?.toString().orEmpty() else ""
+                    val tag = view.tag?.toString().orEmpty()
+                    if (label.equals("home", true) || label.contains("home tab", true) ||
+                        text.trim().equals("home", true) || tag.equals("home", true) ||
+                        tag.equals("rovex_home", true)) {
+                        var clickable: View? = view
+                        while (clickable != null && clickable !== root && !clickable.isClickable) {
+                            clickable = clickable.parent as? View
+                        }
+                        if (clickable != null && clickable !== root && !clickCandidates.contains(clickable)) {
+                            clickCandidates.add(0, clickable)
+                        }
+                    }
+                }
+                if (view is ViewGroup) {
+                    for (index in 0 until view.childCount) visitHomeLabels(view.getChildAt(index))
+                }
+            }
+            visitHomeLabels(root)
+        }
+
+        // Bound the probe: a click gets a short window to perform the real destination change.
+        // All waiting happens off the UI thread; no sleeps or waitForIdleSync calls inside
+        // ActivityScenario.onActivity callbacks.
+        for (candidate in clickCandidates) {
+            scenario.onActivity {
+                if (candidate.isShown && candidate.isEnabled && candidate.isClickable) {
+                    candidate.performClick()
+                }
+            }
+            val deadline = android.os.SystemClock.uptimeMillis() + 1200L
+            do {
+                instrumentation.waitForIdleSync()
+                if (rootAndHomeAttached().second) return
+                android.os.SystemClock.sleep(50L)
+            } while (android.os.SystemClock.uptimeMillis() < deadline)
+        }
+        val (root, attached) = rootAndHomeAttached()
+        if (attached) return
+        val labels = ArrayList<String>()
+        fun visitLabels(view: View) {
             val label = view.contentDescription?.toString().orEmpty()
             val text = if (view is android.widget.TextView) view.text?.toString().orEmpty() else ""
             val tag = view.tag?.toString().orEmpty()
-            val matchesHome = label.equals("home", true) ||
-                label.contains("home tab", true) ||
-                text.trim().equals("home", true) ||
-                tag.equals("home", true) ||
-                tag.equals("rovex_home", true)
-            if (matchesHome && view.visibility == View.VISIBLE && view.isEnabled) {
-                candidates.add(view)
+            if (label.isNotBlank() || text.isNotBlank() || tag.isNotBlank()) {
+                labels.add("tag=" + tag + ",description=" + label + ",text=" + text)
             }
             if (view is ViewGroup) {
-                for (index in 0 until view.childCount) visit(view.getChildAt(index))
+                for (index in 0 until view.childCount) visitLabels(view.getChildAt(index))
             }
         }
-        visit(root)
-        // Labels may be hidden/localized in the compact emulator layout. Rovex's bottom
-        // navigation contract places Home first; explicitly activate that destination before
-        // falling back to accessible text/tag matching.
-        // Prefer the actual Home-labelled/tagged control above. Do not click the first
-        // clickable child of the bottom-navigation container: it can be a wrapper with a
-        // no-op listener and falsely report success while leaving the prior destination active.
-        for (candidate in candidates) {
-            var clickable: View? = candidate
-            while (clickable != null && clickable !== root && !clickable.isClickable) {
-                clickable = clickable.parent as? View
-            }
-            if (clickable != null && clickable !== root && clickable.isClickable) {
-                clickable.performClick()
-                activity.window.decorView.requestLayout()
-                return
-            }
-        }
-        // If Home is already selected, the Home hero is the strongest confirmation.
-        if (root.findViewWithTag<View>("rovex_home_clinical_hero") != null) return
-
-        // Some compact layouts expose no accessible "Home" label. Use the documented
-        // first destination of the tagged bottom navigation, but click the deepest clickable
-        // descendant first: parent wrappers can be clickable while their listener is a no-op.
-        val nav = root.findViewWithTag<View>("rovex_bottom_navigation")
-        if (nav is ViewGroup && nav.childCount > 0) {
-            fun clickDeepest(view: View): Boolean {
-                if (view.visibility != View.VISIBLE || !view.isEnabled) return false
-                if (view is ViewGroup) {
-                    for (index in 0 until view.childCount) {
-                        if (clickDeepest(view.getChildAt(index))) return true
-                    }
-                }
-                return view.isClickable && view.performClick()
-            }
-            if (clickDeepest(nav.getChildAt(0))) {
-                activity.window.decorView.requestLayout()
-                return
-            }
-        }
-        val labels = candidates.joinToString(",") {
-            "tag=" + it.tag + ",description=" + it.contentDescription +
-                ",text=" + (if (it is android.widget.TextView) it.text else "")
-        }
-        error("Could not select Home tab; matching candidates=[$labels]; navFound=" + (nav != null) +
-            "; navChildren=" + ((nav as? ViewGroup)?.childCount ?: 0))
+        visitLabels(root)
+        error("Could not select Home tab after probing " + clickCandidates.size +
+            " clickable controls; nav=" + navDescription + "; views=" + labels.take(40).joinToString("; "))
     }
 
     @Test
@@ -301,8 +332,9 @@ class RovexHomeThemeFoundationRegressionTest {
                         // onCreate must build Home using that selected theme. Calling refreshTheme()
                         // again here races the Activity's own initialization and can detach the
                         // dynamically built Home tree while the regression test is observing it.
-                        selectHomeTab(activity)
-                        activity.window.decorView.requestLayout()
+                    }
+                    selectHomeTab(scenario)
+                    scenario.onActivity { activity -> activity.window.decorView.requestLayout()
                     }
                     // MainActivity builds Home dynamically. On slower GitHub-hosted emulators,
                     // theme preference I/O and first-run initialization can outlast a short 5s gate.
