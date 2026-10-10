@@ -690,3 +690,19 @@ if _new_policy not in _worker:
     raise SystemExit("[659] atomic WorkManager migration policy postcondition failed")
 _worker_path.write_text(_worker, encoding="utf-8")
 print("[659] QBank recovery migration now atomically REPLACEs stale unique work; avoids cancel/enqueue race")
+
+# TEMPORARY P0 diagnostic: expose the exact failing recovery admission assertion
+# from the generated source archive in CI logs; remove after root-cause repair.
+for _diag_rel in (
+    "app/src/androidTest/java/com/localqbank/library/QBankDeletionRecoveryAdmissionTest.kt",
+    "app/src/main/java/com/localqbank/library/QBankDeletionRecoveryWorker.kt",
+):
+    _diag_path = P / _diag_rel
+    if _diag_path.is_file():
+        _diag_lines = _diag_path.read_text(encoding="utf-8").splitlines()
+        print("[P0-DIAG] " + _diag_rel)
+        for _idx, _line in enumerate(_diag_lines[:100], 1):
+            print(f"[P0-DIAG] {_idx}: {_line}")
+    else:
+        print("[P0-DIAG] MISSING " + _diag_rel)
+
