@@ -45,6 +45,35 @@ def resolve_asset(project: Path, rel: str) -> Path:
     return result
 
 
+def jpeg_dimensions(data: bytes):
+    """Read JPEG SOF dimensions without adding a build dependency."""
+    if not data.startswith(b"\\xff\\xd8"):
+        return None
+    i = 2
+    sof = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
+    while i + 4 <= len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        while i < len(data) and data[i] == 0xFF:
+            i += 1
+        if i >= len(data):
+            break
+        marker = data[i]
+        i += 1
+        if marker in (0xD8, 0xD9, 0x01) or 0xD0 <= marker <= 0xD7:
+            continue
+        if i + 2 > len(data):
+            break
+        length = int.from_bytes(data[i:i + 2], "big")
+        if length < 2 or i + length > len(data):
+            break
+        if marker in sof and length >= 7:
+            return int.from_bytes(data[i + 5:i + 7], "big"), int.from_bytes(data[i + 3:i + 5], "big")
+        i += length
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", required=True, type=Path)
@@ -66,6 +95,7 @@ def main() -> int:
         fail("asset manifest is empty")
 
     seen: set[str] = set()
+    wallpaper_themes: set[str] = set()
     for index, entry in enumerate(manifest["assets"]):
         if not isinstance(entry, dict):
             fail(f"assets[{index}] must be an object")
@@ -122,6 +152,35 @@ def main() -> int:
             if doc["fr"] <= 0 or doc["op"] <= doc["ip"] or doc["w"] <= 0 or doc["h"] <= 0:
                 fail(f"{rel}: invalid frame range or canvas dimensions")
         elif kind == "wallpaper" or path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}:
+            if kind == "wallpaper" and int(manifest.get("schema", 0)) >= 2:
+                theme = entry.get("theme")
+                if theme not in {"light", "pastel", "mint", "sunset", "lavender", "amoled"}:
+                    fail(f"{rel}: missing/unknown theme mapping: {theme!r}")
+                if theme in wallpaper_themes:
+                    fail(f"duplicate wallpaper theme mapping: {theme}")
+                wallpaper_themes.add(theme)
+                if entry.get("license") != "CC0-1.0":
+                    fail(f"{rel}: bundled Phase 2 wallpapers must be CC0-1.0")
+                commit = entry.get("upstreamCommit")
+                if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+                    fail(f"{rel}: upstreamCommit must be a pinned 40-character Git commit")
+                if commit not in source:
+                    fail(f"{rel}: source URL must pin the exact upstream commit")
+                retrieved = entry.get("retrievedAtUtc")
+                if not isinstance(retrieved, str) or not re.fullmatch(r"20\\d\\d-\\d\\d-\\d\\d", retrieved):
+                    fail(f"{rel}: retrievedAtUtc must use YYYY-MM-DD")
+                dimensions = jpeg_dimensions(data)
+                if not dimensions:
+                    fail(f"{rel}: JPEG dimensions could not be read")
+                if min(dimensions) < 2160 or max(dimensions) < 3840:
+                    fail(f"{rel}: source dimensions must be at least 3840x2160; got {dimensions}")
+                if entry.get("width") != dimensions[0] or entry.get("height") != dimensions[1]:
+                    fail(f"{rel}: manifest dimensions do not match source JPEG {dimensions}")
+                if entry.get("bytes") != len(data):
+                    fail(f"{rel}: manifest byte count does not match file")
+                if entry.get("modified") is not False:
+                    fail(f"{rel}: source artwork must remain unchanged")
+            valid = (
             valid = (
                 data.startswith(b"\xff\xd8\xff")
                 or data.startswith(b"\x89PNG\r\n\x1a\n")
@@ -133,6 +192,8 @@ def main() -> int:
                 fail(f"{rel}: wallpaper/image payload is suspiciously small ({len(data)} bytes)")
         print(f"[asset-catalog] OK {rel} | {license_name} | sha256={actual_hash}")
 
+    if int(manifest.get("schema", 0)) >= 2 and wallpaper_themes != {"light", "pastel", "mint", "sunset", "lavender", "amoled"}:
+        fail("Phase 2 requires exactly one verified wallpaper for each of light, pastel, mint, sunset, lavender, and amoled; got " + repr(sorted(wallpaper_themes)))
     print(f"[asset-catalog] PASS: {len(seen)} asset(s) verified; this does not replace device visual/performance tests.")
     return 0
 
