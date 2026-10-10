@@ -168,7 +168,7 @@ def main() -> int:
                     fail(f"{rel}: source URL must pin the exact upstream commit")
                 expected_git_blob = entry.get("gitBlobSha")
                 actual_git_blob = hashlib.sha1(
-                    b"blob " + str(len(data)).encode("ascii") + b"\\0" + data
+                    b"blob " + str(len(data)).encode("ascii") + b"\0" + data
                 ).hexdigest()
                 if not isinstance(expected_git_blob, str) or not re.fullmatch(r"[0-9a-f]{40}", expected_git_blob):
                     fail(f"{rel}: gitBlobSha must be a pinned 40-character Git blob hash")
@@ -188,7 +188,6 @@ def main() -> int:
                     fail(f"{rel}: manifest byte count does not match file")
                 if entry.get("modified") is not False:
                     fail(f"{rel}: source artwork must remain unchanged")
-            valid = (
             valid = (
                 data.startswith(b"\xff\xd8\xff")
                 or data.startswith(b"\x89PNG\r\n\x1a\n")
