@@ -25,9 +25,16 @@ for theme in light amoled mint sunset lavender pastel; do
   remote="$PHASE1_REMOTE_DIR/phase1_home_${theme}.png"
   local="$OUT/screens/phase1_home_${theme}.png"
   if ! adb -s "$SERIAL" shell test -s "$remote"; then
-    log "Phase 1 capture missing; app-specific screenshot files:"
-    adb -s "$SERIAL" shell "find \"$PHASE1_REMOTE_DIR\" -maxdepth 3 -type f -name \"phase1_home_*.png\" -print 2>/dev/null" || true
-    fail "Phase 1 rendered Home screenshot missing for theme=$theme at $remote"
+    found="$(adb -s "$SERIAL" shell "find \"$PHASE1_REMOTE_DIR\" -maxdepth 5 -type f -name \"phase1_home_${theme}.png\" -print 2>/dev/null | head -1" | tr -d "\r")"
+    if [[ -n "$found" ]] && adb -s "$SERIAL" shell test -s "$found"; then
+      remote="$found"
+      log "Resolved theme=$theme screenshot at $remote"
+    else
+      log "Phase 1 capture missing; app-specific screenshot files:"
+      adb -s "$SERIAL" shell "find \"$PHASE1_REMOTE_DIR\" -maxdepth 5 -type f -name \"phase1_home_*.png\" -print 2>/dev/null" || true
+      adb -s "$SERIAL" logcat -d -s RovexVisualTruth:I "*:S" 2>/dev/null || true
+      fail "Phase 1 rendered Home screenshot missing for theme=$theme under $PHASE1_REMOTE_DIR"
+    fi
   fi
   adb -s "$SERIAL" pull "$remote" "$local" >/dev/null
   test -s "$local" || fail "Phase 1 rendered Home screenshot could not be collected for theme=$theme"
