@@ -182,7 +182,8 @@ object RovexWallpaperManager {
     fun preload(context: Context) = preloadTheme(context, ThemeManager.get(context))
     private fun preloadTheme(context: Context, theme: String) {
         val c = app(context)
-        if (!isEnabled(c, theme) || (cachedTheme == theme && cachedBitmap != null) || !loadingThemes.add(theme)) return
+        if (!isEnabled(c, theme) || (cachedTheme == theme && cachedBitmap != null) || loadingThemes.contains(theme) || !loadingThemes.add("decode:active")) return
+        loadingThemes.add(theme)
         PerformanceManager.submit {
             val decoded = runCatching {
                 val f = preview(c, theme)
@@ -203,6 +204,8 @@ object RovexWallpaperManager {
                 }
             }
             loadingThemes.remove(theme)
+            loadingThemes.remove("decode:active")
+            if (ThemeManager.get(c) != theme) preloadTheme(c, ThemeManager.get(c))
             if (decoded != null && AppManagers.isReady()) android.os.Handler(android.os.Looper.getMainLooper()).post {
                 if (ThemeManager.get(c) == theme) AppState.changed("wallpaper_loaded:" + theme)
             }
@@ -213,7 +216,8 @@ object RovexWallpaperManager {
     fun setFromUri(context: Context, uri: Uri, theme: String = ThemeManager.get(context), onComplete: (Boolean) -> Unit) {
         val c = app(context)
         val safe = slug(theme)
-        if (!loadingThemes.add("import:" + safe)) { onComplete(false); return }
+        if (!loadingThemes.add("import:active")) { onComplete(false); return }
+        loadingThemes.add("import:" + safe)
         PerformanceManager.submit {
             val ok = runCatching {
                 val sourceTmp = File(c.filesDir, "rovex_wallpaper_" + safe + ORIGINAL_SUFFIX + ".tmp")
@@ -271,6 +275,7 @@ object RovexWallpaperManager {
                 true
             }.getOrDefault(false)
             loadingThemes.remove("import:" + safe)
+            loadingThemes.remove("import:active")
             File(c.filesDir, "rovex_wallpaper_" + safe + ORIGINAL_SUFFIX + ".tmp").delete()
             File(c.filesDir, "rovex_wallpaper_" + safe + PREVIEW_SUFFIX + ".tmp").delete()
             if (ok) preloadTheme(c, theme)
