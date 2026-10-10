@@ -92,8 +92,8 @@ for marker in (
     "RovexPremiumPalette.forKey",
     "contrast(roles.onSurface, roles.surfaceContainer) >= 4.5",
     "contrast(roles.onSurface, roles.surfaceElevated) >= 4.5",
+    'ThemeManager.LIGHT',
     'ThemeManager.AMOLED',
-    'ThemeManager.SUNSET',
     'ThemeManager.MINT',
     'ThemeManager.SUNSET',
     'ThemeManager.LAVENDER',
@@ -116,7 +116,7 @@ if not capture.is_file():
     raise SystemExit("[Phase 1] visual-truth screenshot collector missing")
 capture_text = capture.read_text(encoding="utf-8")
 if "for theme in light amoled mint sunset lavender pastel; do" not in capture_text or "phase1_home_${theme}.png" not in capture_text:
-    raise SystemExit("[Phase 1] visual collector does not enumerate and collect the five required theme screenshots")
+    raise SystemExit("[Phase 1] visual collector does not enumerate and collect all six required theme screenshots")
 
 print("[Phase 1] generated source verification PASS")
 print("[Phase 1] version/application identity, semantic roles, geometry invariants, and contrast/screenshot tests verified")
