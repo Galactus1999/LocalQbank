@@ -22,15 +22,17 @@ new_state = '''# Keep state fingerprints consistent when UiAutomator omits this 
 
 if old_nodes in source:
     source = source.replace(old_nodes, new_nodes, 1)
-elif new_nodes in source:
-    print("[652] nodes() visibility compatibility already applied")
+elif 'a.get("visible-to-user") == "false"' in source and 'a.get("visible-to-user")!="true"' not in source:
+    # The base branch may already have applied its equivalent Phase 652 overlay.
+    # Accept the semantic postcondition instead of requiring identical comments/spacing.
+    print("[652] nodes() visibility compatibility already applied by earlier overlay")
 else:
     raise SystemExit("[652] expected nodes() visibility filter anchor missing; refusing unsafe edit")
 
 if old_state in source:
     source = source.replace(old_state, new_state, 1)
-elif new_state in source:
-    print("[652] state_key() visibility compatibility already applied")
+elif 'a.get("visible-to-user") == "false"' in source and 'a.get("visible-to-user")!="true"' not in source:
+    print("[652] state_key() visibility compatibility already applied by earlier overlay")
 else:
     raise SystemExit("[652] expected state_key() visibility filter anchor missing; refusing unsafe edit")
 
