@@ -10,6 +10,7 @@ overlay650 = (ROOT / ".github/ci/rovex_650_sparse_screen_score_fix.py").read_tex
 overlay651 = (ROOT / ".github/ci/rovex_651_interaction_launch_race_fix.py").read_text(encoding="utf-8")
 overlay652 = (ROOT / ".github/ci/rovex_652_uiautomator_visibility_fix.py").read_text(encoding="utf-8")
 overlay653 = (ROOT / ".github/ci/rovex_653_hidden_status_inset_fix.py").read_text(encoding="utf-8")
+overlay654 = (ROOT / ".github/ci/rovex_654_flashcard_startup_recovery.py").read_text(encoding="utf-8")
 helper = (ROOT / ".github/ci/rovex_visual_truth_capture.sh").read_text(encoding="utf-8")
 truth = (ROOT / "tools/rovex_visual_truth.py").read_text(encoding="utf-8")
 discover = (ROOT / ".github/ci/adaptive-discover.sh").read_text(encoding="utf-8")
@@ -73,6 +74,10 @@ assert "rovex_653_hidden_status_inset_fix.py" in discover
 assert "Hidden-status-bar screens must not reserve the hidden status bar's inset." in overlay653
 assert "insets.getInsets(WindowInsetsCompat.Type.displayCutout()).top" in overlay653
 assert "versionCode = 737" in overlay653
+assert "rovex_654_flashcard_startup_recovery.py" in discover
+assert "half-built reviewer Activity" in overlay654
+assert "window.decorView.post { if (!isFinishing && !isDestroyed) finish() }" in overlay654
+assert "versionCode = 738" in overlay654
 assert 'a.get("visible-to-user") == "false"' in overlay652
 assert "state_key() visibility compatibility" in overlay652
 assert "versionCode = 736" in overlay652
