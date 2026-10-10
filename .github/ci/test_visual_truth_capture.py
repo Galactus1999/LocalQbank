@@ -11,6 +11,7 @@ overlay651 = (ROOT / ".github/ci/rovex_651_interaction_launch_race_fix.py").read
 overlay652 = (ROOT / ".github/ci/rovex_652_uiautomator_visibility_fix.py").read_text(encoding="utf-8")
 overlay653 = (ROOT / ".github/ci/rovex_653_hidden_status_inset_fix.py").read_text(encoding="utf-8")
 overlay654 = (ROOT / ".github/ci/rovex_654_flashcard_startup_recovery.py").read_text(encoding="utf-8")
+overlay655 = (ROOT / ".github/ci/rovex_655_home_card_motion_contrast.py").read_text(encoding="utf-8")
 helper = (ROOT / ".github/ci/rovex_visual_truth_capture.sh").read_text(encoding="utf-8")
 truth = (ROOT / "tools/rovex_visual_truth.py").read_text(encoding="utf-8")
 discover = (ROOT / ".github/ci/adaptive-discover.sh").read_text(encoding="utf-8")
@@ -78,6 +79,10 @@ assert "rovex_654_flashcard_startup_recovery.py" in discover
 assert "half-built reviewer Activity" in overlay654
 assert "window.decorView.post { if (!isFinishing && !isDestroyed) finish() }" in overlay654
 assert "versionCode = 738" in overlay654
+assert "rovex_655_home_card_motion_contrast.py" in discover
+assert "ThemeManager.PASTEL -> 0.32f" in overlay655
+assert "Distinct but light card fills" in overlay655
+assert "versionCode = 739" in overlay655
 assert 'a.get("visible-to-user") == "false"' in overlay652
 assert "state_key() visibility compatibility" in overlay652
 assert "versionCode = 736" in overlay652
