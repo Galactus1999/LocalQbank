@@ -6,6 +6,7 @@ import runpy
 ROOT = Path(__file__).resolve().parents[2]
 runner = (ROOT / ".github/ci/adaptive-instrumentation-v2.sh").read_text(encoding="utf-8")
 overlay = (ROOT / ".github/ci/rovex_649_visual_truth_capture_repair.py").read_text(encoding="utf-8")
+overlay650 = (ROOT / ".github/ci/rovex_650_sparse_screen_score_fix.py").read_text(encoding="utf-8")
 helper = (ROOT / ".github/ci/rovex_visual_truth_capture.sh").read_text(encoding="utf-8")
 truth = (ROOT / "tools/rovex_visual_truth.py").read_text(encoding="utf-8")
 discover = (ROOT / ".github/ci/adaptive-discover.sh").read_text(encoding="utf-8")
@@ -35,5 +36,9 @@ ren_first_run = {
 }
 assert score(ren_first_run) >= 75, "A valid sparse light-theme Activity must not fail the structural-render gate."
 assert "rovex_649_visual_truth_capture_repair.py" in discover
+assert "rovex_650_sparse_screen_score_fix.py" in discover
+assert "versionCode = 735" in overlay650
+assert 'm["entropy"] >= 0.20' in truth
+assert 'm["bright_pixel_ratio"] <= 0.995' in truth
 
 print("PASS: visual truth requires dedicated instrumentation, real Activity screenshots, non-duplicate images, and non-empty interaction exploration.")
