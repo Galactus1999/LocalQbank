@@ -8,6 +8,7 @@ runner = (ROOT / ".github/ci/adaptive-instrumentation-v2.sh").read_text(encoding
 overlay = (ROOT / ".github/ci/rovex_649_visual_truth_capture_repair.py").read_text(encoding="utf-8")
 overlay650 = (ROOT / ".github/ci/rovex_650_sparse_screen_score_fix.py").read_text(encoding="utf-8")
 overlay651 = (ROOT / ".github/ci/rovex_651_interaction_launch_race_fix.py").read_text(encoding="utf-8")
+overlay652 = (ROOT / ".github/ci/rovex_652_interaction_visibility_attribute_fix.py").read_text(encoding="utf-8")
 overlay652 = (ROOT / ".github/ci/rovex_652_uiautomator_visibility_fix.py").read_text(encoding="utf-8")
 helper = (ROOT / ".github/ci/rovex_visual_truth_capture.sh").read_text(encoding="utf-8")
 truth = (ROOT / "tools/rovex_visual_truth.py").read_text(encoding="utf-8")
@@ -45,6 +46,28 @@ assert "rovex_651_interaction_launch_race_fix.py" in discover
 assert "process_started = False" in overlay651
 assert "for attempt in range(30)" in overlay651
 assert "did not start within 30 seconds after launcher request" in overlay651
+assert "rovex_652_interaction_visibility_attribute_fix.py" in discover
+assert 'a.get("visible-to-user") == "false"' in overlay652
+assert "versionCode = 736" in overlay652
+
+# The captured emulator hierarchy had real clickable LATER/RESUME buttons but omitted
+# visible-to-user on all nodes. The explorer must retain those nodes, while still excluding
+# explicitly hidden and disabled controls.
+import xml.etree.ElementTree as ET
+fixture = ET.fromstring("""<hierarchy>
+  <node package="com.localqbank.library" enabled="true" clickable="true" bounds="[10,10][100,60]" text="LATER"/>
+  <node package="com.localqbank.library" enabled="true" clickable="true" visible-to-user="false" bounds="[10,70][100,120]" text="HIDDEN"/>
+  <node package="com.localqbank.library" enabled="false" clickable="true" bounds="[10,130][100,180]" text="DISABLED"/>
+  <node package="com.localqbank.library" enabled="true" clickable="true" bounds="[10,190][100,240]" text="RESUME"/>
+</hierarchy>""")
+fixture_visible = [
+    node.attrib["text"] for node in fixture.iter()
+    if node.attrib.get("enabled") == "true"
+    and node.attrib.get("visible-to-user") != "false"
+    and node.attrib.get("clickable") == "true"
+    and node.attrib.get("bounds")
+]
+assert fixture_visible == ["LATER", "RESUME"], fixture_visible
 assert "source = source.replace(old, new, 1)" in overlay651
 assert 'a.get("visible-to-user")=="false"' in overlay652
 assert 'a.get("visible-to-user")!="true"' in overlay652
