@@ -12,7 +12,7 @@ source = explorer.read_text(encoding="utf-8")
 old = 'if a.get("enabled")!="true" or a.get("visible-to-user")!="true": continue'
 new = 'if a.get("enabled")!="true" or a.get("visible-to-user")=="false": continue'
 if old in source:
-    source = source.replace(old, new, 1)
+    source = source.replace(old, new)
 elif new in source:
     print("[652] visibility compatibility fix already applied")
 else:
