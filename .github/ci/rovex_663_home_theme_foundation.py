@@ -270,7 +270,10 @@ class RovexHomeThemeFoundationRegressionTest {
 
 test = admission_test.read_text(encoding="utf-8")
 old = "assertTrue(info.state == WorkInfo.State.ENQUEUED || info.state == WorkInfo.State.RUNNING)"
-new = """assertTrue(
+new = """println("[663] WorkManager admission observed state=" + info.state +
+            "; batteryNotLow=" + info.constraints.requiresBatteryNotLow() +
+            "; deviceIdle=" + info.constraints.requiresDeviceIdle())
+        assertTrue(
             "Durable recovery work was not admitted; observed state=" + info.state,
             info.state == WorkInfo.State.ENQUEUED ||
                 info.state == WorkInfo.State.RUNNING ||
@@ -287,6 +290,8 @@ if 'versionName = "8.3.659"' not in g or "versionCode = 745" not in g:
     raise SystemExit("[663] version postcondition failed")
 if "Durable recovery work was not admitted; observed state=" not in admission_test.read_text(encoding="utf-8"):
     raise SystemExit("[663] WorkManager fast-completion regression fix missing")
+if "WorkManager admission observed state=" not in admission_test.read_text(encoding="utf-8"):
+    raise SystemExit("[663] WorkManager admission runtime diagnostic missing")
 if "RovexHomeThemeTokens.text(a)" not in home.read_text(encoding="utf-8"):
     raise SystemExit("[663] semantic text role not integrated into Home")
 print("[663] applied v8.3.659 / versionCode 745")
