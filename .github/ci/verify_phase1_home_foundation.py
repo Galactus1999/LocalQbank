@@ -113,9 +113,8 @@ capture = repo / ".github/ci/rovex_visual_truth_capture.sh"
 if not capture.is_file():
     raise SystemExit("[Phase 1] visual-truth screenshot collector missing")
 capture_text = capture.read_text(encoding="utf-8")
-for theme in ("light", "amoled", "space", "mint", "pastel"):
-    if f"phase1_home_{theme}.png" not in capture_text:
-        raise SystemExit("[Phase 1] rendered screenshot collection missing theme=" + theme)
+if "for theme in light amoled space mint pastel; do" not in capture_text or "phase1_home_${theme}.png" not in capture_text:
+    raise SystemExit("[Phase 1] visual collector does not enumerate and collect the five required theme screenshots")
 
 print("[Phase 1] generated source verification PASS")
 print("[Phase 1] version/application identity, semantic roles, geometry invariants, and contrast/screenshot tests verified")
