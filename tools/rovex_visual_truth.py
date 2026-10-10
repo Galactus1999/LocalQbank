@@ -161,18 +161,27 @@ def main():
         "interpretation": "Structural score validates that a real, non-empty UI rendered. It is not a visual similarity score and cannot establish design-match without approved golden references."
     }
     Path(a.output).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    required_names = {"01_home.png", "02_qbank.png", "03_flashcards.png", "04_ren.png", "05_settings.png"}
+    core_required_names = {"01_home.png", "02_qbank.png", "03_flashcards.png", "04_ren.png", "05_settings.png"}
+    phase1_required_names = {
+        "phase1_home_light.png", "phase1_home_amoled.png", "phase1_home_space.png",
+        "phase1_home_mint.png", "phase1_home_pastel.png"
+    }
     by_name = {s["file"]: s for s in screens}
-    missing = sorted(required_names - set(by_name))
+    missing = sorted((core_required_names | phase1_required_names) - set(by_name))
     if missing:
-        raise SystemExit("Visual truth gate failed: required activity screenshots missing: " + ", ".join(missing))
-    required = [by_name[name] for name in sorted(required_names)]
-    fingerprints = [s["sha256"] for s in required]
-    if len(set(fingerprints)) != len(fingerprints):
-        duplicates = sorted({h for h in fingerprints if fingerprints.count(h) > 1})
-        raise SystemExit("Visual truth gate failed: two or more distinct Activities produced byte-identical screenshots; fingerprints=" + ", ".join(duplicates))
-    if any(s["structural_render_score"] < 75 for s in required):
-        raise SystemExit("Visual truth gate failed: one or more required screens have an unhealthy rendered fingerprint")
+        raise SystemExit("Visual truth gate failed: required rendered screenshots missing: " + ", ".join(missing))
+    core_required = [by_name[name] for name in sorted(core_required_names)]
+    phase1_required = [by_name[name] for name in sorted(phase1_required_names)]
+    core_fingerprints = [s["sha256"] for s in core_required]
+    if len(set(core_fingerprints)) != len(core_fingerprints):
+        duplicates = sorted({h for h in core_fingerprints if core_fingerprints.count(h) > 1})
+        raise SystemExit("Visual truth gate failed: two or more distinct core Activities produced byte-identical screenshots; fingerprints=" + ", ".join(duplicates))
+    phase1_fingerprints = [s["sha256"] for s in phase1_required]
+    if len(set(phase1_fingerprints)) != len(phase1_fingerprints):
+        duplicates = sorted({h for h in phase1_fingerprints if phase1_fingerprints.count(h) > 1})
+        raise SystemExit("Phase 1 visual gate failed: theme variants produced byte-identical Home screenshots; fingerprints=" + ", ".join(duplicates))
+    if any(s["structural_render_score"] < 75 for s in core_required + phase1_required):
+        raise SystemExit("Visual truth gate failed: one or more required rendered screens have an unhealthy structural-render score")
 
 
 if __name__ == "__main__":
