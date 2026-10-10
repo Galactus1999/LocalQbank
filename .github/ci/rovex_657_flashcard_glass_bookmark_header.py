@@ -99,12 +99,45 @@ g = gpath.read_text(encoding="utf-8")
 if 'versionName = "8.3.655"' not in g or "versionCode = 741" not in g:
     raise SystemExit("[658] expected v8.3.655 / versionCode 741 baseline")
 wall_path = P / "app/src/main/java/com/localqbank/library/RovexWallpaperManager.kt"
+wallpaper_drawable_path = P / "app/src/main/java/com/localqbank/library/RovexWallpaperDrawable.kt"
 theme_path = P / "app/src/main/java/com/localqbank/library/ThemeManager.kt"
 activity_path = P / "app/src/main/java/com/localqbank/library/SettingsActivity.kt"
 screen_path = P / "app/src/main/java/com/localqbank/library/SettingsScreen.kt"
 home_path = P / "app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
 for f in (wall_path, theme_path, activity_path, screen_path, home_path):
     if not f.is_file(): raise SystemExit("[658] required file missing: " + str(f))
+
+wallpaper_drawable = r'''package com.localqbank.library
+
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.Paint
+import android.graphics.PixelFormat
+import android.graphics.RectF
+import android.graphics.drawable.Drawable
+import kotlin.math.max
+
+/** Center-crop a bounded wallpaper preview without a second bitmap or GPU blur. */
+class RovexWallpaperDrawable(private val bitmap: Bitmap, alpha: Int) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG).apply { this.alpha = alpha.coerceIn(0, 255) }
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        if (b.isEmpty || bitmap.isRecycled) return
+        val scale = max(b.width().toFloat() / bitmap.width, b.height().toFloat() / bitmap.height)
+        val w = bitmap.width * scale
+        val h = bitmap.height * scale
+        val cx = b.exactCenterX()
+        val cy = b.exactCenterY()
+        canvas.drawBitmap(bitmap, null, RectF(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f), paint)
+    }
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha.coerceIn(0, 255); invalidateSelf() }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter; invalidateSelf() }
+    @Suppress("DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+'''
+wallpaper_drawable_path.write_text(wallpaper_drawable, encoding="utf-8")
 
 wall = r'''package com.localqbank.library
 import android.content.Context
@@ -273,12 +306,7 @@ new = '''        val custom = RovexWallpaperManager.bitmap(c, get(c))
         val bundled = if (custom == null && get(c) == PASTEL) RovexBundledVisualAssets.bitmapIfReady(c) else null
         val bitmap = custom ?: bundled ?: return base
         val alpha = if (custom != null) { if (isDark(c)) 76 else 26 } else 30
-        val wallpaper = BitmapDrawable(c.resources, bitmap).apply {
-            gravity=android.view.Gravity.FILL
-            this.alpha=alpha
-            setFilterBitmap(true)
-            setDither(true)
-        }
+        val wallpaper = RovexWallpaperDrawable(bitmap, alpha)
         return LayerDrawable(arrayOf(base, wallpaper))'''
 if ts.count(old) != 1: raise SystemExit("[658] ThemeManager wallpaper anchor mismatch")
 theme_path.write_text(ts.replace(old, new, 1), encoding="utf-8")
