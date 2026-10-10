@@ -201,11 +201,14 @@ class RovexHomeThemeFoundationRegressionTest {
                 for ((themeName, theme) in themeCases) {
                     scenario.onActivity { activity ->
                         ThemeManager.set(activity, theme)
-                        RovexHomeRevolution.refreshTheme(activity)
-                        activity.window.decorView.requestLayout()
                     }
+                    // Recreate the real Activity so all view text, surfaces, borders and controls
+                    // are rebound from the newly selected semantic palette, not just the backdrop.
+                    scenario.recreate()
                     instrumentation.waitForIdleSync()
                     scenario.onActivity { activity ->
+                        RovexHomeRevolution.refreshTheme(activity)
+                        activity.window.decorView.requestLayout()
                         val root = activity.findViewById<ViewGroup>(R.id.dashboardRoot)
                             ?: error("Home dashboard root missing for theme=" + theme)
                         val density = activity.resources.displayMetrics.density
