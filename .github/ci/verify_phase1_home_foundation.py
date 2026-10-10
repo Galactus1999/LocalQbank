@@ -81,7 +81,7 @@ for marker in (
     'assertHeight("rovex_home_search", 50f)',
     'assertHeight("rovex_home_online", 70f)',
     'assertHeight("rovex_home_daily_motivation", 88f)',
-    'assertHeight("rovex_home_today_progress", 225f)',
+    'assertHeight("rovex_home_today_progress", 190f)',
     'assertHeight("modern_feature_qbank", 132f)',
     'assertHeight("modern_feature_flashcards", 132f)',
 ):
