@@ -50,6 +50,11 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
  [[ -n "$project" ]] || fail "ZIP contains Gradle settings but no Android application/library module"
  if [[ "$(basename "$candidate")" == "Rovex_v8.3.445_CI_RuntimeRegression_RootRepair_Source.zip" ]];then python3 "$ROOT/.github/ci/rovex_446_overlay2.py" "$project";fi
  if [[ "$(basename "$candidate")" == "Rovex_v8.3.615_Clinical_Day_Imported_Motion_Phase_Source.zip" ]];then
+  # Phase 1 is applied to the selected build input, not just documented or tested on a different tree.
+  for overlay in rovex_660_compact_home_geometry.py rovex_661_deletion_admission_diagnostic.py rovex_662_deletion_admission_state_diagnostic.py rovex_663_home_theme_foundation.py; do
+    [[ -f "$ROOT/.github/ci/$overlay" ]] || fail "Required Phase 1 overlay missing: $overlay"
+  done
+  log "Applying Home geometry + semantic theme Phase 1 overlays 660-663 to selected source archive"
   python3 "$ROOT/.github/ci/rovex_616_clinical_day_background_overlay.py" "$project"
   python3 "$ROOT/.github/ci/rovex_617_clinical_day_production_overlay.py" "$project"
   python3 "$ROOT/.github/ci/rovex_617_visual_token_overlay.py" "$project"
