@@ -42,7 +42,7 @@ RAW.mkdir(parents=True, exist_ok=True)
 DRAWABLE.mkdir(parents=True, exist_ok=True)
 
 # This animation is imported unchanged from an external MIT-licensed GitHub repository.
-source_url = "https://raw.githubusercontent.com/spemer/lottie-animations-json/master/animate_tab/animate_tab_1_example.json"
+lottie_source_url = "https://raw.githubusercontent.com/spemer/lottie-animations-json/master/animate_tab/animate_tab_1_example.json"
 source_license = "MIT"
 motion_path = ROOT / ".github/assets/rovex-motion/animate_tab_1_example.json"
 if not motion_path.exists():
@@ -156,7 +156,7 @@ license_manifest = {
         {
             "file": "assets/rovex/motion/theme_transition.json",
             "type": "lottie-json",
-            "source": source_url if False else "https://raw.githubusercontent.com/spemer/lottie-animations-json/master/animate_tab/animate_tab_1_example.json",
+            "source": lottie_source_url,
             "license": "MIT",
             "sha256": hashlib.sha256(motion).hexdigest(),
             "modified": False
