@@ -18,9 +18,11 @@ assert "capture_exact_activity" not in runner, "Host-side am start cannot prove 
 assert 'capture_visual "home-production"' not in runner, "Unvalidated host screenshots must not be called visual truth."
 assert "INSTRUMENTATION_CODE: -1" in runner
 assert "INSTRUMENTATION_STATUS_CODE: 0" in runner
+assert "Run only when this test class is explicitly selected" in overlay
 assert "captureCoreRenderedScreens" in overlay
 assert "Required rendered screenshot missing" in helper
-assert 'InstrumentationRegistry.getArguments().getString("rovexVisualTruth")' in overlay
+assert 'InstrumentationRegistry.getArguments().getString("class")' in overlay
+assert '-e class com.localqbank.library.RovexVisualTruthCaptureTest' in runner
 assert "no foreground Rovex Activity with visible interactive nodes" in overlay
 assert "foreground Rovex Activity" in overlay
 assert "def foreground_app()" in overlay
