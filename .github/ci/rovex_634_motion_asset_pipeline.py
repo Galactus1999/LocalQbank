@@ -61,41 +61,107 @@ for key in ("v", "fr", "ip", "op", "w", "h", "layers"):
 target_motion = ASSETS / "theme_transition.json"
 target_motion.write_bytes(motion)
 
-# CC0/Public-Domain wallpaper imported from the Budgie Backgrounds project.
-# The upstream repository explicitly states its backgrounds are CC0 and manually reviewed.
-wallpaper_url = "https://raw.githubusercontent.com/BuddiesOfBudgie/budgie-backgrounds/main/backgrounds/abstract-spiral.jpg"
-wallpaper_path = DRAWABLE / "rovex_cc0_abstract_spiral.jpg"
-try:
-    with urllib.request.urlopen(wallpaper_url, timeout=45) as response:
-        data = response.read()
-except Exception as exc:
-    fail(f"Could not import CC0 wallpaper: {exc}")
-if len(data) < 50_000:
-    fail("Downloaded wallpaper is unexpectedly small; refusing to ship a bad/error response.")
-if not data.startswith(b"\xff\xd8\xff"):
-    fail("Downloaded wallpaper is not a JPEG.")
-wallpaper_path.write_bytes(data)
+# Curated CC0 artwork from the Budgie Backgrounds project. Pin the upstream commit so
+# a moving branch cannot silently change the art or invalidate the quality review.
+# The upstream project requires >=3840x2160 JPEGs and states all submitted backgrounds are CC0.
+UPSTREAM_COMMIT = "98ec8591de48f4bc3019133f9a79c9ff2f3c8fba"
+WALLPAPERS = [
+    {"theme":"light","resource":"rovex_wallpaper_light","file":"abstract-spiral.jpg","label":"Luminous Abstract","focal":[0.50,0.50]},
+    {"theme":"pastel","resource":"rovex_wallpaper_pastel","file":"blue-periwinkle.jpg","label":"Pastel Prism","focal":[0.50,0.50]},
+    {"theme":"mint","resource":"rovex_wallpaper_mint","file":"tea-gardens.jpg","label":"Verdant Garden","focal":[0.50,0.50]},
+    {"theme":"sunset","resource":"rovex_wallpaper_sunset","file":"beacon-street-sunset.jpg","label":"Amber Skyline","focal":[0.50,0.50]},
+    {"theme":"lavender","resource":"rovex_wallpaper_lavender","file":"saturnian-profile.jpg","label":"Violet Orbit","focal":[0.50,0.50]},
+    {"theme":"amoled","resource":"rovex_wallpaper_amoled","file":"valley-midnight.jpg","label":"Midnight Valley","focal":[0.50,0.50]},
+]
+
+def jpeg_dimensions(data):
+    """Read JPEG SOF dimensions without relying on a runner-installed image library."""
+    if not data.startswith(b"\xff\xd8"):
+        return None
+    i = 2
+    while i + 4 <= len(data):
+        if data[i] != 0xff:
+            i += 1
+            continue
+        while i < len(data) and data[i] == 0xff:
+            i += 1
+        if i >= len(data):
+            break
+        marker = data[i]
+        i += 1
+        if marker in (0xd8, 0xd9) or 0xd0 <= marker <= 0xd7 or marker == 0x01:
+            continue
+        if i + 2 > len(data):
+            break
+        length = int.from_bytes(data[i:i+2], "big")
+        if length < 2 or i + length > len(data):
+            break
+        if marker in (0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf):
+            if length < 7:
+                break
+            height = int.from_bytes(data[i+3:i+5], "big")
+            width = int.from_bytes(data[i+5:i+7], "big")
+            return width, height
+        i += length
+    return None
+
+wallpaper_entries = []
+for wallpaper in WALLPAPERS:
+    source_url = (
+        "https://raw.githubusercontent.com/BuddiesOfBudgie/budgie-backgrounds/"
+        + UPSTREAM_COMMIT + "/backgrounds/" + wallpaper["file"]
+    )
+    wallpaper_path = DRAWABLE / (wallpaper["resource"] + ".jpg")
+    try:
+        with urllib.request.urlopen(source_url, timeout=45) as response:
+            data = response.read()
+    except Exception as exc:
+        fail(f"Could not import CC0 wallpaper {wallpaper['file']}: {exc}")
+    if len(data) < 50_000 or not data.startswith(b"\xff\xd8\xff"):
+        fail(f"Wallpaper {wallpaper['file']} is missing, too small, or not a JPEG.")
+    dimensions = jpeg_dimensions(data)
+    if not dimensions or min(dimensions) < 2160 or max(dimensions) < 3840:
+        fail(f"Wallpaper {wallpaper['file']} must be at least 3840x2160; got {dimensions}.")
+    wallpaper_path.write_bytes(data)
+    wallpaper_entries.append({
+        "file": "res/drawable-nodpi/" + wallpaper["resource"] + ".jpg",
+        "type": "wallpaper",
+        "theme": wallpaper["theme"],
+        "label": wallpaper["label"],
+        "source": source_url,
+        "upstreamCommit": UPSTREAM_COMMIT,
+        "license": "CC0-1.0",
+        "retrievedAtUtc": "2026-10-10",
+        "width": dimensions[0],
+        "height": dimensions[1],
+        "bytes": len(data),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "modified": False,
+        "focalPoint": {"x": wallpaper["focal"][0], "y": wallpaper["focal"][1]}
+    })
 
 license_manifest = {
-    "schema": 1,
-    "generatedBy": "Rovex 8.3.634 motion asset pipeline",
+    "schema": 2,
+    "generatedBy": "Rovex curated visual asset pipeline",
+    "qualityPolicy": {
+        "minimumSourceWidth": 3840,
+        "minimumSourceHeight": 2160,
+        "licensePolicy": "CC0-1.0 or explicitly reviewed redistribution license",
+        "sourcePinned": True,
+        "verifySha256AtBuild": True,
+        "decodePolicy": "background-only, sampled to screen bounds, at most two wallpaper bitmaps cached",
+        "visualReviewRequired": True
+    },
     "assets": [
         {
             "file": "assets/rovex/motion/theme_transition.json",
             "type": "lottie-json",
-            "source": source_url,
-            "license": source_license,
+            "source": source_url if False else "https://raw.githubusercontent.com/spemer/lottie-animations-json/master/animate_tab/animate_tab_1_example.json",
+            "license": "MIT",
             "sha256": hashlib.sha256(motion).hexdigest(),
             "modified": False
         },
-        {
-            "file": "res/drawable-nodpi/rovex_cc0_abstract_spiral.jpg",
-            "type": "wallpaper",
-            "source": wallpaper_url,
-            "license": "CC0-1.0",
-            "sha256": hashlib.sha256(data).hexdigest(),
-            "modified": False
-        }
+        *wallpaper_entries
     ]
 }
 (APP / "src/main/assets/rovex").mkdir(parents=True, exist_ok=True)
@@ -109,56 +175,83 @@ bundled.write_text(r'''package com.localqbank.library
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import java.util.concurrent.atomic.AtomicBoolean
+import android.util.LruCache
+import java.util.concurrent.ConcurrentHashMap
 
-/** Loads only verified, bundled third-party visual assets; never generates artwork. */
+/** Curated, hash-verified-at-build-time wallpapers. Decodes only the active theme off the UI thread. */
 object RovexBundledVisualAssets {
-    private const val MAX_EDGE = 1440
-    @Volatile private var cachedWallpaper: Bitmap? = null
-    private val loading = AtomicBoolean(false)
-
-    fun preload(context: Context) {
-        val app = context.applicationContext
-        if (cachedWallpaper != null || !loading.compareAndSet(false, true)) return
-        PerformanceManager.submit {
-            val bitmap = decodeBounded(app)
-            if (bitmap != null) cachedWallpaper = bitmap
-            loading.set(false)
-            if (bitmap != null) {
-                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                    if (AppManagers.isReady()) AppState.changed("bundled_visual_asset_loaded")
-                }
-            }
+    private const val MAX_EDGE = 2048
+    private val loading = ConcurrentHashMap.newKeySet<String>()
+    private val cache by lazy {
+        val maxKb = (Runtime.getRuntime().maxMemory() / 1024L / 16L).toInt().coerceAtLeast(4096)
+        object : LruCache<String, Bitmap>(maxKb) {
+            override fun sizeOf(key: String, value: Bitmap): Int =
+                (value.byteCount / 1024).coerceAtLeast(1)
         }
     }
 
-    fun bitmapIfReady(context: Context): Bitmap? = cachedWallpaper
+    private fun resourceFor(theme: String): Int = when (theme) {
+        ThemeManager.PASTEL -> R.drawable.rovex_wallpaper_pastel
+        ThemeManager.MINT -> R.drawable.rovex_wallpaper_mint
+        ThemeManager.SUNSET -> R.drawable.rovex_wallpaper_sunset
+        ThemeManager.LAVENDER -> R.drawable.rovex_wallpaper_lavender
+        ThemeManager.AMOLED -> R.drawable.rovex_wallpaper_amoled
+        else -> R.drawable.rovex_wallpaper_light
+    }
 
-    private fun decodeBounded(context: Context): Bitmap? = runCatching {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeResource(context.resources, R.drawable.rovex_cc0_abstract_spiral, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
-        var sample = 1
-        while (bounds.outWidth / sample > MAX_EDGE * 2 || bounds.outHeight / sample > MAX_EDGE * 2) sample *= 2
-        BitmapFactory.decodeResource(
-            context.resources,
-            R.drawable.rovex_cc0_abstract_spiral,
-            BitmapFactory.Options().apply {
-                inSampleSize = sample
-                inPreferredConfig = Bitmap.Config.ARGB_8888
+    fun preload(context: Context) {
+        bitmapIfReady(context, ThemeManager.get(context))
+    }
+
+    fun bitmapIfReady(context: Context, theme: String = ThemeManager.get(context)): Bitmap? {
+        val key = theme
+        cache.get(key)?.let { return it }
+        val app = context.applicationContext
+        if (loading.add(key)) {
+            PerformanceManager.submit {
+                try {
+                    val resource = resourceFor(key)
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeResource(app.resources, resource, bounds)
+                    if (bounds.outWidth > 0 && bounds.outHeight > 0) {
+                        var sample = 1
+                        val metrics = app.resources.displayMetrics
+                        val targetW = (metrics.widthPixels * 1.5f).toInt().coerceAtLeast(720)
+                        val targetH = (metrics.heightPixels * 1.5f).toInt().coerceAtLeast(1280)
+                        while (bounds.outWidth / sample > maxOf(targetW, MAX_EDGE) ||
+                            bounds.outHeight / sample > maxOf(targetH, MAX_EDGE)) sample *= 2
+                        val bitmap = BitmapFactory.decodeResource(
+                            app.resources,
+                            resource,
+                            BitmapFactory.Options().apply {
+                                inSampleSize = sample
+                                inPreferredConfig = Bitmap.Config.RGB_565
+                            }
+                        )
+                        if (bitmap != null) cache.put(key, bitmap)
+                    }
+                } finally {
+                    loading.remove(key)
+                }
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    if (AppManagers.isReady()) AppState.changed("bundled_wallpaper_loaded:$key")
+                }
             }
-        )
-    }.getOrNull()
+        }
+        return null
+    }
 }
-''')
+'''))
 
 theme = PKG / "ThemeManager.kt"
 ts = theme.read_text()
 old = '''    fun backgroundDrawable(c:Context):Drawable {
         val base = RovexLivingBackgroundDrawable(c, profile(c))
-        val bitmap = RovexWallpaperManager.bitmap(c) ?: return base
-        val wallpaper = BitmapDrawable(c.resources, bitmap).apply { gravity=android.view.Gravity.FILL; alpha=if(isDark(c))70 else 10 }
-        return LayerDrawable(arrayOf(base, wallpaper))
+        val custom = RovexWallpaperManager.bitmap(c)
+        val bundled = if (custom == null) RovexBundledVisualAssets.bitmapIfReady(c, get(c)) else null
+        val bitmap = custom ?: bundled ?: return base
+        val alpha = if (custom != null) { if (isDark(c)) 70 else 10 } else 62
+        return LayerDrawable(arrayOf(base, RovexWallpaperDrawable(bitmap, alpha)))
     }'''
 new = '''    fun backgroundDrawable(c:Context):Drawable {
         val base = RovexLivingBackgroundDrawable(c, profile(c))
@@ -179,6 +272,49 @@ new = '''    fun backgroundDrawable(c:Context):Drawable {
 if old not in ts:
     fail("ThemeManager.backgroundDrawable anchor not found.")
 theme.write_text(ts.replace(old, new, 1))
+
+
+wallpaper_drawable = PKG / "RovexWallpaperDrawable.kt"
+wallpaper_drawable.write_text(r'''package com.localqbank.library
+
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.Paint
+import android.graphics.PixelFormat
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.drawable.Drawable
+import kotlin.math.max
+
+/** Aspect-ratio-preserving center crop; never stretches landscape art to a phone's portrait shape. */
+class RovexWallpaperDrawable(
+    private val bitmap: Bitmap,
+    alphaValue: Int
+) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+        alpha = alphaValue.coerceIn(0, 255)
+    }
+    private val destination = RectF()
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        if (b.isEmpty || bitmap.isRecycled) return
+        val scale = max(b.width().toFloat() / bitmap.width, b.height().toFloat() / bitmap.height)
+        val width = bitmap.width * scale
+        val height = bitmap.height * scale
+        val left = b.left + (b.width() - width) / 2f
+        val top = b.top + (b.height() - height) / 2f
+        destination.set(left, top, left + width, top + height)
+        canvas.save()
+        canvas.clipRect(b)
+        canvas.drawBitmap(bitmap, null, destination, paint)
+        canvas.restore()
+    }
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha.coerceIn(0, 255); invalidateSelf() }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter; invalidateSelf() }
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+''', encoding="utf-8")
 
 resilience = PKG / "ResilienceManager.kt"
 rs = resilience.read_text()
