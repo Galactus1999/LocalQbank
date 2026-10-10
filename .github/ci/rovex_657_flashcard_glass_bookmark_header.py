@@ -661,32 +661,3 @@ if "MAX_THEMED_CACHE_ENTRIES = 8" not in _loader or "themedCache.size >= MAX_THE
     raise SystemExit("[659] bounded Lottie cache postcondition failed")
 _loader_path.write_text(_loader, encoding="utf-8")
 print("[659] architecture audit: capped recoloured Lottie JSON cache at eight entries")
-
-
-# Phase 659 CI root-cause repair: unique-work migration must be atomic.
-# cancelUniqueWork() is asynchronous. Cancelling and immediately enqueueing with KEEP can
-# race and cancel the replacement request, leaving a durable recovery marker without live work.
-_worker_path = P / "app/src/main/java/com/localqbank/library/QBankDeletionRecoveryWorker.kt"
-if not _worker_path.is_file():
-    raise SystemExit("[659] QBankDeletionRecoveryWorker.kt missing during CI root-cause repair")
-_worker = _worker_path.read_text(encoding="utf-8")
-_old_cancel = """                if (migratingAdmission) {
-                    workManager.cancelUniqueWork(UNIQUE)
-                }
-"""
-if _old_cancel in _worker:
-    _worker = _worker.replace(_old_cancel, "", 1)
-elif "workManager.cancelUniqueWork(UNIQUE)" in _worker:
-    raise SystemExit("[659] unexpected QBank recovery cancellation structure; refusing unsafe rewrite")
-_old_policy = "                    UNIQUE, ExistingWorkPolicy.KEEP, request"
-_new_policy = "                    UNIQUE, if (migratingAdmission) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, request"
-if _worker.count(_old_policy) == 1:
-    _worker = _worker.replace(_old_policy, _new_policy, 1)
-elif _new_policy not in _worker:
-    raise SystemExit("[659] unique-work policy anchor mismatch in QBank recovery worker")
-if "workManager.cancelUniqueWork(UNIQUE)" in _worker:
-    raise SystemExit("[659] unsafe asynchronous cancel remains in recovery migration")
-if _new_policy not in _worker:
-    raise SystemExit("[659] atomic WorkManager migration policy postcondition failed")
-_worker_path.write_text(_worker, encoding="utf-8")
-print("[659] QBank recovery migration now atomically REPLACEs stale unique work; avoids cancel/enqueue race")
