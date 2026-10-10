@@ -193,9 +193,10 @@ class RovexHomeThemeFoundationRegressionTest {
             ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
                 val themeCases = listOf(
                     "light" to ThemeManager.LIGHT,
-                    "amoled" to ThemeManager.OBSIDIAN_NIGHT,
-                    "space" to ThemeManager.SPACE,
+                    "amoled" to ThemeManager.AMOLED,
                     "mint" to ThemeManager.MINT,
+                    "sunset" to ThemeManager.SUNSET,
+                    "lavender" to ThemeManager.LAVENDER,
                     "pastel" to ThemeManager.PASTEL
                 )
                 for ((themeName, theme) in themeCases) {
@@ -272,7 +273,7 @@ if "RovexHomeThemeTokens.text(a)" not in home.read_text(encoding="utf-8"):
     raise SystemExit("[663] semantic text role not integrated into Home")
 print("[663] applied v8.3.659 / versionCode 745")
 print("[663] Home card surfaces now use shared semantic surface/elevation/outline roles; text and accents use semantic palette roles")
-print("[663] compact measured geometry regression covers Light, AMOLED, Space, Mint and Pastel compatibility themes")
+print("[663] compact measured geometry regression covers Light, AMOLED, Mint, Sunset, Lavender and Pastel compatibility themes")
 print("[663] palette contrast tests cover eight palette families in light/dark variants")
-print("[663] saved real emulator Home PNG screenshots for Light, AMOLED, Space, Mint and Pastel themes")
+print("[663] saved real emulator Home PNG screenshots for Light, AMOLED, Mint, Sunset, Lavender and Pastel themes")
 print("[663] corrected WorkManager test race: an already-SUCCEEDED one-time worker is valid admission, while FAILED/BLOCKED/CANCELLED still fail")
