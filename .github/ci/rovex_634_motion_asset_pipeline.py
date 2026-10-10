@@ -66,12 +66,12 @@ target_motion.write_bytes(motion)
 # The upstream project requires >=3840x2160 JPEGs and states all submitted backgrounds are CC0.
 UPSTREAM_COMMIT = "98ec8591de48f4bc3019133f9a79c9ff2f3c8fba"
 WALLPAPERS = [
-    {"theme":"light","resource":"rovex_wallpaper_light","file":"abstract-spiral.jpg","label":"Luminous Abstract","focal":[0.50,0.50]},
-    {"theme":"pastel","resource":"rovex_wallpaper_pastel","file":"blue-periwinkle.jpg","label":"Pastel Prism","focal":[0.50,0.50]},
-    {"theme":"mint","resource":"rovex_wallpaper_mint","file":"tea-gardens.jpg","label":"Verdant Garden","focal":[0.50,0.50]},
-    {"theme":"sunset","resource":"rovex_wallpaper_sunset","file":"beacon-street-sunset.jpg","label":"Amber Skyline","focal":[0.50,0.50]},
-    {"theme":"lavender","resource":"rovex_wallpaper_lavender","file":"saturnian-profile.jpg","label":"Violet Orbit","focal":[0.50,0.50]},
-    {"theme":"amoled","resource":"rovex_wallpaper_amoled","file":"valley-midnight.jpg","label":"Midnight Valley","focal":[0.50,0.50]},
+    {"theme":"light","resource":"rovex_wallpaper_light","file":"abstract-spiral.jpg","gitBlobSha":"63adcf52c8809143512dd211553163605c348c1e","label":"Luminous Abstract","focal":[0.50,0.50]},
+    {"theme":"pastel","resource":"rovex_wallpaper_pastel","file":"blue-periwinkle.jpg","gitBlobSha":"a22195a5dd5e8fda0b021a4b8285c812d4c375bb","label":"Pastel Prism","focal":[0.50,0.50]},
+    {"theme":"mint","resource":"rovex_wallpaper_mint","file":"tea-gardens.jpg","gitBlobSha":"d34ba3f6a085e7e6f10a258aed0468a9f8fcc189","label":"Verdant Garden","focal":[0.50,0.50]},
+    {"theme":"sunset","resource":"rovex_wallpaper_sunset","file":"beacon-street-sunset.jpg","gitBlobSha":"b3d34082e830bbd5abb9eace4dd7b14c28468505","label":"Amber Skyline","focal":[0.50,0.50]},
+    {"theme":"lavender","resource":"rovex_wallpaper_lavender","file":"saturnian-profile.jpg","gitBlobSha":"e34bfe96702dee1ea0a632184c0860bdcb2fa1b7","label":"Violet Orbit","focal":[0.50,0.50]},
+    {"theme":"amoled","resource":"rovex_wallpaper_amoled","file":"valley-midnight.jpg","gitBlobSha":"e6000ea817b869d6285bfd1a9afcee2482ce0d30","label":"Midnight Valley","focal":[0.50,0.50]},
 ]
 
 def jpeg_dimensions(data):
@@ -119,6 +119,12 @@ for wallpaper in WALLPAPERS:
         fail(f"Could not import CC0 wallpaper {wallpaper['file']}: {exc}")
     if len(data) < 50_000 or not data.startswith(b"\xff\xd8\xff"):
         fail(f"Wallpaper {wallpaper['file']} is missing, too small, or not a JPEG.")
+    expected_git_blob = wallpaper["gitBlobSha"]
+    actual_git_blob = hashlib.sha1(
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+    ).hexdigest()
+    if actual_git_blob != expected_git_blob:
+        fail(f"Wallpaper {wallpaper['file']} differs from pinned upstream Git blob: {actual_git_blob}")
     dimensions = jpeg_dimensions(data)
     if not dimensions or min(dimensions) < 2160 or max(dimensions) < 3840:
         fail(f"Wallpaper {wallpaper['file']} must be at least 3840x2160; got {dimensions}.")
@@ -130,6 +136,7 @@ for wallpaper in WALLPAPERS:
         "label": wallpaper["label"],
         "source": source_url,
         "upstreamCommit": UPSTREAM_COMMIT,
+        "gitBlobSha": expected_git_blob,
         "license": "CC0-1.0",
         "retrievedAtUtc": "2026-10-10",
         "width": dimensions[0],
