@@ -70,12 +70,13 @@ new_card = """        if (ThemeManager.get(c) == ThemeManager.PASTEL) {
             val ac=ThemeManager.accent(c)
             setStroke(d(1,c),Color.argb(if(ThemeManager.isDark(c))95 else 70,Color.red(ac),Color.green(ac),Color.blue(ac)))
         }"""
-if s.count(old_card) != 1:
-    if (!s.includes("Glass, not opaque pastel")) throw new Error("[655] exact card anchor missing");
-} else {
-    s = s.replace(old_card, new_card);
-}
-if (!s.includes("ThemeManager.PASTEL -> 0.27f") || !s.includes("Glass, not opaque pastel")) throw new Error("[655] glass postconditions missing");
+if s.count(old_card) == 1:
+    s = s.replace(old_card, new_card, 1)
+elif "Glass, not opaque pastel" not in s:
+    raise SystemExit("[655] exact card anchor missing and glass patch is absent")
+
+if "ThemeManager.PASTEL -> 0.27f" not in s or "Glass, not opaque pastel" not in s:
+    raise SystemExit("[655] glass postconditions missing")
 home.write_text(s, encoding="utf-8")
 g = g.replace('versionName = "8.3.652"', 'versionName = "8.3.653"', 1).replace("versionCode = 738", "versionCode = 739", 1)
 gradle.write_text(g, encoding="utf-8")
