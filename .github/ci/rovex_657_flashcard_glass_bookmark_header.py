@@ -98,6 +98,14 @@ print("[657] applied v8.3.655 / versionCode 741")
 g = gpath.read_text(encoding="utf-8")
 if 'versionName = "8.3.655"' not in g or "versionCode = 741" not in g:
     raise SystemExit("[658] expected v8.3.655 / versionCode 741 baseline")
+wall_path = P / "app/src/main/java/com/localqbank/library/RovexWallpaperManager.kt"
+theme_path = P / "app/src/main/java/com/localqbank/library/ThemeManager.kt"
+activity_path = P / "app/src/main/java/com/localqbank/library/SettingsActivity.kt"
+screen_path = P / "app/src/main/java/com/localqbank/library/SettingsScreen.kt"
+home_path = P / "app/src/main/java/com/localqbank/library/RovexHomeRevolution.kt"
+for f in (wall_path, theme_path, activity_path, screen_path, home_path):
+    if not f.is_file(): raise SystemExit("[658] required file missing: " + str(f))
+
 wall = r'''package com.localqbank.library
 import android.content.Context
 import android.graphics.Bitmap
