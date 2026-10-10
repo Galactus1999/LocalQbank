@@ -137,7 +137,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RovexHomeThemeFoundationRegressionTest {
     private fun captureThemeScreenshot(context: android.content.Context, name: String) {
-        val directory = context.getExternalFilesDir("rovex-phase1")
+        val directory = context.getExternalFilesDir(null)
             ?: error("External screenshot directory unavailable")
         check(directory.exists() || directory.mkdirs()) { "Cannot create Phase 1 screenshot directory" }
         val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
