@@ -47,7 +47,7 @@ def resolve_asset(project: Path, rel: str) -> Path:
 
 def jpeg_dimensions(data: bytes):
     """Read JPEG SOF dimensions without adding a build dependency."""
-    if not data.startswith(b"\\xff\\xd8"):
+    if not data.startswith(b"\xff\xd8"):
         return None
     i = 2
     sof = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
