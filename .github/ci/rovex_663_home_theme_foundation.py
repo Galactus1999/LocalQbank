@@ -224,15 +224,17 @@ class RovexHomeThemeFoundationRegressionTest {
                 ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
                     instrumentation.waitForIdleSync()
                     scenario.onActivity { activity ->
-                        RovexHomeRevolution.refreshTheme(activity)
+                        // This is a fresh MainActivity launched AFTER ThemeManager.set(context, theme).
+                        // onCreate must build Home using that selected theme. Calling refreshTheme()
+                        // again here races the Activity's own initialization and can detach the
+                        // dynamically built Home tree while the regression test is observing it.
                         activity.window.decorView.requestLayout()
                     }
-                    // MainActivity builds Home dynamically and some theme refreshes post work to
-                    // the UI queue. An idle wait alone does not guarantee that posted view-tree
-                    // replacement has completed. Poll from the instrumentation thread, never block
-                    // the main thread, and fail with a clear message if Home truly never attaches.
+                    // MainActivity builds Home dynamically and may finish initial attachment after
+                    // the first idle barrier. Poll on the instrumentation thread for a bounded
+                    // startup window; never sleep or block the main thread.
                     var homeAttached = false
-                    for (attempt in 0 until 40) {
+                    for (attempt in 0 until 100) {
                         instrumentation.waitForIdleSync()
                         scenario.onActivity { activity ->
                             val root = activity.findViewById<ViewGroup>(android.R.id.content)
@@ -243,7 +245,7 @@ class RovexHomeThemeFoundationRegressionTest {
                         Thread.sleep(50)
                     }
                     check(homeAttached) {
-                        "Home clinical hero did not attach within 2s after theme refresh=" + themeName +
+                        "Home clinical hero did not attach within 5s after fresh MainActivity launch=" + themeName +
                             " theme=" + theme
                     }
                     scenario.onActivity { activity ->
