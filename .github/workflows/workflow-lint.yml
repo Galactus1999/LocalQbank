@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m py_compile .github/ci/rovex_649_visual_truth_capture_repair.py .github/ci/test_visual_truth_capture.py tools/rovex_visual_truth.py
+          python3 -m py_compile .github/ci/rovex_649_visual_truth_capture_repair.py .github/ci/rovex_650_sparse_screen_score_fix.py .github/ci/test_visual_truth_capture.py tools/rovex_visual_truth.py
 
       - name: Lint active adaptive shell scripts
         shell: bash
