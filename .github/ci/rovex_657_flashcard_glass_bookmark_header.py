@@ -348,7 +348,7 @@ activity_path.write_text(a.replace(old, new, 1), encoding="utf-8")
 screen_path = P / "app/src/main/java/com/localqbank/library/SettingsScreen.kt"
 ss = screen_path.read_text(encoding="utf-8")
 start = ss.index("    private fun showWallpaperDialog(){")
-end = ss.index("\\n    private fun showFontDialog(){", start)
+end = ss.index("\n    private fun showFontDialog(){", start)
 dialog = '''    private fun showWallpaperDialog(){
         val dialog=Dialog(activity)
         val root=LinearLayout(activity).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(18),dp(20),dp(16));background=rounded(ThemeManager.dialogBg(activity),24)}
