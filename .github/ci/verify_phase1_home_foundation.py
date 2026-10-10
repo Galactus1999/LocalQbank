@@ -116,6 +116,8 @@ if "info.state == WorkInfo.State.SUCCEEDED" not in admission:
     raise SystemExit("[Phase 1] fast-completion-safe admission test update is absent")
 if "info.constraints.requiresBatteryNotLow()" not in admission or "!info.constraints.requiresDeviceIdle()" not in admission:
     raise SystemExit("[Phase 1] deletion recovery constraint assertions were weakened or removed")
+if "[663] WorkManager admission observed state=" not in admission:
+    raise SystemExit("[Phase 1] WorkManager runtime-state diagnostic is missing from the generated admission test")
 
 capture = repo / ".github/ci/rovex_visual_truth_capture.sh"
 if not capture.is_file():
