@@ -91,6 +91,7 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   python3 "$ROOT/.github/ci/rovex_647_root_insets_audio_source_policy.py" "$project"
   python3 "$ROOT/.github/ci/rovex_648_future_qs_grounding.py" "$project"
   python3 "$ROOT/.github/ci/rovex_649_visual_truth_capture_repair.py" "$project"
+  python3 "$ROOT/.github/ci/rovex_650_sparse_screen_score_fix.py" "$project"
  fi
 fi
 if [[ -f "$project/app/src/main/assets/rovex/RovexVisualAssetManifest.json" ]]; then
