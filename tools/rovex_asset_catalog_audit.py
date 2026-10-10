@@ -166,6 +166,14 @@ def main() -> int:
                     fail(f"{rel}: upstreamCommit must be a pinned 40-character Git commit")
                 if commit not in source:
                     fail(f"{rel}: source URL must pin the exact upstream commit")
+                expected_git_blob = entry.get("gitBlobSha")
+                actual_git_blob = hashlib.sha1(
+                    b"blob " + str(len(data)).encode("ascii") + b"\\0" + data
+                ).hexdigest()
+                if not isinstance(expected_git_blob, str) or not re.fullmatch(r"[0-9a-f]{40}", expected_git_blob):
+                    fail(f"{rel}: gitBlobSha must be a pinned 40-character Git blob hash")
+                if actual_git_blob != expected_git_blob:
+                    fail(f"{rel}: upstream Git blob hash mismatch (expected={expected_git_blob}, actual={actual_git_blob})")
                 retrieved = entry.get("retrievedAtUtc")
                 if not isinstance(retrieved, str) or not re.fullmatch(r"20\d\d-\d\d-\d\d", retrieved):
                     fail(f"{rel}: retrievedAtUtc must use YYYY-MM-DD")
