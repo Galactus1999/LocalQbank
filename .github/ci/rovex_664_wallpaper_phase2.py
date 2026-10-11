@@ -127,6 +127,8 @@ for item in WALLPAPERS:
 # Version bump is applied only after every upstream asset passed integrity and resolution checks.
 gradle = gradle.replace('versionName = "8.3.658"', 'versionName = "8.3.659"', 1)
 gradle = gradle.replace("versionCode = 744", "versionCode = 745", 1)
+if 'versionName = "8.3.659"' not in gradle or "versionCode = 745" not in gradle:
+    fail("version bump postcondition failed; refusing to package an ambiguously versioned source")
 GRADLE.write_text(gradle, encoding="utf-8")
 
 loader = PKG / "RovexBundledVisualAssets.kt"
