@@ -60,8 +60,8 @@ def jpeg_dimensions(data: bytes):
 if not PROJECT.is_dir() or not GRADLE.is_file():
     fail("selected Android project or app/build.gradle.kts is missing")
 gradle = GRADLE.read_text(encoding="utf-8")
-if 'versionName = "8.3.660"' not in gradle or "versionCode = 746" not in gradle:
-    fail("wrong baseline; expected Phase 1 output v8.3.660 / versionCode 746")
+if 'versionName = "8.3.658"' not in gradle or "versionCode = 744" not in gradle:
+    fail("wrong baseline; expected green source baseline v8.3.658 / versionCode 744")
 if not MANIFEST.is_file():
     fail("existing Rovex visual asset manifest is required; refusing to overwrite an unknown asset setup")
 try:
@@ -125,8 +125,8 @@ for item in WALLPAPERS:
     print("[664] imported " + item["theme"] + " " + str(dimensions[0]) + "x" + str(dimensions[1]) + " bytes=" + str(len(data)))
 
 # Version bump is applied only after every upstream asset passed integrity and resolution checks.
-gradle = gradle.replace('versionName = "8.3.660"', 'versionName = "8.3.661"', 1)
-gradle = gradle.replace("versionCode = 746", "versionCode = 747", 1)
+gradle = gradle.replace('versionName = "8.3.660"', 'versionName = "8.3.659"', 1)
+gradle = gradle.replace("versionCode = 746", "versionCode = 745", 1)
 GRADLE.write_text(gradle, encoding="utf-8")
 
 loader = PKG / "RovexBundledVisualAssets.kt"
@@ -336,4 +336,4 @@ if set(entry["theme"] for entry in wallpaper_entries) != set(THEMES):
 for item in WALLPAPERS:
     if item["resource"] not in loader.read_text(encoding="utf-8"):
         fail("theme/runtime resource mapping missing: " + item["resource"])
-print("[664] PASS: v8.3.661 / 747; six pinned CC0 themes, bounded async decode/cache, custom wallpaper precedence")
+print("[664] PASS: v8.3.659 / 745; six pinned CC0 themes, bounded async decode/cache, custom wallpaper precedence")
