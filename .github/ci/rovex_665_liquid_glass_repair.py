@@ -162,8 +162,8 @@ write("RovexDailyStudyHub.kt", daily)
 # Floating navigation belongs to the functional layer and uses the same selectable treatment.
 nav = read("RovexBottomNavigation.kt")
 nav = replace_once(nav,
-    "background = UiDrawableUtils.roundedDrawable(activity, ThemeManager.elevated(activity), 14f)",
-    "background = RovexVisualSurfaceStyle.glass(activity, 22f, true)", "bottom navigation background")
+    "            background = UiDrawableUtils.roundedDrawable(activity, ThemeManager.elevated(activity), 14f)",
+    "            background = RovexVisualSurfaceStyle.glass(activity, 22f, true)", "bottom navigation background")
 nav = replace_once(nav,
     "shell.background = UiDrawableUtils.roundedDrawable(activity, ThemeManager.elevated(activity), 14f)",
     "shell.background = RovexVisualSurfaceStyle.glass(activity, 22f, true)", "bottom navigation refresh")
