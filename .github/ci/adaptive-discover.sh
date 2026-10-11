@@ -82,6 +82,7 @@ if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build
   python3 "$ROOT/.github/ci/rovex_666_cross_theme_audit.py" "$project"
   python3 "$ROOT/.github/ci/rovex_667_motion_surface_repair.py" "$project"
   python3 "$ROOT/.github/ci/rovex_668_static_glass_splash.py" "$project"
+  python3 "$ROOT/.github/ci/rovex_669_black_hole_prototype.py" "$project"
   python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
   log "Phase 2 wallpaper provenance, static theme-lit glass rims, no background motion, and splash palette audit passed"
 fi
