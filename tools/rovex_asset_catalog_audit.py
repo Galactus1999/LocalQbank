@@ -199,7 +199,7 @@ def main() -> int:
                 fail(f"{rel}: wallpaper/image payload is suspiciously small ({len(data)} bytes)")
         print(f"[asset-catalog] OK {rel} | {license_name} | sha256={actual_hash}")
 
-    if int(manifest.get("schema", 0)) >= 2 and wallpaper_themes != {"light", "pastel", "mint", "sunset", "lavender", "amoled"}:
+    if int(manifest.get("schema", 0)) >= 2 and wallpaper_themes != {"light", "pastel", "mint", "sunset", "lavender", "amoled", "pandora", "space"}:
         fail("Phase 2 requires exactly one verified wallpaper for each of light, pastel, mint, sunset, lavender, amoled, pandora, and space; got " + repr(sorted(wallpaper_themes)))
     print(f"[asset-catalog] PASS: {len(seen)} asset(s) verified; this does not replace device visual/performance tests.")
     return 0
