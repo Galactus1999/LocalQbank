@@ -103,8 +103,10 @@ func = """    fun glass(context: Context, radiusDp: Float, prominent: Boolean = 
 style = style[:i] + func + style[j:]
 if "import android.graphics.drawable.Drawable" not in style:
     style = replace_once(style, "import android.graphics.drawable.GradientDrawable",
-                         "import android.graphics.drawable.Drawable\\nimport android.graphics.drawable.GradientDrawable",
+                         "import android.graphics.drawable.Drawable\nimport android.graphics.drawable.GradientDrawable",
                          "Drawable import")
+if "import android.graphics.drawable.Drawable\\nimport android.graphics.drawable.GradientDrawable" in style:
+    raise SystemExit("[665] FATAL: Drawable import separator was emitted as a literal escape")
 write("RovexVisualSurfaceStyle.kt", style)
 
 # Home cards no longer add a second independent refraction/sheen stack over the shared surface.
