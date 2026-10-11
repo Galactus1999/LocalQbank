@@ -301,8 +301,11 @@ replacement = '''    fun backgroundDrawable(c:Context):Drawable {
         // Do not flash a bundled default while the user's selected wallpaper is loading.
         val bundled = if (!customSelected) RovexBundledVisualAssets.bitmapIfReady(c, get(c)) else null
         val bitmap = custom ?: bundled ?: return base
+        // Imported wallpapers are user-selected content, not a translucent texture.
+        // Alpha 26 (10%) let the patterned base bleed through and washed out the image.
+        // Draw the original bitmap at full opacity; card surfaces retain text readability.
         val alpha = if (custom != null) {
-            if (isDark(c)) 76 else 26
+            255
         } else {
             when (get(c)) {
                 AMOLED -> 34
@@ -383,6 +386,8 @@ if set(entry["theme"] for entry in wallpaper_entries) != set(THEMES):
     fail("wallpaper theme set is incomplete or duplicated")
 if "RovexWallpaperManager.isEnabled(c, get(c))" not in theme:
     fail("custom wallpaper precedence is not enforced in ThemeManager")
+if "val alpha = if (custom != null) {\\n            255\\n        } else {" not in theme:
+    fail("custom wallpaper must render at full opacity; translucent overlay regression detected")
 for item in WALLPAPERS:
     if item["resource"] not in loader.read_text(encoding="utf-8"):
         fail("theme/runtime resource mapping missing: " + item["resource"])
