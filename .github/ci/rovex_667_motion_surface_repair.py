@@ -34,7 +34,7 @@ if theme.count(old_base) != 1:
 theme = theme.replace(old_base, new_base, 1)
 # The opaque wallpaper had completely hidden the animated layer beneath it. Keep the wallpaper
 # visually dominant while letting the existing 18/255-alpha motion layer remain perceptible.
-if not re_full_opacity(theme):
+if "val alpha = 255" not in theme:
     raise SystemExit("[667] FATAL: unexpected wallpaper alpha implementation; inspect manually")
 theme = theme.replace("val alpha = 255", "val alpha = if (RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)) 218 else 255", 1)
 theme_path.write_text(theme, encoding="utf-8")
@@ -77,6 +77,3 @@ assert "Live Motion Off" in settings and "Live Motion On" in settings
 assert "RovexLiveMotionSettings.setEnabled(activity, !RovexLiveMotionSettings.enabled(activity))" in settings
 assert "Liquid Glass" in settings and "Normal / Solid" in settings
 print("[667] PASS: live motion restored behind wallpaper at restrained opacity; independent Appearance control; Glass/Normal retained; v8.3.662 / 748")
-
-def re_full_opacity(text):
-    return "val alpha = 255" in text
