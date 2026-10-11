@@ -95,6 +95,8 @@ if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build
   python3 "$ROOT/.github/ci/rovex_674_header_builder_map.py" "$project"
   [[ -f "$ROOT/.github/ci/rovex_675_layout_inset_map.py" ]] || fail "Phase 675 layout/inset map missing"
   python3 "$ROOT/.github/ci/rovex_675_layout_inset_map.py" "$project"
+  [[ -f "$ROOT/.github/ci/rovex_676_compact_quiz_header.py" ]] || fail "Phase 676 compact quiz header repair missing"
+  python3 "$ROOT/.github/ci/rovex_676_compact_quiz_header.py" "$project"
   python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
   log "Phase 2 wallpaper provenance, static theme-lit glass rims, no background motion, and splash palette audit passed"
 fi
