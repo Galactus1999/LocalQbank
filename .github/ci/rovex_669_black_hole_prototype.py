@@ -6,7 +6,7 @@ gradle=root/'app/build.gradle.kts'
 g=gradle.read_text()
 if 'versionName = "8.3.667"' not in g or 'versionCode = 753' not in g:
     raise SystemExit('[669] wrong baseline')
-src = r"""package com.localqbank.library
+src = r'''package com.localqbank.library
 import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
@@ -132,7 +132,7 @@ class RovexBlackHolePreviewView @JvmOverloads constructor(c: Context, a: Attribu
         }
     }
 }
-"""
+'''
 path=pkg/'RovexBlackHolePreviewView.kt'
 if path.exists(): raise SystemExit('[669] prototype already exists')
 path.write_text(src)
