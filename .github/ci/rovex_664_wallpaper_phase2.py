@@ -125,8 +125,8 @@ for item in WALLPAPERS:
     print("[664] imported " + item["theme"] + " " + str(dimensions[0]) + "x" + str(dimensions[1]) + " bytes=" + str(len(data)))
 
 # Version bump is applied only after every upstream asset passed integrity and resolution checks.
-gradle = gradle.replace('versionName = "8.3.660"', 'versionName = "8.3.659"', 1)
-gradle = gradle.replace("versionCode = 746", "versionCode = 745", 1)
+gradle = gradle.replace('versionName = "8.3.658"', 'versionName = "8.3.659"', 1)
+gradle = gradle.replace("versionCode = 744", "versionCode = 745", 1)
 GRADLE.write_text(gradle, encoding="utf-8")
 
 loader = PKG / "RovexBundledVisualAssets.kt"
