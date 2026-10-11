@@ -74,7 +74,7 @@ settings = settings.replace(normal_anchor, motion_control, 1)
 settings_path.write_text(settings, encoding="utf-8")
 
 g = g.replace('versionName = "8.3.661"', 'versionName = "8.3.665"', 1).replace("versionCode = 747", "versionCode = 751", 1)
-if 'versionName = "8.3.664"' not in g or "versionCode = 750" not in g:
+if 'versionName = "8.3.665"' not in g or "versionCode = 751" not in g:
     raise SystemExit("[667] FATAL: version bump failed")
 gradle.write_text(g, encoding="utf-8")
 
@@ -103,7 +103,7 @@ assert 'category("Live animated backgrounds"' in settings
 assert '{showLiveMotionDialog()}' in settings
 assert 'RovexAmbientMotionDrawable(c, profile(c).backgroundA, profile(c).backgroundB)' in theme
 assert 'RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)' in theme
-assert 'val alpha = if (RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)) 218 else 255' in theme
+assert 'val alpha = if (RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)) 164 else 255' in theme
 assert 'val alpha = 255' not in theme[theme.index("fun backgroundDrawable(c:Context):Drawable"):theme.index("\n    }", theme.index("fun backgroundDrawable(c:Context):Drawable"))]
 assert 'RovexWallpaperManager.isEnabled(c, get(c))' in theme
 assert 'AnimationPolicy.enabled(c)' in theme
