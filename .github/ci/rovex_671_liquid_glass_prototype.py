@@ -150,7 +150,7 @@ class RovexLiquidGlassPreviewActivity : Activity() {
             }
             addView(chips)
             addView(space(16))
-            addView(label("API tier: \${android.os.Build.VERSION.SDK_INT}  •  sensor effects OFF  •  debug only", 11f, 0xFFCBD5E1.toInt(), false))
+            addView(label("API tier: ${android.os.Build.VERSION.SDK_INT}  •  sensor effects OFF  •  debug only", 11f, 0xFFCBD5E1.toInt(), false))
         }
         glass.addView(glassContent, FrameLayout.LayoutParams(-1, -1))
         val cardLp = FrameLayout.LayoutParams(-1, dp(300), Gravity.CENTER).apply {
@@ -219,7 +219,7 @@ class RovexLiquidGlassPreviewActivity : Activity() {
     private fun applyTheme(index: Int) {
         palette = index.coerceIn(themes.indices)
         val t = themes[palette]
-        val id = resources.getIdentifier("rovex_wallpaper_\${t.resource}", "drawable", packageName)
+        val id = resources.getIdentifier("rovex_wallpaper_${t.resource}", "drawable", packageName)
         val drawable: Drawable? = if (id != 0) runCatching { resources.getDrawable(id, theme) }.getOrNull() else null
         wallpaper.setImageDrawable(drawable ?: ColorDrawable(t.base))
         glass.glassTint = when (palette) {
