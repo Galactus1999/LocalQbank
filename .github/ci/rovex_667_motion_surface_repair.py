@@ -34,7 +34,7 @@ if theme.count(old_base) != 1:
     raise SystemExit("[667] FATAL: expected static background anchor not found exactly once")
 theme = theme.replace(old_base, new_base, 1)
 theme = theme.replace("val bitmap = custom ?: bundled ?: return base", "val bitmap = custom ?: bundled ?: return if (motion != null) LayerDrawable(arrayOf(base, motion)) else base", 1)
-theme = theme.replace("return LayerDrawable(arrayOf(base, RovexWallpaperDrawable(bitmap, alpha)))", "val wallpaper = RovexWallpaperDrawable(bitmap, alpha)\\n        return if (motion != null) LayerDrawable(arrayOf(base, wallpaper, motion)) else LayerDrawable(arrayOf(base, wallpaper))", 1)
+theme = theme.replace("return LayerDrawable(arrayOf(base, RovexWallpaperDrawable(bitmap, alpha)))", "val wallpaper = RovexWallpaperDrawable(bitmap, alpha)\n        return if (motion != null) LayerDrawable(arrayOf(base, wallpaper, motion)) else LayerDrawable(arrayOf(base, wallpaper))", 1)
 # Replace the older Lottie-based full-screen motion with a low-cost native Canvas renderer.
 theme = theme.replace(
     "RovexImportedMotionBackgroundDrawable(c, profile(c))",
