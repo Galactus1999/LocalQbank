@@ -179,7 +179,7 @@ anchor = '''        themes.forEach{(key,label)-> root.addView(button(if(ThemeMan
 replacement = '''        themes.forEach{(key,label)-> root.addView(button(if(ThemeManager.get(activity)==key)"✓  $label" else label){viewModel.setTheme(key);RovexThemeTransition.apply(activity)},lp())}
         section(root,"SURFACE STYLE")
         root.addView(TextView(activity).apply {
-            text = "Choose how cards and controls are rendered. Liquid Glass uses restrained translucency and a fine highlight; Normal uses solid surfaces. Wallpaper and text remain unchanged."
+            text = "Choose how cards and controls are rendered. Liquid Glass-inspired layered tint and edge highlights (no live backdrop blur on this path); Normal uses opaque solid surfaces. Wallpaper and text remain unchanged."
             textSize = 12f
             setTextColor(ThemeManager.muted(activity))
             setPadding(dp(2), 0, dp(2), dp(8))
@@ -215,7 +215,7 @@ sheet_anchor = '''    /** Shared Material-style settings sheet used for secondar
     private fun showSettingsSheet(title: String, subtitle: String, fill: (LinearLayout, BottomSheetDialog) -> Unit) {'''
 surface_dialog = """    private fun showSurfaceStyleDialog() {
         showSettingsSheet("Surface Style",
-            "Choose the card and control finish. This choice is saved independently of theme and wallpaper.") { body, dialog ->
+            "Choose the card and control finish. Liquid Glass is a restrained layered approximation, not live backdrop sampling/blur. This choice is saved independently of theme and wallpaper.") { body, dialog ->
             val glassEnabled = RovexSurfaceSettings.isGlassEnabled(activity)
             body.addView(TextView(activity).apply {
                 text = "The active option is checked. Changes apply immediately and remain selected when you change themes."
@@ -242,6 +242,17 @@ if settings.count(sheet_anchor) != 1:
 settings = settings.replace(sheet_anchor, surface_dialog + sheet_anchor, 1)
 
 write("SettingsScreen.kt", settings)
+
+# Fail closed unless the visible root card and its dialog are connected to the persistent setting.
+if 'root.addView(category("Surface Style",' not in settings or '{ showSurfaceStyleDialog() }' not in settings:
+    raise SystemExit("[665] FATAL: Surface Style is not reachable from the root Settings list")
+if 'private fun showSurfaceStyleDialog()' not in settings:
+    raise SystemExit("[665] FATAL: Surface Style selector implementation missing")
+if 'RovexSurfaceSettings.setGlassEnabled(activity, true)' not in settings or 'RovexSurfaceSettings.setGlassEnabled(activity, false)' not in settings:
+    raise SystemExit("[665] FATAL: both persisted surface choices are not wired")
+if 'dialog.dismiss()' not in settings or 'activity.recreate()' not in settings:
+    raise SystemExit("[665] FATAL: surface choice does not refresh UI")
+
 
 g = g.replace('versionName = "8.3.659"', 'versionName = "8.3.660"', 1).replace("versionCode = 745", "versionCode = 746", 1)
 if 'versionName = "8.3.660"' not in g or "versionCode = 746" not in g:
