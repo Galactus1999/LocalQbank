@@ -86,6 +86,13 @@ for entry in motion_assets:
         fail("motion asset hash mismatch before wallpaper integration: " + rel)
 
 DRAWABLE.mkdir(parents=True, exist_ok=True)
+# Remove the legacy single-theme wallpaper only after verifying it is the exact manifest-tracked file.
+legacy = DRAWABLE / "rovex_cc0_abstract_spiral.jpg"
+if legacy.exists():
+    legacy_entry = next((entry for entry in old_assets if isinstance(entry, dict) and entry.get("file") == "res/drawable-nodpi/rovex_cc0_abstract_spiral.jpg"), None)
+    if legacy_entry is None or hashlib.sha256(legacy.read_bytes()).hexdigest() != legacy_entry.get("sha256"):
+        fail("legacy wallpaper exists but is not the exact manifest-tracked asset; refusing to delete unknown bytes")
+    legacy.unlink()
 wallpaper_entries = []
 for item in WALLPAPERS:
     source_url = "https://raw.githubusercontent.com/BuddiesOfBudgie/budgie-backgrounds/" + UPSTREAM_COMMIT + "/backgrounds/" + item["file"]
