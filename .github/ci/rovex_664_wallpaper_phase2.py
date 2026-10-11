@@ -160,10 +160,12 @@ import kotlin.math.roundToInt
  */
 object RovexBundledVisualAssets {
     private val loading = ConcurrentHashMap.newKeySet<String>()
-    private val cache: LruCache<String, Bitmap> by lazy {
+    private fun cacheBudgetKb(): Int {
         val heapKb = Runtime.getRuntime().maxMemory() / 1024L
-        val budgetKb = (heapKb / 12L).coerceIn(8L * 1024L, 32L * 1024L).toInt()
-        object : LruCache<String, Bitmap>(budgetKb) {
+        return (heapKb / 12L).coerceIn(8L * 1024L, 32L * 1024L).toInt()
+    }
+    private val cache: LruCache<String, Bitmap> by lazy {
+        object : LruCache<String, Bitmap>(cacheBudgetKb()) {
             override fun sizeOf(key: String, value: Bitmap): Int =
                 (value.byteCount / 1024).coerceAtLeast(1)
         }
@@ -214,7 +216,10 @@ object RovexBundledVisualAssets {
                     var sample = 1
                     val targetW = (metrics.widthPixels * 1.5f).toInt().coerceAtLeast(720)
                     val targetH = (metrics.heightPixels * 1.5f).toInt().coerceAtLeast(1280)
-                    while (region.width() / sample > targetW || region.height() / sample > targetH) {
+                    while (region.width() / sample > targetW ||
+                        region.height() / sample > targetH ||
+                        (region.width().toLong() / sample) * (region.height().toLong() / sample) * 4L >
+                            cacheBudgetKb().toLong() * 1024L) {
                         sample *= 2
                     }
                     val stream = app.resources.openRawResource(resource)
