@@ -193,7 +193,7 @@ assert "hostVisible = visible" in ambient_source
 assert "val effective = visible && appForeground" in ambient_source
 assert "super.setVisible(hostVisible && active, false)" in ambient_source
 assert "RovexAmbientMotionLifecycle.kt" in str(pkg / "RovexAmbientMotionLifecycle.kt")
-assert "onActivityPaused(activity)" in lifecycle_source
+assert "onActivityPaused(activity: Activity)" in lifecycle_source
 assert "LayerDrawable(arrayOf(base, wallpaper, motion))" in theme
 assert "LinearGradient(" not in ambient_source and "Shader.TileMode" not in ambient_source
 assert "RovexAmbientMotionLifecycle.kt" in str(pkg / "RovexAmbientMotionLifecycle.kt")
