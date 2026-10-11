@@ -16,7 +16,7 @@ DRAWABLE = PROJECT / "app/src/main/res/drawable-nodpi"
 MANIFEST = PROJECT / "app/src/main/assets/rovex/RovexVisualAssetManifest.json"
 UPSTREAM_COMMIT = "98ec8591de48f4bc3019133f9a79c9ff2f3c8fba"
 RETRIEVED = "2026-10-11"
-THEMES = ("light", "pastel", "mint", "sunset", "lavender", "amoled")
+THEMES = ("light", "pastel", "mint", "sunset", "lavender", "amoled", "pandora", "space")
 
 WALLPAPERS = [
     {"theme":"light","resource":"rovex_wallpaper_light","file":"abstract-spiral.jpg","gitBlobSha":"63adcf52c8809143512dd211553163605c348c1e","label":"Luminous Abstract","focal":[0.50,0.50]},
@@ -25,6 +25,8 @@ WALLPAPERS = [
     {"theme":"sunset","resource":"rovex_wallpaper_sunset","file":"beacon-street-sunset.jpg","gitBlobSha":"b3d34082e830bbd5abb9eace4dd7b14c28468505","label":"Amber Skyline","focal":[0.50,0.50]},
     {"theme":"lavender","resource":"rovex_wallpaper_lavender","file":"saturnian-profile.jpg","gitBlobSha":"e34bfe96702dee1ea0a632184c0860bdcb2fa1b7","label":"Violet Orbit","focal":[0.50,0.50]},
     {"theme":"amoled","resource":"rovex_wallpaper_amoled","file":"valley-midnight.jpg","gitBlobSha":"e6000ea817b869d6285bfd1a9afcee2482ce0d30","label":"Midnight Valley","focal":[0.50,0.50]},
+    {"theme":"pandora","resource":"rovex_wallpaper_pandora","file":"ocean-waves.jpg","gitBlobSha":"caed78b956e09ab3276fe70608b49314cecac603","label":"Pandora Ocean Glass","focal":[0.50,0.50]},
+    {"theme":"space","resource":"rovex_wallpaper_space","file":"waves-midnight.jpg","gitBlobSha":"43dd958236d7b036e215bafd6186a1714dc30e2c","label":"Deep Space Waves","focal":[0.50,0.50]},
 ]
 
 def fail(message: str) -> None:
@@ -177,6 +179,8 @@ object RovexBundledVisualAssets {
         ThemeManager.SUNSET -> R.drawable.rovex_wallpaper_sunset
         ThemeManager.LAVENDER -> R.drawable.rovex_wallpaper_lavender
         ThemeManager.AMOLED -> R.drawable.rovex_wallpaper_amoled
+        ThemeManager.PANDORA -> R.drawable.rovex_wallpaper_pandora
+        ThemeManager.SPACE -> R.drawable.rovex_wallpaper_space
         else -> R.drawable.rovex_wallpaper_light
     }
 
