@@ -233,6 +233,9 @@ object RovexBundledVisualAssets {
                 // Decorative wallpaper must never take down foreground study.
                 decoded?.recycle()
                 decoded = null
+            } catch (_: java.io.IOException) {
+                decoded?.recycle()
+                decoded = null
             } catch (_: RuntimeException) {
                 decoded?.recycle()
                 decoded = null
