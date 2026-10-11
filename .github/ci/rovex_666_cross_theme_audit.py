@@ -70,7 +70,7 @@ if re.search(r"val\s+alpha\s*=\s*if\s*\(custom\s*!=\s*null\)", background):
         }'''
     if background.count(old) != 1:
         fail("wallpaper alpha branch changed unexpectedly; inspect before changing it")
-    replacement = '''        // All six curated wallpapers are full-opacity content, not faint texture overlays.
+    replacement = '''        // All eight curated wallpapers are full-opacity content, not faint texture overlays.
         // Glass cards provide readability; do not wash out the lower screen by fading the art.
         val alpha = 255'''
     theme = theme.replace(old, replacement, 1)
@@ -105,7 +105,7 @@ by_theme = {}
 for entry in wallpapers:
     by_theme.setdefault(entry.get("theme"), []).append(entry)
 if set(by_theme) != set(THEMES):
-    fail("wallpaper theme coverage mismatch; expected six themes, found " + repr(sorted(by_theme)))
+    fail("wallpaper theme coverage mismatch; expected eight themes, found " + repr(sorted(by_theme)))
 for theme_name in THEMES:
     entries = by_theme[theme_name]
     if len(entries) != 1:
@@ -167,4 +167,4 @@ gradle = gradle.replace("versionCode = 746", "versionCode = 747", 1)
 if 'versionName = "8.3.661"' not in gradle or "versionCode = 747" not in gradle:
     fail("version bump failed; expected v8.3.661 / code 747")
 GRADLE.write_text(gradle, encoding="utf-8")
-print("[666] PASS: six-theme wallpaper bytes/provenance/mapping; full-opacity rendering; static base; shared Glass/Normal controls; v8.3.661 / 747")
+print("[666] PASS: eight-theme wallpaper bytes/provenance/mapping; full-opacity rendering; static base; shared Glass/Normal controls; v8.3.661 / 747")
