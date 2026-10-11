@@ -59,7 +59,12 @@ for old, new in activity_replacements:
     activity = activity.replace(old, new, 1)
 
 # Postconditions prevent a builder/runtime mismatch or accidental edits to unrelated layouts.
-for forbidden in ("dp(46)", "dp(34)", "dp(32), dp(32)", "dp(30), 1f"):
+for forbidden in (
+    "root.addView(top, LinearLayout.LayoutParams(-1, dp(46)))",
+    "root.addView(infoRow, LinearLayout.LayoutParams(-1, dp(34)))",
+    "infoRow.addView(settingsButton, LinearLayout.LayoutParams(dp(32), dp(32))",
+    "infoRow.addView(jumpButton, LinearLayout.LayoutParams(dp(32), dp(32))",
+):
     if forbidden in builder:
         raise SystemExit("[676] FATAL: stale oversized builder sizing remains: " + forbidden)
 if "height = dp(46)" in activity or "height = dp(34)" in activity:
