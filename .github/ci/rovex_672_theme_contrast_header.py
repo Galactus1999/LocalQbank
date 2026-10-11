@@ -53,7 +53,7 @@ object RovexSemanticColors {
 
     fun surface(context: Context, elevated: Boolean = false): Int =
         if (ThemeManager.isDark(context)) {
-            if (elevated) ThemeManager.elevated(context) else ThemeManager.background(context)
+            ThemeManager.elevated(context)
         } else {
             if (elevated) Color.rgb(250, 252, 255) else Color.rgb(244, 247, 252)
         }
