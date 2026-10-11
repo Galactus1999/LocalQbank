@@ -80,8 +80,9 @@ if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build
   python3 "$ROOT/.github/ci/rovex_665_liquid_glass_repair.py" "$project"
   [[ -f "$ROOT/.github/ci/rovex_666_cross_theme_audit.py" ]] || fail "Phase 666 cross-theme audit missing"
   python3 "$ROOT/.github/ci/rovex_666_cross_theme_audit.py" "$project"
+  python3 "$ROOT/.github/ci/rovex_667_motion_surface_repair.py" "$project"
   python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
-  log "Phase 2 six-theme wallpaper, full-opacity, static-background, and Glass/Normal audits passed"
+  log "Phase 2 wallpaper provenance, restrained live motion, Glass/Normal controls, and surface-mode repair audits passed"
 fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
