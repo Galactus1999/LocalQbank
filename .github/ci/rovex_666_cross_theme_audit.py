@@ -139,6 +139,26 @@ for name in ("RovexHomeRevolution.kt", "RovexDailyStudyHub.kt", "RovexBottomNavi
 settings = (PKG / "SettingsScreen.kt").read_text(encoding="utf-8")
 if "Liquid Glass" not in settings or "Normal / Solid" not in settings:
     fail("visible Glass/Normal appearance controls are missing")
+# Reachability contract: the actual root Settings card shown to users must navigate to the
+# surface selector. Merely finding labels in addAppearance() or a disconnected helper is insufficient.
+root_theme_card = 'root.addView(category("Themes","Light, Pastel, Mint, Sunset, Lavender, AMOLED, Pandora and Space","●",Color.rgb(255,180,70)){showThemeDialog()})'
+if settings.count(root_theme_card) != 1:
+    fail("visible root Settings Themes navigation anchor missing/ambiguous")
+root_surface_card = 'root.addView(category("Surface Style",'
+if settings.count(root_surface_card) != 1:
+    fail("Surface Style card is not inserted into the reachable root Settings list")
+if 'else "Normal / Solid is active • tap to choose Liquid Glass"' not in settings:
+    fail("root Surface Style card does not expose current solid state")
+if '{ showSurfaceStyleDialog() }' not in settings or 'private fun showSurfaceStyleDialog()' not in settings:
+    fail("root Surface Style card is not wired to a real selector")
+if 'RovexSurfaceSettings.isGlassEnabled(activity)' not in settings:
+    fail("surface selector does not read persisted state")
+if 'RovexSurfaceSettings.setGlassEnabled(activity, true)' not in settings or 'RovexSurfaceSettings.setGlassEnabled(activity, false)' not in settings:
+    fail("surface selector does not persist both modes")
+if 'dialog.dismiss()' not in settings or 'activity.recreate()' not in settings:
+    fail("surface selector does not refresh the current UI after a mode change")
+if 'private const val KEY_GLASS = "liquid_glass_enabled"' not in (PKG / "RovexSurfaceSettings.kt").read_text(encoding="utf-8"):
+    fail("persistent surface preference key missing")
 
 gradle = gradle.replace('versionName = "8.3.660"', 'versionName = "8.3.661"', 1)
 gradle = gradle.replace("versionCode = 746", "versionCode = 747", 1)
