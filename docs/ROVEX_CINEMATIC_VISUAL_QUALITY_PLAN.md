@@ -16,6 +16,20 @@ Build a small collection of exceptional, optional, theme-aware visual scenes for
 - Every overlay/change must be reproducible from the exact source archive selected by CI and fail closed on unexpected source anchors.
 - Do not claim device validation based on JVM/Gradle CI alone. Do not merge the visual PR until the full CI and device acceptance are complete.
 
+## Liquid Glass reference and Android adaptation
+
+The supplied PyQt6 sample is a visual reference for layered translucent base, directional/radial highlight, fine inner edge, restrained outer rim, and clear hover/pressed states. Do not port its Python/Qt classes into Android.
+
+Important technical distinction: QGraphicsBlurEffect applied to a QWidget blurs that widget's rendered output; it does not automatically sample and blur arbitrary content behind the panel. On Android, RenderEffect on a view similarly does not provide general-purpose live backdrop sampling of sibling content or the wallpaper. Do not label the current LayerDrawable approximation as true refractive/backdrop Liquid Glass.
+
+Android implementation rules:
+- Preserve Glass/Normal as a visible, persisted preference independent of theme and wallpaper; apply immediately. Normal/Solid must remain opaque and readable.
+- Keep the existing shared surface primitive as the single styling authority for Home cards, mission/progress cards, bookmark tiles and floating navigation.
+- Compose the glass look from a restrained theme-tinted translucent base, subtle vertical depth gradient, localized radial/elliptical highlight, fine inner edge, static accent rim segments and optional localized low-cost light glint. Use theme-adaptive colors and avoid a white wash that reduces contrast.
+- Draw highlights and rims as static shapes. No perpetual animation, full-screen blur, repeated offscreen passes or per-card blur by default.
+- If true backdrop blur/refraction is pursued later, prototype it in isolation and measure GPU overdraw, render-target bandwidth, memory, frame pacing and thermal impact on the target phone. Keep a cheap static fallback and do not introduce it globally unless device profiling proves it safe.
+- Buttons need clear pressed/focused/disabled states and adequate text contrast; the visual effect must never obscure content or touch targets.
+
 ## Production method: art direction + hybrid rendering
 
 Use the least expensive technique that meets the visual target, rather than forcing every effect into one renderer.
