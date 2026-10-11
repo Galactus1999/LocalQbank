@@ -137,17 +137,19 @@ loader.write_text(r'''package com.localqbank.library
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
+import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.util.LruCache
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.roundToInt
 
 /**
- * Six pinned, unchanged CC0 theme wallpapers. Only the selected theme is decoded, off-main-thread;
- * source JPEGs remain bundled unchanged and are sampled only for the in-memory display derivative.
+ * Six pinned, unchanged CC0 theme wallpapers. Decode the focal crop off-main-thread so a tall
+ * phone gets near-native portrait detail without retaining six full 4K bitmaps in heap memory.
  */
 object RovexBundledVisualAssets {
-    private const val MAX_EDGE = 2048
     private val loading = ConcurrentHashMap.newKeySet<String>()
     private val cache: LruCache<String, Bitmap> by lazy {
         val heapKb = Runtime.getRuntime().maxMemory() / 1024L
@@ -183,24 +185,45 @@ object RovexBundledVisualAssets {
                 BitmapFactory.decodeResource(app.resources, resource, bounds)
                 if (bounds.outWidth > 0 && bounds.outHeight > 0) {
                     val metrics = app.resources.displayMetrics
+                    val targetAspect = metrics.widthPixels.toFloat() /
+                        metrics.heightPixels.coerceAtLeast(1).toFloat()
+                    val sourceAspect = bounds.outWidth.toFloat() / bounds.outHeight.toFloat()
+                    val cropWidth: Int
+                    val cropHeight: Int
+                    if (sourceAspect > targetAspect) {
+                        cropHeight = bounds.outHeight
+                        cropWidth = (cropHeight * targetAspect).roundToInt().coerceIn(1, bounds.outWidth)
+                    } else {
+                        cropWidth = bounds.outWidth
+                        cropHeight = (cropWidth / targetAspect).roundToInt().coerceIn(1, bounds.outHeight)
+                    }
+                    val focalX = bounds.outWidth / 2
+                    val focalY = bounds.outHeight / 2
+                    val left = (focalX - cropWidth / 2).coerceIn(0, bounds.outWidth - cropWidth)
+                    val top = (focalY - cropHeight / 2).coerceIn(0, bounds.outHeight - cropHeight)
+                    val region = Rect(left, top, left + cropWidth, top + cropHeight)
+                    var sample = 1
                     val targetW = (metrics.widthPixels * 1.5f).toInt().coerceAtLeast(720)
                     val targetH = (metrics.heightPixels * 1.5f).toInt().coerceAtLeast(1280)
-                    var sample = 1
-                    while (bounds.outWidth / sample > minOf(MAX_EDGE, targetW) ||
-                        bounds.outHeight / sample > minOf(MAX_EDGE, targetH)) sample *= 2
-                    decoded = BitmapFactory.decodeResource(
-                        app.resources, resource,
-                        BitmapFactory.Options().apply {
-                            inSampleSize = sample
-                            inPreferredConfig = Bitmap.Config.ARGB_8888
-                        }
-                    )
+                    while (region.width() / sample > targetW || region.height() / sample > targetH) {
+                        sample *= 2
+                    }
+                    val decoder = BitmapRegionDecoder.newInstance(app.resources.openRawResource(resource), false)
+                    try {
+                        decoded = decoder.decodeRegion(
+                            region,
+                            BitmapFactory.Options().apply {
+                                inSampleSize = sample
+                                inPreferredConfig = Bitmap.Config.ARGB_8888
+                            }
+                        )
+                    } finally {
+                        decoder.recycle()
+                    }
                 }
-                if (decoded != null) {
-                    cache.put(theme, decoded!!)
-                }
+                if (decoded != null) cache.put(theme, decoded!!)
             } catch (_: OutOfMemoryError) {
-                // Wallpaper is optional decoration; preserve study functionality and theme fallback.
+                // Decorative wallpaper must never take down foreground study.
                 decoded?.recycle()
                 decoded = null
             } catch (_: RuntimeException) {
