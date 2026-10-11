@@ -21,7 +21,7 @@ if style.count(old) != 1:
     raise SystemExit("[670] FATAL: expected shared glass stack missing/ambiguous")
 # Remove the high-contrast, repeated white outline and multi-arc cyan decoration. Those arcs
 # are the most visually distinctive defect in the supplied screenshots and are not refraction.
-style = style.replace(old, "return LayerDrawable(arrayOf(fill, tintLayer, sheen, border, RovexGlassOpticsDrawable(accent, dark, r)))", 1)
+style = style.replace(old, "return LayerDrawable(arrayOf(fill, tintLayer, sheen, border, RovexGlassOpticsDrawable(accent, dark, ThemeManager.get(context), r)))", 1)
 # A subtler border lets the highlight supply depth instead of outlining every card.
 style = style.replace(
     "setStroke(d.toInt().coerceAtLeast(1), Color.argb(if (dark) 112 else 135, 255, 255, 255))",
@@ -41,6 +41,7 @@ style = style[:start].rstrip() + """
 private class RovexGlassOpticsDrawable(
     private val accent: Int,
     private val darkTheme: Boolean,
+    private val themeName: String,
     private val radiusPx: Float
 ) : Drawable() {
     private val reflection = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -50,6 +51,7 @@ private class RovexGlassOpticsDrawable(
     }
     private val rect = RectF()
     private val highlight = RectF()
+    private var drawableAlpha = 255
 
     override fun draw(canvas: Canvas) {
         val b = bounds
@@ -66,35 +68,38 @@ private class RovexGlassOpticsDrawable(
             rect.left + rect.width() * .84f,
             rect.top + rect.height() * .72f
         )
+        val centerAlpha = when (themeName) { ThemeManager.AMOLED -> 18; ThemeManager.SPACE -> 27; ThemeManager.PANDORA -> 25; else -> if (darkTheme) 24 else 30 }
+        val accentAlpha = when (themeName) { ThemeManager.AMOLED -> 5; ThemeManager.SPACE -> 14; ThemeManager.PANDORA -> 12; else -> if (darkTheme) 11 else 13 }
         reflection.shader = RadialGradient(
             highlight.centerX(), highlight.centerY(),
             maxOf(highlight.width(), highlight.height()) * .58f,
             intArrayOf(
-                Color.argb(if (darkTheme) 24 else 30, 255, 255, 255),
-                Color.argb(if (darkTheme) 11 else 13, Color.red(accent), Color.green(accent), Color.blue(accent)),
+                Color.argb(centerAlpha, 255, 255, 255),
+                Color.argb(accentAlpha, Color.red(accent), Color.green(accent), Color.blue(accent)),
                 Color.TRANSPARENT
             ),
             floatArrayOf(0f, .42f, 1f),
             Shader.TileMode.CLAMP
         )
+        reflection.alpha = drawableAlpha
         canvas.drawRoundRect(rect, r, r, reflection)
         reflection.shader = null
 
         // A short, low-contrast top glint; no long corner arcs or decorative bottom streaks.
         edge.color = Color.WHITE
         edge.strokeWidth = .9f
-        edge.alpha = if (darkTheme) 78 else 86
+        edge.alpha = (if (darkTheme) 78 else 86) * drawableAlpha / 255
         val y = rect.top + .8f
         canvas.drawLine(rect.left + r * .72f, y, rect.right - r * 1.05f, y, edge)
         edge.color = accent
         edge.strokeWidth = 1.1f
-        edge.alpha = if (darkTheme) 48 else 38
+        edge.alpha = (when (themeName) { ThemeManager.AMOLED -> 24; ThemeManager.SPACE -> 58; ThemeManager.PANDORA -> 52; else -> if (darkTheme) 48 else 38 }) * drawableAlpha / 255
         canvas.drawLine(rect.left + r * 1.1f, rect.bottom - .8f,
             rect.left + r * 1.75f, rect.bottom - .8f, edge)
         canvas.restoreToCount(save)
     }
 
-    override fun setAlpha(alpha: Int) { }
+    override fun setAlpha(alpha: Int) { drawableAlpha = alpha.coerceIn(0, 255); invalidateSelf() }
     override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) {
         reflection.colorFilter = colorFilter
         edge.colorFilter = colorFilter
@@ -118,7 +123,7 @@ for imp in imports:
         style = style.replace(anchor, anchor + "\n" + imp, 1)
 if "RovexGlassRimDrawable" in style or "canvas.drawArc(" in style:
     raise SystemExit("[670] FATAL: legacy arc renderer remains in shared surface style")
-if "RovexGlassOpticsDrawable(accent, dark, r)" not in style:
+if "RovexGlassOpticsDrawable(accent, dark, ThemeManager.get(context), r)" not in style:
     raise SystemExit("[670] FATAL: new optical highlight not wired to shared glass primitive")
 style_path.write_text(style, encoding="utf-8")
 
