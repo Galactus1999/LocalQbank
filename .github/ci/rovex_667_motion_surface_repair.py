@@ -147,7 +147,7 @@ internal object RovexAmbientMotionLifecycle : Application.ActivityLifecycleCallb
 (pkg / "RovexAmbientMotionLifecycle.kt").write_text(lifecycle_source, encoding="utf-8")
 ambient_path = pkg / "RovexAmbientMotionDrawable.kt"
 ambient_path.write_text(ambient_source, encoding="utf-8")
-# Keep the wallpaper visually dominant while letting restrained motion remain perceptible.
+# Keep the wallpaper at full opacity; the transparent motion layer is drawn above it.
 if "val alpha = 255" not in theme:
     raise SystemExit("[667] FATAL: unexpected wallpaper alpha implementation; inspect manually")
 theme = theme.replace("val alpha = 255", "val alpha = 255", 1)
@@ -189,6 +189,10 @@ assert "internal class RovexAmbientMotionDrawable" in ambient_source
 assert "scheduleSelf(frame, SystemClock.uptimeMillis() + 125L)" in ambient_source
 assert "RovexAmbientMotionLifecycle.register(context, this)" in ambient_source
 assert "appForeground" in ambient_source
+assert "hostVisible = visible" in ambient_source
+assert "val effective = visible && appForeground" in ambient_source
+assert "super.setVisible(hostVisible && active, false)" in ambient_source
+assert "RovexAmbientMotionLifecycle.kt" in str(pkg / "RovexAmbientMotionLifecycle.kt")
 assert "onActivityPaused(activity)" in lifecycle_source
 assert "LayerDrawable(arrayOf(base, wallpaper, motion))" in theme
 assert "LinearGradient(" not in ambient_source and "Shader.TileMode" not in ambient_source
