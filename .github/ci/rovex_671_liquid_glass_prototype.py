@@ -117,7 +117,7 @@ class RovexLiquidGlassPreviewActivity : Activity() {
             enableAdaptiveTint = true
             enablePressEffect = false
             collectFrameStats = false
-            setBackdropSource(backdrop)
+            backdropSource = backdrop
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
             contentDescription = "Live liquid glass surface preview"
         }
