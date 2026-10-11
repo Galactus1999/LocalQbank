@@ -101,12 +101,12 @@ private class RovexGlassOpticsDrawable(
         edge.strokeWidth = .9f
         edge.alpha = (if (darkTheme) 78 else 86) * drawableAlpha / 255
         val y = rect.top + .8f
-        canvas.drawLine(rect.left + r * .72f, y, rect.right - r * 1.05f, y, edge)
+        canvas.drawLine(rect.left + radiusPx * .72f, y, rect.right - radiusPx * 1.05f, y, edge)
         edge.color = accent
         edge.strokeWidth = 1.1f
         edge.alpha = (when (themeName) { ThemeManager.AMOLED -> 24; ThemeManager.SPACE -> 58; ThemeManager.PANDORA -> 52; else -> if (darkTheme) 48 else 38 }) * drawableAlpha / 255
-        canvas.drawLine(rect.left + r * 1.1f, rect.bottom - .8f,
-            rect.left + r * 1.75f, rect.bottom - .8f, edge)
+        canvas.drawLine(rect.left + radiusPx * 1.1f, rect.bottom - .8f,
+            rect.left + radiusPx * 1.75f, rect.bottom - .8f, edge)
         canvas.restoreToCount(save)
     }
 
