@@ -76,4 +76,12 @@ assert "section(root, \"LIVE MOTION\")" in settings
 assert "Live Motion Off" in settings and "Live Motion On" in settings
 assert "RovexLiveMotionSettings.setEnabled(activity, !RovexLiveMotionSettings.enabled(activity))" in settings
 assert "Liquid Glass" in settings and "Normal / Solid" in settings
+# Emit bounded structural context so CI proves where controls live, not merely that labels exist.
+lines = settings.splitlines()
+for idx, line in enumerate(lines):
+    if any(token in line for token in ('"Themes"', '"Settings Search"', '"Live animated backgrounds"', 'fun addAppearance', 'fun showSettings')):
+        lo, hi = max(0, idx - 3), min(len(lines), idx + 5)
+        print(f"[667][UI-TRACE] SettingsScreen.kt:{lo+1}-{hi}")
+        for n in range(lo, hi):
+            print(f"[667][UI-TRACE] {n+1}: {lines[n][:240]}")
 print("[667] PASS: live motion restored behind wallpaper at restrained opacity; independent Appearance control; Glass/Normal retained; v8.3.662 / 748")
