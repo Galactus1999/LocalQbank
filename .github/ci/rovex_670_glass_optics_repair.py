@@ -51,17 +51,19 @@ private class RovexGlassOpticsDrawable(
     }
     private val rect = RectF()
     private val highlight = RectF()
+    private var reflectionShader: RadialGradient? = null
     private var drawableAlpha = 255
+    private var cornerRadius = 4f
 
-    override fun draw(canvas: Canvas) {
-        val b = bounds
-        if (b.width() < 4 || b.height() < 4) return
+    override fun onBoundsChange(bounds: android.graphics.Rect) {
+        super.onBoundsChange(bounds)
         val inset = 1.25f
-        rect.set(b.left + inset, b.top + inset, b.right - inset, b.bottom - inset)
-        val r = radiusPx.coerceAtMost(minOf(rect.width(), rect.height()) / 2f).coerceAtLeast(4f)
-        val save = canvas.save()
-        canvas.clipRect(b)
-        // One soft, localized reflection, biased toward the upper-left like a broad studio softbox.
+        rect.set(bounds.left + inset, bounds.top + inset, bounds.right - inset, bounds.bottom - inset)
+        if (rect.width() < 4f || rect.height() < 4f) {
+            reflectionShader = null
+            return
+        }
+        cornerRadius = radiusPx.coerceAtMost(minOf(rect.width(), rect.height()) / 2f).coerceAtLeast(4f)
         highlight.set(
             rect.left - rect.width() * .12f,
             rect.top - rect.height() * .42f,
@@ -70,7 +72,7 @@ private class RovexGlassOpticsDrawable(
         )
         val centerAlpha = when (themeName) { ThemeManager.AMOLED -> 18; ThemeManager.SPACE -> 27; ThemeManager.PANDORA -> 25; else -> if (darkTheme) 24 else 30 }
         val accentAlpha = when (themeName) { ThemeManager.AMOLED -> 5; ThemeManager.SPACE -> 14; ThemeManager.PANDORA -> 12; else -> if (darkTheme) 11 else 13 }
-        reflection.shader = RadialGradient(
+        reflectionShader = RadialGradient(
             highlight.centerX(), highlight.centerY(),
             maxOf(highlight.width(), highlight.height()) * .58f,
             intArrayOf(
@@ -81,8 +83,17 @@ private class RovexGlassOpticsDrawable(
             floatArrayOf(0f, .42f, 1f),
             Shader.TileMode.CLAMP
         )
+    }
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        if (b.width() < 4 || b.height() < 4) return
+        if (b.width() < 4 || b.height() < 4 || rect.width() < 4f || rect.height() < 4f) return
+        val save = canvas.save()
+        canvas.clipRect(b)
+        reflection.shader = reflectionShader
         reflection.alpha = drawableAlpha
-        canvas.drawRoundRect(rect, r, r, reflection)
+        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, reflection)
         reflection.shader = null
 
         // A short, low-contrast top glint; no long corner arcs or decorative bottom streaks.
@@ -125,6 +136,8 @@ if "RovexGlassRimDrawable" in style or "canvas.drawArc(" in style:
     raise SystemExit("[670] FATAL: legacy arc renderer remains in shared surface style")
 if "RovexGlassOpticsDrawable(accent, dark, ThemeManager.get(context), r)" not in style:
     raise SystemExit("[670] FATAL: new optical highlight not wired to shared glass primitive")
+if "private var reflectionShader: RadialGradient? = null" not in style or "override fun onBoundsChange" not in style:
+    raise SystemExit("[670] FATAL: radial shader must be cached when bounds change, not allocated on every draw")
 style_path.write_text(style, encoding="utf-8")
 
 g = g.replace('versionName = "8.3.668"', 'versionName = "8.3.669"', 1).replace("versionCode = 754", "versionCode = 755", 1)
