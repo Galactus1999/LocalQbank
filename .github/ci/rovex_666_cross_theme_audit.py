@@ -12,7 +12,7 @@ APP = ROOT / "app"
 PKG = APP / "src/main/java/com/localqbank/library"
 GRADLE = APP / "build.gradle.kts"
 MANIFEST = APP / "src/main/assets/rovex/RovexVisualAssetManifest.json"
-THEMES = ("light", "pastel", "mint", "sunset", "lavender", "amoled")
+THEMES = ("light", "pastel", "mint", "sunset", "lavender", "amoled", "pandora", "space")
 RESOURCES = {
     "light": "rovex_wallpaper_light",
     "pastel": "rovex_wallpaper_pastel",
@@ -20,6 +20,8 @@ RESOURCES = {
     "sunset": "rovex_wallpaper_sunset",
     "lavender": "rovex_wallpaper_lavender",
     "amoled": "rovex_wallpaper_amoled",
+    "pandora": "rovex_wallpaper_pandora",
+    "space": "rovex_wallpaper_space",
 }
 
 def fail(message: str) -> None:
