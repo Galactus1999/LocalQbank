@@ -208,7 +208,12 @@ object RovexBundledVisualAssets {
                     while (region.width() / sample > targetW || region.height() / sample > targetH) {
                         sample *= 2
                     }
-                    val decoder = BitmapRegionDecoder.newInstance(app.resources.openRawResource(resource), false)
+                    val stream = app.resources.openRawResource(resource)
+                    val decoder = try {
+                        BitmapRegionDecoder.newInstance(stream, false)
+                    } finally {
+                        stream.close()
+                    }
                     try {
                         decoded = decoder.decodeRegion(
                             region,
