@@ -225,6 +225,7 @@ object RovexBundledVisualAssets {
                     val stream = app.resources.openRawResource(resource)
                     val decoder = try {
                         BitmapRegionDecoder.newInstance(stream, false)
+                            ?: error("Android could not create a wallpaper region decoder")
                     } finally {
                         stream.close()
                     }
