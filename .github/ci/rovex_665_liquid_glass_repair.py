@@ -196,6 +196,51 @@ replacement = '''        themes.forEach{(key,label)-> root.addView(button(if(The
     }
 '''
 settings = replace_once(settings, anchor, replacement, "Appearance surface mode controls")
+
+# Add an entry to the actual root Settings screen. Its visible Themes card calls
+# showThemeDialog(), so addAppearance() is not a reachable navigation destination.
+root_card = '''        root.addView(category("Themes","Light, Pastel, Mint, Sunset, Lavender, AMOLED, Pandora and Space","●",Color.rgb(255,180,70)){showThemeDialog()})'''
+if settings.count(root_card) != 1:
+    raise SystemExit("[665] FATAL: actual root Settings Themes card missing/ambiguous; refusing to guess navigation")
+root_card_replacement = root_card + """
+        root.addView(category("Surface Style",
+            if (RovexSurfaceSettings.isGlassEnabled(activity)) "Liquid Glass is active • tap to choose Normal / Solid"
+            else "Normal / Solid is active • tap to choose Liquid Glass",
+            "◈", ThemeManager.accent(activity)) { showSurfaceStyleDialog() },
+            LinearLayout.LayoutParams(-1,-2).apply { setMargins(0,dp(6),0,0) })"""
+settings = replace_once(settings, root_card, root_card_replacement, "reachable root Surface Style card")
+
+# The card opens the same settings sheet used elsewhere; choices are persisted and selected state is explicit.
+sheet_anchor = '''    /** Shared Material-style settings sheet used for secondary settings flows. */
+    private fun showSettingsSheet(title: String, subtitle: String, fill: (LinearLayout, BottomSheetDialog) -> Unit) {'''
+surface_dialog = """    private fun showSurfaceStyleDialog() {
+        showSettingsSheet("Surface Style",
+            "Choose the card and control finish. This choice is saved independently of theme and wallpaper.") { body, dialog ->
+            val glassEnabled = RovexSurfaceSettings.isGlassEnabled(activity)
+            body.addView(TextView(activity).apply {
+                text = "The active option is checked. Changes apply immediately and remain selected when you change themes."
+                textSize = 13f
+                setTextColor(ThemeManager.muted(activity))
+                setPadding(0, dp(4), 0, dp(10))
+            }, lp())
+            body.addView(button(if (glassEnabled) "✓  Liquid Glass" else "Liquid Glass") {
+                RovexSurfaceSettings.setGlassEnabled(activity, true)
+                dialog.dismiss()
+                activity.recreate()
+            }, lp())
+            body.addView(button(if (!glassEnabled) "✓  Normal / Solid" else "Normal / Solid") {
+                RovexSurfaceSettings.setGlassEnabled(activity, false)
+                dialog.dismiss()
+                activity.recreate()
+            }, lp())
+        }
+    }
+
+"""
+if settings.count(sheet_anchor) != 1:
+    raise SystemExit("[665] FATAL: shared settings sheet anchor missing/ambiguous")
+settings = settings.replace(sheet_anchor, surface_dialog + sheet_anchor, 1)
+
 write("SettingsScreen.kt", settings)
 
 g = g.replace('versionName = "8.3.659"', 'versionName = "8.3.660"', 1).replace("versionCode = 745", "versionCode = 746", 1)
