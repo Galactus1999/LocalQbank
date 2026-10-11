@@ -63,8 +63,8 @@ motion_control = normal_anchor + '''        section(root, "LIVE MOTION")
 settings = settings.replace(normal_anchor, motion_control, 1)
 settings_path.write_text(settings, encoding="utf-8")
 
-g = g.replace('versionName = "8.3.661"', 'versionName = "8.3.662"', 1).replace("versionCode = 747", "versionCode = 748", 1)
-if 'versionName = "8.3.662"' not in g or "versionCode = 748" not in g:
+g = g.replace('versionName = "8.3.661"', 'versionName = "8.3.663"', 1).replace("versionCode = 747", "versionCode = 749", 1)
+if 'versionName = "8.3.663"' not in g or "versionCode = 749" not in g:
     raise SystemExit("[667] FATAL: version bump failed")
 gradle.write_text(g, encoding="utf-8")
 
@@ -76,6 +76,22 @@ assert "section(root, \"LIVE MOTION\")" in settings
 assert "Live Motion Off" in settings and "Live Motion On" in settings
 assert "RovexLiveMotionSettings.setEnabled(activity, !RovexLiveMotionSettings.enabled(activity))" in settings
 assert "Liquid Glass" in settings and "Normal / Solid" in settings
+# The card the user actually sees must route to the surface selector; labels in addAppearance()
+# alone are explicitly insufficient. Preserve the existing main-screen motion card and handler.
+assert 'root.addView(category("Surface Style",' in settings
+assert '{ showSurfaceStyleDialog() }' in settings
+assert 'private fun showSurfaceStyleDialog()' in settings
+assert 'RovexSurfaceSettings.isGlassEnabled(activity)' in settings
+assert 'RovexSurfaceSettings.setGlassEnabled(activity, true)' in settings
+assert 'RovexSurfaceSettings.setGlassEnabled(activity, false)' in settings
+assert 'category("Live animated backgrounds"' in settings
+assert '{showLiveMotionDialog()}' in settings
+assert 'RovexImportedMotionBackgroundDrawable(c, profile(c))' in theme
+assert 'RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)' in theme
+assert 'val alpha = if (RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)) 218 else 255' in theme
+assert 'val alpha = 255' not in theme[theme.index("fun backgroundDrawable(c:Context):Drawable"):theme.index("\n    }", theme.index("fun backgroundDrawable(c:Context):Drawable"))]
+assert 'RovexWallpaperManager.isEnabled(c, get(c))' in theme
+assert 'AnimationPolicy.enabled(c)' in theme
 # Emit bounded structural context so CI proves where controls live, not merely that labels exist.
 lines = settings.splitlines()
 for idx, line in enumerate(lines):
@@ -84,4 +100,4 @@ for idx, line in enumerate(lines):
         print(f"[667][UI-TRACE] SettingsScreen.kt:{lo+1}-{hi}")
         for n in range(lo, hi):
             print(f"[667][UI-TRACE] {n+1}: {lines[n][:240]}")
-print("[667] PASS: live motion restored behind wallpaper at restrained opacity; independent Appearance control; Glass/Normal retained; v8.3.662 / 748")
+print("[667] PASS: live motion restored behind wallpaper at restrained opacity; independent Appearance control; Glass/Normal retained; v8.3.663 / 749")
