@@ -107,13 +107,13 @@ style_path.write_text(style, encoding="utf-8")
 # hard-coded saturated accent choices only when the known splash source anchors are present.
 splash_candidates = []
 for p in pkg.rglob("*.kt"):
-    if "splash" in p.name.lower() or "Splash" in p.read_text(encoding="utf-8", errors="ignore")[:4000]:
+    if "splash" in p.name.lower():
         splash_candidates.append(p)
 print("[668] Splash candidates: " + ", ".join(str(p.relative_to(root)) for p in splash_candidates[:12]))
 # Theme-safe splash accents are centralized through ThemeManager.accent; avoid speculative
 # mass replacement of unrelated colors. CI asserts that at least one real splash surface exists.
 if not splash_candidates:
-    raise SystemExit("[668] FATAL: could not locate splash implementation; refusing to claim splash repair")
+    raise SystemExit("[668] FATAL: could not locate a filename-scoped splash implementation; refusing broad substitutions")
 # For common custom splash classes, normalize animated accents to the selected theme accent and
 # remove rainbow/multi-stop effects only at the splash class boundary.
 changed_splash = []
