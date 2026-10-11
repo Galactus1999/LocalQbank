@@ -11,7 +11,7 @@ theme_path = pkg / "ThemeManager.kt"
 if not gradle.is_file() or not theme_path.is_file():
     raise SystemExit("[672] FATAL: expected app/build.gradle.kts and ThemeManager.kt")
 g = gradle.read_text(encoding="utf-8")
-if 'versionName = "8.3.669"' not in g or not re.search(r"\\bversionCode\\s*=\\s*755\\b", g):
+if 'versionName = "8.3.669"' not in g or not re.search(r"\bversionCode\s*=\s*755\b", g):
     raise SystemExit("[672] FATAL: expected v8.3.669 / code 755 after Phase 671")
 theme = theme_path.read_text(encoding="utf-8")
 marker = "fun backgroundDrawable(c:Context):Drawable"
@@ -81,7 +81,6 @@ object RovexSemanticColors {
         var low = 0
         var high = 255
         var best = target
-        // Find the smallest blend toward black/white that satisfies the WCAG threshold.
         while (low <= high) {
             val mid = (low + high) ushr 1
             val mixed = blend(foreground, target, mid)
@@ -122,8 +121,6 @@ if 'versionName = "8.3.670"' not in g or "versionCode = 756" not in g:
     raise SystemExit("[672] FATAL: version bump postcondition failed")
 gradle.write_text(g, encoding="utf-8")
 
-# Fail closed if we cannot identify the question screen in this baseline; the header is handled
-# in the next overlay after this source scan can name its actual layout/container safely.
 candidates = [p for p in pkg.glob("*.kt") if re.search(r"Question|Quiz|Solve", p.name, re.I)]
 if not candidates:
     raise SystemExit("[672] FATAL: no question/quiz source candidates found; header must not be guessed")
