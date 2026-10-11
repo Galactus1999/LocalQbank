@@ -85,6 +85,8 @@ if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build
   python3 "$ROOT/.github/ci/rovex_669_black_hole_prototype.py" "$project"
   [[ -f "$ROOT/.github/ci/rovex_670_glass_optics_repair.py" ]] || fail "Phase 670 glass optics repair missing"
   python3 "$ROOT/.github/ci/rovex_670_glass_optics_repair.py" "$project"
+  [[ -f "$ROOT/.github/ci/rovex_671_liquid_glass_prototype.py" ]] || fail "Phase 671 real liquid-glass prototype overlay missing"
+  python3 "$ROOT/.github/ci/rovex_671_liquid_glass_prototype.py" "$project"
   python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
   log "Phase 2 wallpaper provenance, static theme-lit glass rims, no background motion, and splash palette audit passed"
 fi
