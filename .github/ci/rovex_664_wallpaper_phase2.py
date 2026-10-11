@@ -386,7 +386,7 @@ if set(entry["theme"] for entry in wallpaper_entries) != set(THEMES):
     fail("wallpaper theme set is incomplete or duplicated")
 if "RovexWallpaperManager.isEnabled(c, get(c))" not in theme:
     fail("custom wallpaper precedence is not enforced in ThemeManager")
-if "val alpha = if (custom != null) {\\n            255\\n        } else {" not in theme:
+if "val alpha = if (custom != null) {\n            255\n        } else {" not in theme:
     fail("custom wallpaper must render at full opacity; translucent overlay regression detected")
 for item in WALLPAPERS:
     if item["resource"] not in loader.read_text(encoding="utf-8"):
