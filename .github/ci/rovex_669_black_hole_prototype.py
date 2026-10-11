@@ -57,6 +57,8 @@ class RovexBlackHolePreviewView @JvmOverloads constructor(c: Context, a: Attribu
         private var program=0
         private var resolution=-1
         private var time=-1
+        private var width=1
+        private var height=1
         private var start=0L
         private val buffer=java.nio.ByteBuffer.allocateDirect(24).order(java.nio.ByteOrder.nativeOrder()).asFloatBuffer().apply {
             put(floatArrayOf(-1f,-1f,3f,-1f,-1f,3f)); position(0)
@@ -73,11 +75,11 @@ class RovexBlackHolePreviewView @JvmOverloads constructor(c: Context, a: Attribu
             time=GLES20.glGetUniformLocation(program,"uTime")
             start=System.nanoTime()
         }
-        override fun onSurfaceChanged(gl: GL10?, w: Int, h: Int) { GLES20.glViewport(0,0,w,h) }
+        override fun onSurfaceChanged(gl: GL10?, w: Int, h: Int) { width=w; height=h.coerceAtLeast(1); GLES20.glViewport(0,0,w,h) }
         override fun onDrawFrame(gl: GL10?) {
             if(program==0) { GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT); return }
             GLES20.glUseProgram(program)
-            GLES20.glUniform2f(resolution,1f,1f)
+            GLES20.glUniform2f(resolution,width.toFloat(),height.toFloat())
             GLES20.glUniform1f(time,(System.nanoTime()-start)/1.0e9f)
             val p=GLES20.glGetAttribLocation(program,"aPosition")
             GLES20.glEnableVertexAttribArray(p); GLES20.glVertexAttribPointer(p,2,GLES20.GL_FLOAT,false,0,buffer)
