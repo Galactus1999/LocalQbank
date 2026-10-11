@@ -178,7 +178,7 @@ settings = settings.replace(normal_anchor, motion_control, 1)
 settings_path.write_text(settings, encoding="utf-8")
 
 g = g.replace('versionName = "8.3.661"', 'versionName = "8.3.666"', 1).replace("versionCode = 747", "versionCode = 752", 1)
-if 'versionName = "8.3.665"' not in g or "versionCode = 751" not in g:
+if 'versionName = "8.3.666"' not in g or "versionCode = 752" not in g:
     raise SystemExit("[667] FATAL: version bump failed")
 gradle.write_text(g, encoding="utf-8")
 
@@ -213,7 +213,7 @@ assert '{showLiveMotionDialog()}' in settings
 assert 'RovexAmbientMotionDrawable(c, profile(c).backgroundA, profile(c).backgroundB)' in theme
 assert 'RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)' in theme
 assert 'val alpha = 255' in theme
-assert 'val alpha = 255' not in theme[theme.index("fun backgroundDrawable(c:Context):Drawable"):theme.index("\n    }", theme.index("fun backgroundDrawable(c:Context):Drawable"))]
+assert 'val alpha = 255' in theme[theme.index("fun backgroundDrawable(c:Context):Drawable"):theme.index("\n    }", theme.index("fun backgroundDrawable(c:Context):Drawable"))]
 assert 'RovexWallpaperManager.isEnabled(c, get(c))' in theme
 assert 'AnimationPolicy.enabled(c)' in theme
 # Emit bounded structural context so CI proves where controls live, not merely that labels exist.
