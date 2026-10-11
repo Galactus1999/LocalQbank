@@ -11,3 +11,5 @@
 5. Open Actions > Build Android APK > the latest ru n > Artifacts and download QBank-Pro-v3.0-Study Dashboard.
 
 The ZIP contains the updated Android project with t he professional study dashboard.
+
+<!-- CI green validation -->
