@@ -278,8 +278,10 @@ replacement = '''    fun backgroundDrawable(c:Context):Drawable {
             GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(profile(c).backgroundA, profile(c).backgroundB))
         }
         // A selected user wallpaper always wins. Bundled art is only a default when none is active.
-        val custom = RovexWallpaperManager.bitmap(c, get(c))
-        val bundled = if (custom == null) RovexBundledVisualAssets.bitmapIfReady(c, get(c)) else null
+        val customSelected = RovexWallpaperManager.isEnabled(c, get(c))
+        val custom = if (customSelected) RovexWallpaperManager.bitmap(c, get(c)) else null
+        // Do not flash a bundled default while the user's selected wallpaper is loading.
+        val bundled = if (!customSelected) RovexBundledVisualAssets.bitmapIfReady(c, get(c)) else null
         val bitmap = custom ?: bundled ?: return base
         val alpha = if (custom != null) {
             if (isDark(c)) 76 else 26
@@ -361,6 +363,8 @@ MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 # Verify the runtime mapping and the generated catalogue before the next CI stage.
 if set(entry["theme"] for entry in wallpaper_entries) != set(THEMES):
     fail("wallpaper theme set is incomplete or duplicated")
+if "RovexWallpaperManager.isEnabled(c, get(c))" not in theme:
+    fail("custom wallpaper precedence is not enforced in ThemeManager")
 for item in WALLPAPERS:
     if item["resource"] not in loader.read_text(encoding="utf-8"):
         fail("theme/runtime resource mapping missing: " + item["resource"])
