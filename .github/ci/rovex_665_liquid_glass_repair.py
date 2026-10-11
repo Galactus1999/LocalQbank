@@ -30,7 +30,11 @@ def replace_once(text, old, new, label):
 # through translucent surfaces and created persistent lines in every theme.
 theme = read("ThemeManager.kt")
 theme = replace_once(theme,
-'''        val base: Drawable = if (RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)) RovexImportedMotionBackgroundDrawable(c, profile(c)) else GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(profile(c).backgroundA, profile(c).backgroundB))''',
+'''        val base: Drawable = if (RovexLiveMotionSettings.enabled(c) && AnimationPolicy.enabled(c)) {
+            RovexImportedMotionBackgroundDrawable(c, profile(c))
+        } else {
+            GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(profile(c).backgroundA, profile(c).backgroundB))
+        }''',
 '''        // Static wallpaper foundation: no full-screen Lottie strokes/lines behind UI.
         val base: Drawable = GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
