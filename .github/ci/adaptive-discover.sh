@@ -110,10 +110,12 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
   python3 "$ROOT/.github/ci/rovex_663_home_theme_foundation.py" "$project"
   python3 "$ROOT/.github/ci/verify_phase1_home_foundation.py" "$project" "$ROOT"
   log "Phase 1 generated-source verifier passed after overlays 660-663 on the selected source archive"
+ fi
+fi
+if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build_Source_Fixed_HomeMotionHeader.zip" ]]; then
   [[ -f "$ROOT/.github/ci/rovex_664_wallpaper_phase2.py" ]] || fail "Phase 2 wallpaper overlay missing"
   python3 "$ROOT/.github/ci/rovex_664_wallpaper_phase2.py" "$project"
-  log "Phase 2 six-theme wallpaper integration applied and provenance checks completed"
- fi
+  log "Phase 2 six-theme wallpaper integration applied to the verified green source archive"
 fi
 if [[ -f "$project/app/src/main/assets/rovex/RovexVisualAssetManifest.json" ]]; then
  python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
