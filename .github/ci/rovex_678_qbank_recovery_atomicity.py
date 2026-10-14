@@ -153,7 +153,7 @@ new_test = '''    @Test
         assertTrue("marker writers did not reach start barrier", ready.await(5, TimeUnit.SECONDS))
         start.countDown()
         assertTrue("marker writers did not finish", finished.await(15, TimeUnit.SECONDS))
-        failure.get()?.let { throw AssertionError("concurrent recovery marker write failed", it) }
+        failure.get()?.let { throw IllegalStateException("concurrent recovery marker write failed", it) }
         assertEquals(initialGeneration + requestCount, prefs.getLong(KEY_GENERATION, 0L))
         assertTrue(QBankDeletionRecoveryWorker.isRecoveryNeeded(context))
     }
