@@ -162,6 +162,13 @@ new_test = '''    @Test
     fun recoveryMarkerIsDurableAcrossFreshContextHandle() {
 '''
 test = replace_once(test, anchor, new_test, "concurrent marker regression test")
+if 'private const val KEY_GENERATION = "recovery_generation"' not in test:
+    test = replace_once(
+        test,
+        'private const val KEY_NEEDED = "recovery_needed"\n',
+        'private const val KEY_NEEDED = "recovery_needed"\n        private const val KEY_GENERATION = "recovery_generation"\n',
+        "test generation key",
+    )
 test_path.write_text(test, encoding="utf-8")
 
 g = g.replace('versionName = "8.3.675"', 'versionName = "8.3.676"', 1).replace("versionCode = 761", "versionCode = 762", 1)
@@ -176,5 +183,7 @@ for token in ("private val recoveryStateLock = Any()", "synchronized(recoverySta
         raise SystemExit(f"[678] FATAL: worker postcondition missing: {token}")
 if "concurrentRecoveryRequestsDoNotLoseGenerationIncrements" not in test_after:
     raise SystemExit("[678] FATAL: concurrent marker regression test postcondition failed")
+if 'private const val KEY_GENERATION = "recovery_generation"' not in test_after:
+    raise SystemExit("[678] FATAL: test recovery generation key postcondition failed")
 print("[678] PASS: recovery marker generation increments and terminal clearing are serialized.")
 print("[678] PASS: concurrent marker regression test added; version is 8.3.676 / code 762.")
