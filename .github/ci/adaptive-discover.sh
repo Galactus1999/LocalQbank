@@ -102,7 +102,7 @@ if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build
   [[ -f "$ROOT/.github/ci/rovex_678_qbank_recovery_atomicity.py" ]] || fail "Phase 678 QBank recovery marker atomicity overlay missing"
   python3 "$ROOT/.github/ci/rovex_678_qbank_recovery_atomicity.py" "$project"
   python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
-  log "Phase 2 wallpaper provenance, static theme-lit glass rims, no background motion, and splash palette audit passed"
+  log "Phase 2 wallpaper/theme audits and Phase 3 QBank recovery stability overlay passed"
 fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
