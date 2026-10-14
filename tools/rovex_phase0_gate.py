@@ -301,13 +301,10 @@ def artifact_contract_audit():
     if missing:
         die("Adaptive source-archive validation contract missing: " + "; ".join(missing))
 
-    upload = re.search(
-        r"(?ms)^      - name: Upload adaptive artifacts\\n(?P<body>.*?)(?=^      - name:|\\Z)",
-        workflow,
-    )
-    if not upload:
+    upload_marker = "      - name: Upload adaptive artifacts"
+    if upload_marker not in workflow:
         die("Could not locate adaptive artifact upload step.")
-    upload_body = upload.group("body")
+    upload_body = workflow.split(upload_marker, 1)[1].split("      - name:", 1)[0]
     if "adaptive-release.apk" not in upload_body or "adaptive-source.zip" not in upload_body:
         die("Adaptive artifact upload must include both release APK and source ZIP.")
     if "$RUNNER_TEMP/adaptive-source.zip" in upload_body:
