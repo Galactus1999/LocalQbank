@@ -22,15 +22,15 @@ replacements = [
     # A localized dark translucent scrim preserves the wallpaper while protecting text from
     # bright/dark image details. It is limited to the two quiz-header rows, not the whole screen.
     ('background=android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)\n            elevation = dp(1).toFloat()',
-     'background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(\n                 Color.argb(232, 17, 13, 43), Color.argb(184, 36, 24, 72)))\n             elevation = dp(1).toFloat()'),
+     'background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(\n                 Color.argb(232, 17, 13, 43), Color.argb(184, 36, 24, 72)))\n            elevation = dp(1).toFloat()'),
     ('setTextColor(ThemeManager.text(context))\n            maxLines = 1',
-     'setTextColor(Color.rgb(250, 251, 255))\n             maxLines = 1'),
+     'setTextColor(Color.rgb(250, 251, 255))\n            maxLines = 1'),
     ('setTextColor(ThemeManager.muted(context))\n            maxLines = 1',
-     'setTextColor(Color.rgb(224, 229, 245))\n             maxLines = 1'),
+     'setTextColor(Color.rgb(224, 229, 245))\n            maxLines = 1'),
     ('background=android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)\n        }\n        val counter = TextView(context).apply {',
-     'background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(\n                 Color.argb(224, 17, 13, 43), Color.argb(160, 36, 24, 72)))\n         }\n         val counter = TextView(context).apply {'),
+     'background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(\n                 Color.argb(224, 17, 13, 43), Color.argb(160, 36, 24, 72)))\n        }\n        val counter = TextView(context).apply {'),
     ('setTextColor(ThemeManager.muted(context))\n            gravity = Gravity.CENTER_VERTICAL',
-     'setTextColor(Color.rgb(250, 251, 255))\n             gravity = Gravity.CENTER_VERTICAL'),
+     'setTextColor(Color.rgb(250, 251, 255))\n            gravity = Gravity.CENTER_VERTICAL'),
 ]
 for old, new in replacements:
     if builder.count(old) != 1:
