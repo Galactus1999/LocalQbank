@@ -99,6 +99,8 @@ if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build
   python3 "$ROOT/.github/ci/rovex_676_compact_quiz_header.py" "$project"
   [[ -f "$ROOT/.github/ci/rovex_677_quiz_header_contrast.py" ]] || fail "Phase 677 quiz header contrast repair missing"
   python3 "$ROOT/.github/ci/rovex_677_quiz_header_contrast.py" "$project"
+  [[ -f "$ROOT/.github/ci/rovex_678_qbank_recovery_atomicity.py" ]] || fail "Phase 678 QBank recovery marker atomicity overlay missing"
+  python3 "$ROOT/.github/ci/rovex_678_qbank_recovery_atomicity.py" "$project"
   python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
   log "Phase 2 wallpaper provenance, static theme-lit glass rims, no background motion, and splash palette audit passed"
 fi
