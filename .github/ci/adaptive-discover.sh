@@ -89,6 +89,8 @@ if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build
   python3 "$ROOT/.github/ci/rovex_671_liquid_glass_prototype.py" "$project"
   [[ -f "$ROOT/.github/ci/rovex_672_theme_contrast_header.py" ]] || fail "Phase 672 theme/contrast correction overlay missing"
   python3 "$ROOT/.github/ci/rovex_672_theme_contrast_header.py" "$project"
+  [[ -f "$ROOT/.github/ci/rovex_673_recovery_marker_atomicity.py" ]] || fail "Phase 673 QBank recovery marker atomicity overlay missing"
+  python3 "$ROOT/.github/ci/rovex_673_recovery_marker_atomicity.py" "$project"
   python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
   log "Phase 2 wallpaper provenance, static theme-lit glass rims, no background motion, and splash palette audit passed"
 fi
