@@ -241,9 +241,14 @@ jobs:
         run: |
           set -euo pipefail
           cd "$ADAPTIVE_PROJECT"
-          zip -9 -qr "$RUNNER_TEMP/adaptive-source.zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
-          size="$(stat -c%s "$RUNNER_TEMP/adaptive-source.zip")"
+          source_zip="$GITHUB_WORKSPACE/adaptive-source.zip"
+          zip -9 -qr "$source_zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
+          test -s "$source_zip"
+          unzip -tq "$source_zip"
+          unzip -Z1 "$source_zip" | grep -Fxq 'gradlew'
+          size="$(stat -c%s "$source_zip")"
           echo "Source archive size: $size bytes"
+          sha256sum "$source_zip" | tee "$RUNNER_TEMP/adaptive-source.sha256"
           if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then [[ "$size" -lt 25000000 ]]; fi
 
       - name: Upload adaptive artifacts
@@ -252,6 +257,6 @@ jobs:
           name: adaptive-android-output
           path: |
             adaptive-release.apk
-            $RUNNER_TEMP/adaptive-source.zip
+            adaptive-source.zip
           if-no-files-found: error
           retention-days: 30
