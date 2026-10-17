@@ -10,6 +10,27 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
     var hasValidAnswer: Bool {
         options.indices.contains(correctAnswerIndex)
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, question, options, correctAnswerIndex, explanation
+    }
+
+    init(id: UUID = UUID(), question: String, options: [String], correctAnswerIndex: Int, explanation: String = "") {
+        self.id = id
+        self.question = question
+        self.options = options
+        self.correctAnswerIndex = correctAnswerIndex
+        self.explanation = explanation
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        question = try container.decode(String.self, forKey: .question)
+        options = try container.decode([String].self, forKey: .options)
+        correctAnswerIndex = try container.decode(Int.self, forKey: .correctAnswerIndex)
+        explanation = try container.decodeIfPresent(String.self, forKey: .explanation) ?? ""
+    }
 }
 
 struct StudyFlashcard: Identifiable, Codable, Hashable {
