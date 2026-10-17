@@ -146,7 +146,7 @@ enum APKGImporter {
     }
 
     private static func templateFieldNames(_ template: String) -> [String] {
-        guard let regex = try? NSRegularExpression(pattern: #"\\{\\{(?:[^}:]+:)?([^}]+)\\}\\}"#) else { return [] }
+        guard let regex = try? NSRegularExpression(pattern: #"\{\{(?:[^}:]+:)?([^}]+)\}\}"#) else { return [] }
         let range = NSRange(template.startIndex..., in: template)
         return regex.matches(in: template, range: range).compactMap { match in
             guard let range = Range(match.range(at: 1), in: template) else { return nil }
@@ -157,16 +157,16 @@ enum APKGImporter {
     private static func readableText(_ html: String) -> String {
         var value = html
         value = value.replacingOccurrences(
-            of: #"(?i)<img\\b[^>]*?src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>"#,
+            of: #"(?i)<img\b[^>]*?src\s*=\s*['"]([^'"]+)['"][^>]*>"#,
             with: "[image: $1]",
             options: .regularExpression
         )
         value = value.replacingOccurrences(
-            of: #"(?i)<audio\\b[^>]*?src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>.*?</audio>"#,
+            of: #"(?i)<audio\b[^>]*?src\s*=\s*['"]([^'"]+)['"][^>]*>.*?</audio>"#,
             with: "[audio: $1]",
             options: .regularExpression
         )
-        value = value.replacingOccurrences(of: #"(?i)<br\\s*/?>|</(?:div|p|li|tr|h[1-6])\\s*>"#, with: "\n", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"(?i)<br\s*/?>|</(?:div|p|li|tr|h[1-6])\s*>"#, with: "\n", options: .regularExpression)
         value = value.replacingOccurrences(of: #"<[^>]+>"#, with: "", options: .regularExpression)
         let entities = [
             "&nbsp;": " ", "&amp;": "&", "&lt;": "<", "&gt;": ">",
