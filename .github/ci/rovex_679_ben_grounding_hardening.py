@@ -59,7 +59,7 @@ class BenContrastiveEvidencePlannerTest {
         )
 
         assertEquals(listOf(20L, 10L), result.answers.map { it.sourceId })
-        assertTrue(result.all().none { it.sourceId <= 0L })
+        assertTrue((result.answers + result.distractors).none { it.sourceId <= 0L })
         assertTrue(result.all().none { !it.score.isFinite() })
     }
 
