@@ -10,6 +10,7 @@
     A10000000000000000000002 /* StudyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* StudyModels.swift */; };
     A10000000000000000000003 /* LocalStudyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* LocalStudyStore.swift */; };
     A10000000000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ContentView.swift */; };
+    A10000000000000000000005 /* SQLiteQBankImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* SQLiteQBankImporter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +19,7 @@
     B10000000000000000000003 /* LocalStudyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStudyStore.swift; sourceTree = "<group>"; };
     B10000000000000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
     B10000000000000000000005 /* Rovex.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rovex.app; sourceTree = BUILT_PRODUCTS_DIR; };
+    B10000000000000000000006 /* SQLiteQBankImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteQBankImporter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,7 +62,7 @@
       isa = PBXGroup;
       path = Services;
       sourceTree = "<group>";
-      children = (B10000000000000000000003 /* LocalStudyStore.swift */, );
+      children = (B10000000000000000000003 /* LocalStudyStore.swift */, B10000000000000000000006 /* SQLiteQBankImporter.swift */, );
     };
     D10000000000000000000006 /* Views */ = {
       isa = PBXGroup;
@@ -124,6 +126,7 @@
         A10000000000000000000002 /* StudyModels.swift in Sources */,
         A10000000000000000000003 /* LocalStudyStore.swift in Sources */,
         A10000000000000000000004 /* ContentView.swift in Sources */,
+        A10000000000000000000005 /* SQLiteQBankImporter.swift in Sources */,
       );
       runOnlyForDeploymentPostprocessing = 0;
     };

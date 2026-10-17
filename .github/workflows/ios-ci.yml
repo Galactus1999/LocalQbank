@@ -37,7 +37,7 @@ jobs:
 
       - name: Run QBank import compatibility smoke tests
         run: |
-          swiftc -parse-as-library ios/Rovex/Models/StudyModels.swift ios/tests/ImportCompatibilitySmoke.swift -o "$RUNNER_TEMP/rovex-import-smoke"
+          swiftc -parse-as-library ios/Rovex/Models/StudyModels.swift ios/Rovex/Services/SQLiteQBankImporter.swift ios/tests/ImportCompatibilitySmoke.swift -lsqlite3 -o "$RUNNER_TEMP/rovex-import-smoke"
           "$RUNNER_TEMP/rovex-import-smoke"
 
       - name: Build Debug

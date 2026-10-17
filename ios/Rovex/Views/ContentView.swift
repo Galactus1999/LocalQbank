@@ -194,9 +194,9 @@ struct QBankView: View {
                     ContentUnavailableView {
                         Label("No questions yet", systemImage: "text.book.closed")
                     } description: {
-                        Text("Import a JSON question set stored on your device to begin. No account or network is required.")
+                        Text("Import a JSON question set or a supported SQLite QBank database stored on your device. No account or network is required.")
                     } actions: {
-                        Button("Import JSON") { showingImporter = true }.buttonStyle(.borderedProminent)
+                        Button("Import QBank") { showingImporter = true }.buttonStyle(.borderedProminent)
                     }
                 } else {
                     List {
@@ -225,10 +225,10 @@ struct QBankView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingImporter = true } label: { Image(systemName: "square.and.arrow.down") }
-                        .accessibilityLabel("Import question JSON")
+                        .accessibilityLabel("Import question data")
                 }
             }
-            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json, .data], allowsMultipleSelection: false) { result in
                 handleImport(result)
             }
             .alert(importError ? "Import failed" : "Import complete", isPresented: Binding(
@@ -248,8 +248,13 @@ struct QBankView: View {
             guard let url = urls.first else { return }
             let hasAccess = url.startAccessingSecurityScopedResource()
             defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
-            let data = try Data(contentsOf: url)
-            let count = try store.importQuestions(from: data)
+            let count: Int
+            if isSQLiteDatabase(at: url) {
+                let questions = try SQLiteQBankImporter.importQuestions(from: url)
+                count = try store.importQuestions(questions)
+            } else {
+                count = try store.importQuestions(from: Data(contentsOf: url))
+            }
             importError = false
             importMessage = "Added \(count) new question(s). Duplicate question stems were skipped."
         } catch {
@@ -549,6 +554,14 @@ struct StudyArchiveDocument: FileDocument {
     }
 }
 
+private func isSQLiteDatabase(at url: URL) -> Bool {
+    if ["db", "sqlite", "sqlite3"].contains(url.pathExtension.lowercased()) { return true }
+    guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
+    defer { try? handle.close() }
+    let signature = (try? handle.read(upToCount: 16)) ?? nil
+    return signature == Data("SQLite format 3\0".utf8)
+}
+
 struct SettingsView: View {
     @ObservedObject var store: LocalStudyStore
     let theme: RovexTheme
@@ -602,20 +615,26 @@ struct SettingsView: View {
                 Section("Build status") {
                     LabeledContent("Platform", value: "Native SwiftUI")
                     LabeledContent("AI assistant", value: "Not connected")
-                    LabeledContent("Question import", value: "JSON")
+                    LabeledContent("Question import", value: "JSON + SQLite")
                 }
             }
             .scrollContentBackground(.hidden)
             .background(p.background)
             .tint(p.accent)
             .navigationTitle("Settings")
-            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json, .data], allowsMultipleSelection: false) { result in
                 do {
                     let urls = try result.get()
                     guard let url = urls.first else { return }
                     let hasAccess = url.startAccessingSecurityScopedResource()
                     defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
-                    let counts = try store.importData(from: Data(contentsOf: url))
+                    let counts: (questionsAdded: Int, flashcardsAdded: Int)
+                    if isSQLiteDatabase(at: url) {
+                        let questions = try SQLiteQBankImporter.importQuestions(from: url)
+                        counts = (try store.importQuestions(questions), 0)
+                    } else {
+                        counts = try store.importData(from: Data(contentsOf: url))
+                    }
                     transferIsError = false
                     transferMessage = "Added \(counts.questionsAdded) question(s) and \(counts.flashcardsAdded) flashcard(s)."
                 } catch {
