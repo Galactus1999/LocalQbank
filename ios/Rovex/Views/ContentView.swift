@@ -615,7 +615,7 @@ struct SettingsView: View {
                 Section("Build status") {
                     LabeledContent("Platform", value: "Native SwiftUI")
                     LabeledContent("AI assistant", value: "Not connected")
-                    LabeledContent("Question import", value: "JSON + SQLite")
+                    LabeledContent("Data import", value: "JSON + SQLite + APKG text")
                 }
             }
             .scrollContentBackground(.hidden)
@@ -628,15 +628,24 @@ struct SettingsView: View {
                     guard let url = urls.first else { return }
                     let hasAccess = url.startAccessingSecurityScopedResource()
                     defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
-                    let counts: (questionsAdded: Int, flashcardsAdded: Int)
-                    if isSQLiteDatabase(at: url) {
-                        let questions = try SQLiteQBankImporter.importQuestions(from: url)
-                        counts = (try store.importQuestions(questions), 0)
+                    if url.pathExtension.lowercased() == "apkg" {
+                        let cards = try await Task.detached(priority: .userInitiated) {
+                            try APKGImporter.importFlashcards(from: url)
+                        }.value
+                        let added = try store.importFlashcards(cards)
+                        transferIsError = false
+                        transferMessage = "Added \(added) Anki flashcard(s). Text and field formatting were imported; media files are not copied in this phase."
                     } else {
-                        counts = try store.importData(from: Data(contentsOf: url))
+                        let counts: (questionsAdded: Int, flashcardsAdded: Int)
+                        if isSQLiteDatabase(at: url) {
+                            let questions = try SQLiteQBankImporter.importQuestions(from: url)
+                            counts = (try store.importQuestions(questions), 0)
+                        } else {
+                            counts = try store.importData(from: Data(contentsOf: url))
+                        }
+                        transferIsError = false
+                        transferMessage = "Added \(counts.questionsAdded) question(s) and \(counts.flashcardsAdded) flashcard(s)."
                     }
-                    transferIsError = false
-                    transferMessage = "Added \(counts.questionsAdded) question(s) and \(counts.flashcardsAdded) flashcard(s)."
                 } catch {
                     transferIsError = true
                     transferMessage = error.localizedDescription
