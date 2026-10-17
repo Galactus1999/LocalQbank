@@ -79,7 +79,7 @@ struct ContentView: View {
             BenView(theme: theme)
                 .tabItem { Label("Ben", systemImage: "brain.head.profile") }
                 .tag(3)
-            SettingsView(theme: theme)
+            SettingsView(store: store, theme: theme)
                 .tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
                 .tag(4)
         }
@@ -492,9 +492,35 @@ struct BenView: View {
     }
 }
 
+struct StudyArchiveDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+    var data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        self.data = data
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
+}
+
 struct SettingsView: View {
+    @ObservedObject var store: LocalStudyStore
     let theme: RovexTheme
     @AppStorage("rovex.theme") private var selectedTheme = RovexTheme.amoled.rawValue
+    @State private var showingImporter = false
+    @State private var showingExporter = false
+    @State private var exportDocument = StudyArchiveDocument(data: Data())
+    @State private var transferMessage: String?
+    @State private var transferIsError = false
     private var p: ThemePalette { theme.palette }
 
     var body: some View {
@@ -508,6 +534,26 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.navigationLink)
                     Text("Theme changes are stored on this device and apply across the app.")
+                        .font(.footnote).foregroundStyle(p.secondaryText)
+                }
+                Section("Study data transfer") {
+                    Button {
+                        do {
+                            exportDocument = StudyArchiveDocument(data: try store.exportData())
+                            showingExporter = true
+                        } catch {
+                            transferIsError = true
+                            transferMessage = error.localizedDescription
+                        }
+                    } label: {
+                        Label("Export study data", systemImage: "square.and.arrow.up")
+                    }
+                    Button {
+                        showingImporter = true
+                    } label: {
+                        Label("Import study data", systemImage: "square.and.arrow.down")
+                    }
+                    Text("Exports questions and flashcards into one versioned JSON archive. Import merges new records and skips duplicates.")
                         .font(.footnote).foregroundStyle(p.secondaryText)
                 }
                 Section("Data and privacy") {
@@ -526,6 +572,38 @@ struct SettingsView: View {
             .background(p.background)
             .tint(p.accent)
             .navigationTitle("Settings")
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+                do {
+                    let urls = try result.get()
+                    guard let url = urls.first else { return }
+                    let hasAccess = url.startAccessingSecurityScopedResource()
+                    defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
+                    let counts = try store.importData(from: Data(contentsOf: url))
+                    transferIsError = false
+                    transferMessage = "Added \(counts.questionsAdded) question(s) and \(counts.flashcardsAdded) flashcard(s)."
+                } catch {
+                    transferIsError = true
+                    transferMessage = error.localizedDescription
+                }
+            }
+            .fileExporter(isPresented: $showingExporter, document: exportDocument, contentType: .json, defaultFilename: "rovex-study-data") { result in
+                switch result {
+                case .success:
+                    transferIsError = false
+                    transferMessage = "Study archive exported successfully."
+                case .failure(let error):
+                    transferIsError = true
+                    transferMessage = error.localizedDescription
+                }
+            }
+            .alert(transferIsError ? "Transfer failed" : "Study data", isPresented: Binding(
+                get: { transferMessage != nil },
+                set: { if !$0 { transferMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) { transferMessage = nil }
+            } message: {
+                Text(transferMessage ?? "")
+            }
         }
     }
 }
