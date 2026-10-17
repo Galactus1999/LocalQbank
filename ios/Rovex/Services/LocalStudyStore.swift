@@ -49,7 +49,13 @@ final class LocalStudyStore: ObservableObject {
         }
 
         var seen = Set(questions.map { normalized($0.question) })
-        let newQuestions = document.questions.filter { seen.insert(normalized($0.question)).inserted }
+        let accepted = document.questions.filter { seen.insert(normalized($0.question)).inserted }
+        // Imported IDs are untrusted and may collide with existing records; assign fresh local IDs.
+        let newQuestions = accepted.map { item -> QBankQuestion in
+            var localItem = item
+            localItem.id = UUID()
+            return localItem
+        }
         let updatedQuestions = questions + newQuestions
         try persist(updatedQuestions, to: "questions.json")
         questions = updatedQuestions
@@ -87,7 +93,7 @@ final class LocalStudyStore: ObservableObject {
     }
 
     private func persist<T: Encodable>(_ value: T, to name: String) throws {
-        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true, attributes: nil)
         let data = try encoder.encode(value)
         try data.write(to: directoryURL.appendingPathComponent(name), options: .atomic)
         storageError = nil
