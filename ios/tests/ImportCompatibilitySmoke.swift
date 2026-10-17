@@ -98,15 +98,33 @@ struct ImportCompatibilitySmoke {
         VALUES
           ('SQLite question one', '["First","Second","Third","Fourth"]', 'B', 'SQLite explanation'),
           ('SQLite question two', '["Alpha","Beta"]', '1', '');
+        CREATE TABLE keyed_question (question TEXT, options TEXT, answer TEXT);
+        INSERT INTO keyed_question VALUES
+          ('SQLite keyed options', '{"D":"Fourth","B":"Second","A":"First","C":"Third"}', 'C');
+        CREATE TABLE option_fields (
+            stem TEXT, optionA TEXT, optionB TEXT, optionC TEXT, optionD TEXT, answer TEXT
+        );
+        INSERT INTO option_fields VALUES ('SQLite option fields', 'One', 'Two', 'Three', 'Four', 'D');
         """
         try require(sqlite3_exec(openedDatabase, sql, nil, nil, nil) == SQLITE_OK, "populate SQLite fixture")
         sqlite3_close(openedDatabase)
         database = nil
+        let databaseBytesBeforeImport = try Data(contentsOf: databaseURL)
         let sqliteQuestions = try SQLiteQBankImporter.importQuestions(from: databaseURL)
-        try require(sqliteQuestions.count == 2, "SQLite question count")
-        try require(sqliteQuestions[0].correctAnswerIndex == 1, "SQLite letter answer mapping")
-        try require(sqliteQuestions[0].explanation == "SQLite explanation", "SQLite explanation")
-        try require(sqliteQuestions[1].correctAnswerIndex == 1, "SQLite numeric answer mapping")
+        let databaseBytesAfterImport = try Data(contentsOf: databaseURL)
+        try require(databaseBytesBeforeImport == databaseBytesAfterImport, "SQLite source remains byte-identical after read-only import")
+        try require(sqliteQuestions.count == 4, "SQLite question count across supported table layouts")
+        let standardQuestion = sqliteQuestions.first { $0.question == "SQLite question one" }
+        try require(standardQuestion?.correctAnswerIndex == 1, "SQLite letter answer mapping")
+        try require(standardQuestion?.explanation == "SQLite explanation", "SQLite explanation")
+        let numericQuestion = sqliteQuestions.first { $0.question == "SQLite question two" }
+        try require(numericQuestion?.correctAnswerIndex == 1, "SQLite numeric answer mapping")
+        let keyedQuestion = sqliteQuestions.first { $0.question == "SQLite keyed options" }
+        try require(keyedQuestion?.options == ["First", "Second", "Third", "Fourth"], "SQLite keyed options order")
+        try require(keyedQuestion?.correctAnswerIndex == 2, "SQLite keyed options answer mapping")
+        let optionFieldQuestion = sqliteQuestions.first { $0.question == "SQLite option fields" }
+        try require(optionFieldQuestion?.options == ["One", "Two", "Three", "Four"], "SQLite optionA-D column mapping")
+        try require(optionFieldQuestion?.correctAnswerIndex == 3, "SQLite optionA-D answer mapping")
 
         let unsupportedURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rovex-sqlite-unsupported-\\(UUID().uuidString).db")
@@ -125,7 +143,30 @@ struct ImportCompatibilitySmoke {
             // Expected: no recognizable question/options/answer schema.
         }
 
-        print("PASS: JSON compatibility and archive tests; read-only SQLite import, answer mapping, explanation, and unsupported-schema rejection")
+        let malformedURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rovex-sqlite-malformed-\\(UUID().uuidString).db")
+        defer { try? FileManager.default.removeItem(at: malformedURL) }
+        var malformedDatabase: OpaquePointer?
+        try require(sqlite3_open(malformedURL.path, &malformedDatabase) == SQLITE_OK, "create malformed SQLite fixture")
+        guard let openedMalformedDatabase = malformedDatabase else { throw SmokeTestError.failed("malformed SQLite fixture handle") }
+        defer { if let malformedDatabase { sqlite3_close(malformedDatabase) } }
+        let malformedSQL = """
+        CREATE TABLE questions (question TEXT, options TEXT, answer TEXT);
+        INSERT INTO questions VALUES
+          ('Valid row before malformed row', '["One","Two"]', 'A'),
+          ('Malformed row', 'not-json', 'B');
+        """
+        try require(sqlite3_exec(openedMalformedDatabase, malformedSQL, nil, nil, nil) == SQLITE_OK, "populate malformed SQLite fixture")
+        sqlite3_close(openedMalformedDatabase)
+        malformedDatabase = nil
+        do {
+            _ = try SQLiteQBankImporter.importQuestions(from: malformedURL)
+            throw SmokeTestError.failed("malformed SQLite row must reject the complete import")
+        } catch SQLiteQBankImportError.invalidRow {
+            // Expected: validation fails before the caller can merge any rows.
+        }
+
+        print("PASS: JSON/archive compatibility; SQLite read-only integrity, JSON/keyed/optionA-D layouts, answer mapping, unsupported schemas, and malformed-row rejection")
     }
 
     private static func require(_ condition: Bool, _ name: String) throws {
