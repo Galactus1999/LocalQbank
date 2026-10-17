@@ -90,6 +90,51 @@ final class LocalStudyStore: ObservableObject {
         flashcards = updatedFlashcards
     }
 
+    var dueFlashcardCount: Int {
+        flashcards.reduce(into: 0) { count, card in
+            if card.dueAt <= Date() { count += 1 }
+        }
+    }
+
+    func reviewFlashcard(id: UUID, rating: FlashcardRating, reviewedAt: Date = Date()) throws {
+        guard let index = flashcards.firstIndex(where: { $0.id == id }) else {
+            throw StudyStoreError.flashcardNotFound
+        }
+        var updatedCard = flashcards[index]
+        let currentInterval = max(0, updatedCard.intervalDays)
+        let ease = min(3.0, max(1.3, updatedCard.easeFactor))
+        let nextInterval: Int
+
+        switch rating {
+        case .again:
+            updatedCard.repetitions = 0
+            updatedCard.easeFactor = max(1.3, ease - 0.20)
+            nextInterval = 0
+            updatedCard.dueAt = reviewedAt.addingTimeInterval(60 * 60)
+        case .hard:
+            updatedCard.repetitions += 1
+            updatedCard.easeFactor = max(1.3, ease - 0.15)
+            nextInterval = max(1, Int(ceil(Double(max(1, currentInterval)) * 1.2)))
+            updatedCard.dueAt = reviewedAt.addingTimeInterval(Double(nextInterval) * 86_400)
+        case .good:
+            updatedCard.repetitions += 1
+            nextInterval = updatedCard.repetitions == 1 ? 1 : (updatedCard.repetitions == 2 ? 6 : max(1, Int((Double(max(1, currentInterval)) * ease).rounded())))
+            updatedCard.dueAt = reviewedAt.addingTimeInterval(Double(nextInterval) * 86_400)
+        case .easy:
+            updatedCard.repetitions += 1
+            updatedCard.easeFactor = min(3.0, ease + 0.15)
+            nextInterval = updatedCard.repetitions == 1 ? 2 : max(2, Int((Double(max(1, currentInterval)) * updatedCard.easeFactor * 1.3).rounded()))
+            updatedCard.dueAt = reviewedAt.addingTimeInterval(Double(nextInterval) * 86_400)
+        }
+
+        updatedCard.intervalDays = nextInterval
+        updatedCard.lastReviewedAt = reviewedAt
+        var updatedFlashcards = flashcards
+        updatedFlashcards[index] = updatedCard
+        try persistState(questions: questions, flashcards: updatedFlashcards)
+        flashcards = updatedFlashcards
+    }
+
     private func merge(questions incomingQuestions: [QBankQuestion], flashcards incomingFlashcards: [StudyFlashcard]) throws -> (questionsAdded: Int, flashcardsAdded: Int) {
         guard !incomingQuestions.isEmpty || !incomingFlashcards.isEmpty else {
             throw StudyStoreError.emptyImport
@@ -172,6 +217,7 @@ enum StudyStoreError: LocalizedError {
     case invalidQuestion
     case emptyFlashcard
     case invalidFlashcard
+    case flashcardNotFound
     case unsupportedArchiveVersion(Int)
 
     var errorDescription: String? {
@@ -184,6 +230,8 @@ enum StudyStoreError: LocalizedError {
             return "Enter both the front and back of the flashcard."
         case .invalidFlashcard:
             return "Each imported flashcard needs both a front and a back."
+        case .flashcardNotFound:
+            return "This flashcard is no longer available. Return to the deck and try again."
         case .unsupportedArchiveVersion(let version):
             return "Study archive version \(version) is not supported by this app version."
         }
