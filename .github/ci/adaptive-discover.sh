@@ -103,8 +103,10 @@ if [[ -n "$candidate" && "$(basename "$candidate")" == "Rovex_Todays_Green_Build
   python3 "$ROOT/.github/ci/rovex_678_qbank_recovery_atomicity.py" "$project"
   [[ -f "$ROOT/.github/ci/rovex_679_ben_grounding_hardening.py" ]] || fail "Phase 679 Ben grounding hardening overlay missing"
   python3 "$ROOT/.github/ci/rovex_679_ben_grounding_hardening.py" "$project"
+  [[ -f "$ROOT/.github/ci/rovex_680_quiz_inset_performance.py" ]] || fail "Phase 680 quiz inset/performance repair missing"
+  python3 "$ROOT/.github/ci/rovex_680_quiz_inset_performance.py" "$project"
   python3 "$ROOT/tools/rovex_asset_catalog_audit.py" --project "$project"
-  log "Phase 2 wallpaper/theme audits, Phase 3 QBank recovery stability, and Phase 4 Ben grounding hardening overlays passed"
+  log "Phase 2 wallpaper/theme audits, Phase 3 QBank recovery stability, Phase 4 Ben grounding, and Phase 5 quiz inset/performance overlays passed"
 fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
