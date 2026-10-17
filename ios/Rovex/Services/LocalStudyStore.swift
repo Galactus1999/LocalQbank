@@ -50,7 +50,7 @@ final class LocalStudyStore: ObservableObject {
     @discardableResult
     func importQuestions(from data: Data) throws -> Int {
         let document = try decoder.decode(QBankImportDocument.self, from: data)
-        return try merge(questions: document.questions, flashcards: [])
+        return try merge(questions: document.questions, flashcards: []).questionsAdded
     }
 
     @discardableResult
