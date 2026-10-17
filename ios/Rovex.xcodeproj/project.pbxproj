@@ -1,0 +1,219 @@
+// !$*UTF8*$!
+{
+  archiveVersion = 1;
+  classes = {};
+  objectVersion = 60;
+  objects = {
+
+/* Begin PBXBuildFile section */
+    A10000000000000000000001 /* RovexApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* RovexApp.swift */; };
+    A10000000000000000000002 /* StudyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* StudyModels.swift */; };
+    A10000000000000000000003 /* LocalStudyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* LocalStudyStore.swift */; };
+    A10000000000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ContentView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+    B10000000000000000000001 /* RovexApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RovexApp.swift; sourceTree = "<group>"; };
+    B10000000000000000000002 /* StudyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyModels.swift; sourceTree = "<group>"; };
+    B10000000000000000000003 /* LocalStudyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStudyStore.swift; sourceTree = "<group>"; };
+    B10000000000000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+    B10000000000000000000005 /* Rovex.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rovex.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+    C10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+    D10000000000000000000001 = {
+      isa = PBXGroup;
+      children = (
+        D10000000000000000000002 /* Rovex */,
+        D10000000000000000000003 /* Products */,
+      );
+      sourceTree = "<group>";
+    };
+    D10000000000000000000002 /* Rovex */ = {
+      isa = PBXGroup;
+      path = Rovex;
+      sourceTree = "<group>";
+      children = (
+        B10000000000000000000001 /* RovexApp.swift */,
+        D10000000000000000000004 /* Models */,
+        D10000000000000000000005 /* Services */,
+        D10000000000000000000006 /* Views */,
+      );
+    };
+    D10000000000000000000003 /* Products */ = {
+      isa = PBXGroup;
+      name = Products;
+      children = (B10000000000000000000005 /* Rovex.app */, );
+      sourceTree = "<group>";
+    };
+    D10000000000000000000004 /* Models */ = {
+      isa = PBXGroup;
+      path = Models;
+      sourceTree = "<group>";
+      children = (B10000000000000000000002 /* StudyModels.swift */, );
+    };
+    D10000000000000000000005 /* Services */ = {
+      isa = PBXGroup;
+      path = Services;
+      sourceTree = "<group>";
+      children = (B10000000000000000000003 /* LocalStudyStore.swift */, );
+    };
+    D10000000000000000000006 /* Views */ = {
+      isa = PBXGroup;
+      path = Views;
+      sourceTree = "<group>";
+      children = (B10000000000000000000004 /* ContentView.swift */, );
+    };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+    E10000000000000000000001 /* Rovex */ = {
+      isa = PBXNativeTarget;
+      buildConfigurationList = F10000000000000000000002 /* Build configuration list for PBXNativeTarget "Rovex" */;
+      buildPhases = (
+        C10000000000000000000002 /* Sources */,
+        C10000000000000000000001 /* Frameworks */,
+        C10000000000000000000003 /* Resources */,
+      );
+      buildRules = ();
+      dependencies = ();
+      name = Rovex;
+      productName = Rovex;
+      productReference = B10000000000000000000005 /* Rovex.app */;
+      productType = "com.apple.product-type.application";
+    };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+    E10000000000000000000002 /* Project object */ = {
+      isa = PBXProject;
+      attributes = {
+        BuildIndependentTargetsInParallel = 1;
+        LastUpgradeCheck = 1600;
+        TargetAttributes = {
+          E10000000000000000000001 = { CreatedOnToolsVersion = 16.0; };
+        };
+      };
+      buildConfigurationList = F10000000000000000000001 /* Build configuration list for PBXProject */;
+      compatibilityVersion = "Xcode 14.0";
+      developmentRegion = en;
+      hasScannedForEncodings = 0;
+      knownRegions = (en, Base, );
+      mainGroup = D10000000000000000000001;
+      productRefGroup = D10000000000000000000003 /* Products */;
+      projectDirPath = "";
+      projectRoot = "";
+      targets = (E10000000000000000000001 /* Rovex */, );
+    };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+    C10000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+    C10000000000000000000002 /* Sources */ = {
+      isa = PBXSourcesBuildPhase;
+      buildActionMask = 2147483647;
+      files = (
+        A10000000000000000000001 /* RovexApp.swift in Sources */,
+        A10000000000000000000002 /* StudyModels.swift in Sources */,
+        A10000000000000000000003 /* LocalStudyStore.swift in Sources */,
+        A10000000000000000000004 /* ContentView.swift in Sources */,
+      );
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+    F20000000000000000000001 /* Debug project */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        ALWAYS_SEARCH_USER_PATHS = NO;
+        CLANG_ENABLE_MODULES = YES;
+        CLANG_ENABLE_OBJC_ARC = YES;
+        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+        SDKROOT = iphoneos;
+        SWIFT_VERSION = 5.0;
+      };
+      name = Debug;
+    };
+    F20000000000000000000002 /* Release project */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        ALWAYS_SEARCH_USER_PATHS = NO;
+        CLANG_ENABLE_MODULES = YES;
+        CLANG_ENABLE_OBJC_ARC = YES;
+        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+        SDKROOT = iphoneos;
+        SWIFT_VERSION = 5.0;
+      };
+      name = Release;
+    };
+    F20000000000000000000003 /* Debug target */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        CODE_SIGN_STYLE = Automatic;
+        GENERATE_INFOPLIST_FILE = YES;
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+        INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+        INFOPLIST_KEY_CFBundleDisplayName = Rovex;
+        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+        PRODUCT_BUNDLE_IDENTIFIER = com.localqbank.rovex;
+        PRODUCT_NAME = "$(TARGET_NAME)";
+        SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+        SWIFT_EMIT_LOC_STRINGS = YES;
+        SWIFT_VERSION = 5.0;
+        TARGETED_DEVICE_FAMILY = "1,2";
+      };
+      name = Debug;
+    };
+    F20000000000000000000004 /* Release target */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        CODE_SIGN_STYLE = Automatic;
+        GENERATE_INFOPLIST_FILE = YES;
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+        INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+        INFOPLIST_KEY_CFBundleDisplayName = Rovex;
+        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+        PRODUCT_BUNDLE_IDENTIFIER = com.localqbank.rovex;
+        PRODUCT_NAME = "$(TARGET_NAME)";
+        SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+        SWIFT_EMIT_LOC_STRINGS = YES;
+        SWIFT_VERSION = 5.0;
+        TARGETED_DEVICE_FAMILY = "1,2";
+      };
+      name = Release;
+    };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+    F10000000000000000000001 /* Build configuration list for PBXProject */ = {
+      isa = XCConfigurationList;
+      buildConfigurations = (
+        F20000000000000000000001 /* Debug project */,
+        F20000000000000000000002 /* Release project */,
+      );
+      defaultConfigurationIsVisible = 0;
+      defaultConfigurationName = Release;
+    };
+    F10000000000000000000002 /* Build configuration list for PBXNativeTarget "Rovex" */ = {
+      isa = XCConfigurationList;
+      buildConfigurations = (
+        F20000000000000000000003 /* Debug target */,
+        F20000000000000000000004 /* Release target */,
+      );
+      defaultConfigurationIsVisible = 0;
+      defaultConfigurationName = Release;
+    };
+/* End XCConfigurationList section */
+  };
+  rootObject = E10000000000000000000002 /* Project object */;
+}
