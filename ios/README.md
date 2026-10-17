@@ -58,3 +58,11 @@ The portable Rovex archive uses `schemaVersion: 1` and contains `exportedAt`, `q
 - Existing Android SQLite databases, HTML question rendering, images/attachments, APKG import, Android SRS settings and limits, backups, online services, and the Ben AI architecture are not yet migrated. The iOS flashcard scheduler is an initial independent implementation; it is not yet behaviorally equivalent to Android SRS.
 - The Android implementation remains authoritative for the existing Android release. iOS work is isolated under `ios/` plus its dedicated CI workflow.
 - Keep feature parity work incremental: build/test each subsystem, define a cross-platform data format and migration/import/export path, and do not claim iOS parity until the corresponding behavior is implemented and tested on simulator and physical devices.
+
+## Anki/APKG import (Phase 6)
+
+Settings can import Anki `.apkg` decks into the local flashcard collection. The importer reads `collection.anki21` or `collection.anki2`, maps note fields from the first card template where possible, strips basic HTML, and preserves image/audio references as readable placeholders.
+
+**Current limitations:** media files are not extracted or rendered; full HTML/CSS/JavaScript, cloze rendering, tags/deck hierarchy, and Anki scheduling/SRS metadata are not migrated. This does not establish compatibility with the real Rovex Android database or APKG exporter. Test with copies of study files.
+
+GitHub Actions runs a synthetic APKG archive test for ZIP extraction, note/model/card parsing, front/back field mapping, basic HTML cleanup, and media placeholders, in addition to JSON/SQLite smoke tests and Debug/Release simulator builds.
