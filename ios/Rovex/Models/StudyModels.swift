@@ -56,3 +56,29 @@ struct QBankImportDocument: Decodable {
         case questions
     }
 }
+
+struct StudyDataArchive: Codable {
+    var schemaVersion: Int
+    var exportedAt: Date
+    var questions: [QBankQuestion]
+    var flashcards: [StudyFlashcard]
+
+    init(schemaVersion: Int = 1, exportedAt: Date = Date(), questions: [QBankQuestion], flashcards: [StudyFlashcard]) {
+        self.schemaVersion = schemaVersion
+        self.exportedAt = exportedAt
+        self.questions = questions
+        self.flashcards = flashcards
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, exportedAt, questions, flashcards
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        exportedAt = try container.decodeIfPresent(Date.self, forKey: .exportedAt) ?? Date()
+        questions = try container.decodeIfPresent([QBankQuestion].self, forKey: .questions) ?? []
+        flashcards = try container.decodeIfPresent([StudyFlashcard].self, forKey: .flashcards) ?? []
+    }
+}
