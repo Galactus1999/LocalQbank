@@ -176,7 +176,7 @@ enum APKGImporter {
             value = value.replacingOccurrences(of: entity, with: replacement, options: .caseInsensitive)
         }
         return value
-            .replacingOccurrences(of: "\\r\\n", with: "\n")
+            .replacingOccurrences(of: "\r\n", with: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
