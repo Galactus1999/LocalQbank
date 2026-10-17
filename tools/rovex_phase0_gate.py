@@ -284,6 +284,35 @@ def write_manifest(out: Path, src: Path, project: Path, source_version: str, sou
     out.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     (ROOT / "phase0-selected-source.txt").write_text(str(src) + "\n", encoding="utf-8")
 
+def artifact_contract_audit():
+    """Prevent successful CI uploads that silently omit the generated source ZIP."""
+    workflow_path = ROOT / ".github" / "workflows" / "_adaptive-android.yml"
+    workflow = read_text(workflow_path)
+    if not workflow:
+        die("Missing adaptive Android workflow for release-artifact contract audit.")
+
+    required_packaging = [
+        'source_zip="$GITHUB_WORKSPACE/adaptive-source.zip"',
+        'unzip -tq "$source_zip"',
+        "grep -Fxq 'gradlew'",
+        'sha256sum "$source_zip"',
+    ]
+    missing = [item for item in required_packaging if item not in workflow]
+    if missing:
+        die("Adaptive source-archive validation contract missing: " + "; ".join(missing))
+
+    upload_marker = "      - name: Upload adaptive artifacts"
+    if upload_marker not in workflow:
+        die("Could not locate adaptive artifact upload step.")
+    upload_body = workflow.split(upload_marker, 1)[1].split("      - name:", 1)[0]
+    if "adaptive-release.apk" not in upload_body or "adaptive-source.zip" not in upload_body:
+        die("Adaptive artifact upload must include both release APK and source ZIP.")
+    if "$RUNNER_TEMP/adaptive-source.zip" in upload_body:
+        die("Artifact upload uses an unexpanded RUNNER_TEMP variable; source ZIP may be silently omitted.")
+
+    print("PHASE0 ARTIFACT CONTRACT: PASS (validated source ZIP is included in upload paths)")
+
+
 def main():
     src = choose_zip()
     print(f"PHASE0 SOURCE: {src.name}")
@@ -308,6 +337,7 @@ def main():
         throwable_audit(current, baseline)
         db_construction_diff(current, baseline)
         test_presence_audit(project)
+        artifact_contract_audit()
 
         out = ROOT / "phase0-verification-manifest.json"
         write_manifest(out, src, project, source_version, source_code)
