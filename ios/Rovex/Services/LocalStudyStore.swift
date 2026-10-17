@@ -25,7 +25,7 @@ final class LocalStudyStore: ObservableObject {
 
     func reload() {
         do {
-            try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+            try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true, attributes: nil)
             questions = try read([QBankQuestion].self, defaultValue: [], from: "questions.json")
             flashcards = try read([StudyFlashcard].self, defaultValue: [], from: "flashcards.json")
             storageError = nil
@@ -48,10 +48,11 @@ final class LocalStudyStore: ObservableObject {
             throw StudyStoreError.invalidQuestion
         }
 
-        let existing = Set(questions.map { normalized($0.question) })
-        let newQuestions = document.questions.filter { !existing.contains(normalized($0.question)) }
-        questions.append(contentsOf: newQuestions)
-        try persist(questions, to: "questions.json")
+        var seen = Set(questions.map { normalized($0.question) })
+        let newQuestions = document.questions.filter { seen.insert(normalized($0.question)).inserted }
+        let updatedQuestions = questions + newQuestions
+        try persist(updatedQuestions, to: "questions.json")
+        questions = updatedQuestions
         return newQuestions.count
     }
 
@@ -61,13 +62,15 @@ final class LocalStudyStore: ObservableObject {
         guard !cleanFront.isEmpty, !cleanBack.isEmpty else {
             throw StudyStoreError.emptyFlashcard
         }
-        flashcards.insert(StudyFlashcard(front: cleanFront, back: cleanBack), at: 0)
-        try persist(flashcards, to: "flashcards.json")
+        let updatedFlashcards = [StudyFlashcard(front: cleanFront, back: cleanBack)] + flashcards
+        try persist(updatedFlashcards, to: "flashcards.json")
+        flashcards = updatedFlashcards
     }
 
     func deleteFlashcard(id: UUID) throws {
-        flashcards.removeAll { $0.id == id }
-        try persist(flashcards, to: "flashcards.json")
+        let updatedFlashcards = flashcards.filter { $0.id != id }
+        try persist(updatedFlashcards, to: "flashcards.json")
+        flashcards = updatedFlashcards
     }
 
     private func normalized(_ value: String) -> String {
