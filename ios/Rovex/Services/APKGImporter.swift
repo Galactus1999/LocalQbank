@@ -156,6 +156,8 @@ enum APKGImporter {
 
     private static func readableText(_ html: String) -> String {
         var value = html
+        value = value.replacingOccurrences(of: #"(?is)<script\\b[^>]*>.*?</script>|<style\\b[^>]*>.*?</style>"#, with: "", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"(?i)\\[sound:([^\\]]+)\\]"#, with: "[audio: $1]", options: .regularExpression)
         value = value.replacingOccurrences(
             of: #"(?i)<img\b[^>]*?src\s*=\s*['"]([^'"]+)['"][^>]*>"#,
             with: "[image: $1]",
