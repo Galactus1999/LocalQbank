@@ -65,8 +65,8 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
                 correctAnswerIndex = index
             } else if let answerText, answerText.count == 1,
                       let scalar = answerText.uppercased().unicodeScalars.first,
-                      ("A"..."D").contains(String(scalar)) {
-                correctAnswerIndex = Int(scalar.value - UnicodeScalar("A").value)
+                      ["A", "B", "C", "D"].contains(String(scalar)) {
+                correctAnswerIndex = Int(scalar.value - 65)
             } else if let answerText,
                       let index = options.firstIndex(where: {
                           $0.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -97,8 +97,8 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
         func rank(_ key: String) -> Int {
             let normalized = key.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             if normalized.count == 1, let scalar = normalized.unicodeScalars.first,
-               ("A"..."Z").contains(String(scalar)) {
-                return Int(scalar.value - UnicodeScalar("A").value)
+               scalar.value >= 65 && scalar.value <= 90 {
+                return Int(scalar.value - 65)
             }
             if let number = Int(normalized) { return number }
             return Int.max
