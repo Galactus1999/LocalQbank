@@ -201,7 +201,8 @@ struct QBankView: View {
                 } else {
                     List {
                         Section {
-                            ForEach(Array(store.questions.enumerated()), id: \.element.id) { index, question in
+                            ForEach(store.questions.indices, id: \.self) { index in
+                                let question = store.questions[index]
                                 NavigationLink {
                                     QuestionDetailView(question: question, number: index + 1, theme: theme)
                                 } label: {
