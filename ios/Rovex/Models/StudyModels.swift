@@ -45,8 +45,8 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
             let optionKeys: [(CodingKeys, String)] = [
                 (.optionA, "A"), (.optionB, "B"), (.optionC, "C"), (.optionD, "D")
             ]
-            options = optionKeys.compactMap { key, _ in
-                try? container.decode(String.self, forKey: key)
+            options = optionKeys.compactMap { pair in
+                try? container.decode(String.self, forKey: pair.0)
             }
         }
 
@@ -79,6 +79,15 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
         }
 
         explanation = Self.decodeFirstString(container, keys: [.explanation, .rationale]) ?? ""
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(question, forKey: .question)
+        try container.encode(options, forKey: .options)
+        try container.encode(correctAnswerIndex, forKey: .correctAnswerIndex)
+        try container.encode(explanation, forKey: .explanation)
     }
 
     private static func decodeFirstString(
