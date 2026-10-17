@@ -77,7 +77,7 @@ fi
 # ZIP archives and cross-platform packagers may strip the Unix executable bit.
 # Normalize the launcher before CI invokes it as ./gradlew.
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
-chmod u+x "$project/gradlew"
+chmod 755 "$project/gradlew"
 test -x "$project/gradlew" || fail "Gradle wrapper is not executable: $project/gradlew"
 log "Gradle launcher executable bit verified"
 [[ -f "$project/settings.gradle" || -f "$project/settings.gradle.kts" ]] || fail "Gradle settings not found: $project"
