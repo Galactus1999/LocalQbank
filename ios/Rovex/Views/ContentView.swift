@@ -622,7 +622,7 @@ struct SettingsView: View {
             .background(p.background)
             .tint(p.accent)
             .navigationTitle("Settings")
-            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json, .data], allowsMultipleSelection: false) { result in
                 do {
                     let urls = try result.get()
                     guard let url = urls.first else { return }
