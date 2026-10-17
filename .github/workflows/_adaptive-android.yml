@@ -207,8 +207,11 @@ jobs:
           apk="$ADAPTIVE_RELEASE_APK"
           if [[ -z "$KEYSTORE_B64" ]]; then KEYSTORE_B64="$KEYSTORE_B64_LEGACY"; fi
           if [[ -z "$KEYSTORE_B64" || -z "$STORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
-            echo "CAPABILITY SKIPPED: signing secrets are not configured."
-            if [[ "$STRICT_MODE" == "true" ]]; then exit 1; fi
+            if [[ "$ADAPTIVE_IS_ROVEX" == "true" || "$STRICT_MODE" == "true" ]]; then
+              echo "FATAL: signed release APK is mandatory for Rovex; signing secrets are missing."
+              exit 1
+            fi
+            echo "CAPABILITY SKIPPED: signing secrets are not configured for this non-Rovex target."
             exit 0
           fi
           ks="$RUNNER_TEMP/adaptive-release.jks"
@@ -220,6 +223,9 @@ jobs:
             expected="8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153"
             actual="$(awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}' "$RUNNER_TEMP/signing.txt" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
             [[ "$actual" == "$expected" ]] || { echo "Rovex signing certificate mismatch."; exit 1; }
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$apk"
+            test -s "$apk"
+            echo "PASS: Rovex release APK is signed and matches the persistent signing certificate."
           fi
 
       - name: Verify Qualcomm runtime when present
