@@ -1,0 +1,73 @@
+name: Quiz Header Gap and Performance Repair
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/ci/rovex_678_quiz_statusbar_performance.py"
+      - ".github/workflows/quiz-header-repair.yml"
+      - "Rovex_Todays_Green_Build_Source_Fixed_HomeMotionHeader.zip"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  overlay-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+      - name: Install Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-34" "build-tools;35.0.0"
+      - name: Extract exact visual baseline
+        run: |
+          set -euo pipefail
+          test -f Rovex_Todays_Green_Build_Source_Fixed_HomeMotionHeader.zip
+          mkdir -p "$RUNNER_TEMP/rovex-source"
+          unzip -q Rovex_Todays_Green_Build_Source_Fixed_HomeMotionHeader.zip -d "$RUNNER_TEMP/rovex-source"
+          PROJECT="$(find "$RUNNER_TEMP/rovex-source" -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit | xargs dirname)"
+          test -n "$PROJECT" && test -f "$PROJECT/gradlew"
+          echo "ROVEX_PROJECT=$PROJECT" >> "$GITHUB_ENV"
+      - name: Apply wallpaper and header baseline
+        run: |
+          set -euo pipefail
+          python3 .github/ci/rovex_664_wallpaper_phase2.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_665_liquid_glass_repair.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_666_cross_theme_audit.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_667_motion_surface_repair.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_668_static_glass_splash.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_669_black_hole_prototype.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_670_glass_optics_repair.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_671_liquid_glass_prototype.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_672_theme_contrast_header.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_673_header_diagnostic.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_674_header_builder_map.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_675_layout_inset_map.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_676_compact_quiz_header.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_677_quiz_header_contrast.py "$ROVEX_PROJECT"
+          python3 .github/ci/rovex_678_quiz_statusbar_performance.py "$ROVEX_PROJECT"
+      - name: Run JVM tests
+        run: |
+          cd "$ROVEX_PROJECT"
+          ./gradlew test --no-daemon --stacktrace
+      - name: Build debug and release
+        run: |
+          cd "$ROVEX_PROJECT"
+          ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
+      - name: Upload candidate APK and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiz-header-repair-candidate
+          path: |
+            ${{ env.ROVEX_PROJECT }}/app/build/outputs/apk/**/*.apk
+          if-no-files-found: warn
+          retention-days: 14
