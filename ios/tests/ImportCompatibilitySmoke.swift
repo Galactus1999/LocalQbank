@@ -59,6 +59,12 @@ struct ImportCompatibilitySmoke {
         try require(optionFieldDocument.questions[0].options == ["One", "Two", "Three", "Four"], "optionA-D aliases")
         try require(optionFieldDocument.questions[0].correctAnswerIndex == 3, "D answer mapping")
 
+        let numericAlias = Data("""
+        [{"question":"Numeric alias","options":["One","Two","Three"],"correctAnswer":1}]
+        """.utf8)
+        let numericQuestion = try decoder.decode(QBankImportDocument.self, from: numericAlias).questions[0]
+        try require(numericQuestion.correctAnswerIndex == 1, "numeric correctAnswer alias remains zero-based")
+
         let invalidAnswer = Data("""
         [{"question":"No answer","options":["One","Two"],"correctAnswer":"Z"}]
         """.utf8)
