@@ -11,7 +11,7 @@ final class LocalStudyStore: ObservableObject {
 
     private let fileManager = FileManager.default
     private let encoder: JSONEncoder
-    private let decoder = JSONDecoder
+    private let decoder = JSONDecoder()
     private let directoryURL: URL
 
     private init() {
@@ -26,8 +26,8 @@ final class LocalStudyStore: ObservableObject {
     func reload() {
         do {
             try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-            questions = try read([QBankQuestion].self, from: "questions.json")
-            flashcards = try read([StudyFlashcard].self, from: "flashcards.json")
+            questions = try read([QBankQuestion].self, defaultValue: [], from: "questions.json")
+            flashcards = try read([StudyFlashcard].self, defaultValue: [], from: "flashcards.json")
             storageError = nil
         } catch {
             storageError = "Local study data could not be read: \(error.localizedDescription)"
@@ -77,13 +77,9 @@ final class LocalStudyStore: ObservableObject {
             .joined(separator: " ")
     }
 
-    private func read<T: Decodable>(_ type: T.Type, from name: String) throws -> T {
+    private func read<T: Decodable>(_ type: T.Type, defaultValue: T, from name: String) throws -> T {
         let url = directoryURL.appendingPathComponent(name)
-        guard fileManager.fileExists(atPath: url.path) else {
-            if type == [QBankQuestion].self { return [] as! T }
-            if type == [StudyFlashcard].self { return [] as! T }
-            throw StudyStoreError.unsupportedStoreType
-        }
+        guard fileManager.fileExists(atPath: url.path) else { return defaultValue }
         return try decoder.decode(type, from: Data(contentsOf: url))
     }
 
@@ -99,7 +95,6 @@ enum StudyStoreError: LocalizedError {
     case emptyImport
     case invalidQuestion
     case emptyFlashcard
-    case unsupportedStoreType
 
     var errorDescription: String? {
         switch self {
@@ -109,8 +104,6 @@ enum StudyStoreError: LocalizedError {
             return "Each question needs text, at least two options, and a valid correct-answer index."
         case .emptyFlashcard:
             return "Enter both the front and back of the flashcard."
-        case .unsupportedStoreType:
-            return "This local data format is not supported."
         }
     }
 }
