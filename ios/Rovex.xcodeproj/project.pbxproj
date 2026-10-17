@@ -11,6 +11,8 @@
     A10000000000000000000003 /* LocalStudyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* LocalStudyStore.swift */; };
     A10000000000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ContentView.swift */; };
     A10000000000000000000005 /* SQLiteQBankImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* SQLiteQBankImporter.swift */; };
+    A10000000000000000000006 /* APKGImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* APKGImporter.swift */; };
+    A10000000000000000000007 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000001 /* ZIPFoundation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,10 +22,11 @@
     B10000000000000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
     B10000000000000000000005 /* Rovex.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rovex.app; sourceTree = BUILT_PRODUCTS_DIR; };
     B10000000000000000000006 /* SQLiteQBankImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteQBankImporter.swift; sourceTree = "<group>"; };
+    B10000000000000000000007 /* APKGImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APKGImporter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-    C10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+    C10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000007 /* ZIPFoundation in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -62,7 +65,7 @@
       isa = PBXGroup;
       path = Services;
       sourceTree = "<group>";
-      children = (B10000000000000000000003 /* LocalStudyStore.swift */, B10000000000000000000006 /* SQLiteQBankImporter.swift */, );
+      children = (B10000000000000000000003 /* LocalStudyStore.swift */, B10000000000000000000006 /* SQLiteQBankImporter.swift */, B10000000000000000000007 /* APKGImporter.swift */, );
     };
     D10000000000000000000006 /* Views */ = {
       isa = PBXGroup;
@@ -87,6 +90,7 @@
       productName = Rovex;
       productReference = B10000000000000000000005 /* Rovex.app */;
       productType = "com.apple.product-type.application";
+      packageProductDependencies = (A20000000000000000000001 /* ZIPFoundation */, );
     };
 /* End PBXNativeTarget section */
 
@@ -108,6 +112,7 @@
       mainGroup = D10000000000000000000001;
       productRefGroup = D10000000000000000000003 /* Products */;
       projectDirPath = "";
+      packageReferences = (R20000000000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */, );
       projectRoot = "";
       targets = (E10000000000000000000001 /* Rovex */, );
     };
@@ -127,10 +132,30 @@
         A10000000000000000000003 /* LocalStudyStore.swift in Sources */,
         A10000000000000000000004 /* ContentView.swift in Sources */,
         A10000000000000000000005 /* SQLiteQBankImporter.swift in Sources */,
+        A10000000000000000000006 /* APKGImporter.swift in Sources */,
       );
       runOnlyForDeploymentPostprocessing = 0;
     };
 /* End PBXSourcesBuildPhase section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+    R20000000000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+      isa = XCRemoteSwiftPackageReference;
+      repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+      requirement = {
+        kind = upToNextMajorVersion;
+        minimumVersion = 0.9.19;
+      };
+    };
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+    A20000000000000000000001 /* ZIPFoundation */ = {
+      isa = XCSwiftPackageProductDependency;
+      package = R20000000000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+      productName = ZIPFoundation;
+    };
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
     F20000000000000000000001 /* Debug project */ = {

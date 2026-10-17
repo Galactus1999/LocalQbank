@@ -59,6 +59,11 @@ final class LocalStudyStore: ObservableObject {
     }
 
     @discardableResult
+    func importFlashcards(_ flashcards: [StudyFlashcard]) throws -> Int {
+        try merge(questions: [], flashcards: flashcards).flashcardsAdded
+    }
+
+    @discardableResult
     func importData(from data: Data) throws -> (questionsAdded: Int, flashcardsAdded: Int) {
         if let archive = try? decoder.decode(StudyDataArchive.self, from: data) {
             guard archive.schemaVersion == 1 else {
