@@ -12,7 +12,10 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, question, options, correctAnswerIndex, explanation
+        case id, question, questionText, stem, text
+        case options, optionA, optionB, optionC, optionD
+        case correctAnswerIndex, answerIndex, correctAnswer, correctOption, answer
+        case explanation, rationale
     }
 
     init(id: UUID = UUID(), question: String, options: [String], correctAnswerIndex: Int, explanation: String = "") {
@@ -25,11 +28,84 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
-        question = try container.decode(String.self, forKey: .question)
-        options = try container.decode([String].self, forKey: .options)
-        correctAnswerIndex = try container.decode(Int.self, forKey: .correctAnswerIndex)
-        explanation = try container.decodeIfPresent(String.self, forKey: .explanation) ?? ""
+
+        // Android/database identifiers are not necessarily UUIDs. Never reject an otherwise
+        // usable question solely because an external ID uses another format.
+        id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
+        question = try Self.decodeFirstString(
+            container,
+            keys: [.question, .questionText, .stem, .text]
+        ) ?? ""
+
+        if let array = try? container.decode([String].self, forKey: .options) {
+            options = array
+        } else if let keyedOptions = try? container.decode([String: String].self, forKey: .options) {
+            options = keyedOptions.keys.sorted(by: Self.optionKeyOrder).compactMap { keyedOptions[$0] }
+        } else {
+            let optionKeys: [(CodingKeys, String)] = [
+                (.optionA, "A"), (.optionB, "B"), (.optionC, "C"), (.optionD, "D")
+            ]
+            options = optionKeys.compactMap { key, _ in
+                try? container.decode(String.self, forKey: key)
+            }
+        }
+
+        if let index = try? container.decode(Int.self, forKey: .correctAnswerIndex) {
+            correctAnswerIndex = index
+        } else if let index = try? container.decode(Int.self, forKey: .answerIndex) {
+            correctAnswerIndex = index
+        } else {
+            let answerText = Self.decodeFirstString(
+                container,
+                keys: [.correctAnswer, .correctOption, .answer]
+            )?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if let answerText, let index = Int(answerText) {
+                // Integer values follow the documented zero-based JSON contract.
+                correctAnswerIndex = index
+            } else if let answerText, answerText.count == 1,
+                      let scalar = answerText.uppercased().unicodeScalars.first,
+                      ("A"..."D").contains(String(scalar)) {
+                correctAnswerIndex = Int(scalar.value - UnicodeScalar("A").value)
+            } else if let answerText,
+                      let index = options.firstIndex(where: {
+                          $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                              .localizedCaseInsensitiveCompare(answerText) == .orderedSame
+                      }) {
+                correctAnswerIndex = index
+            } else {
+                correctAnswerIndex = -1
+            }
+        }
+
+        explanation = Self.decodeFirstString(container, keys: [.explanation, .rationale]) ?? ""
+    }
+
+    private static func decodeFirstString(
+        _ container: KeyedDecodingContainer<CodingKeys>,
+        keys: [CodingKeys]
+    ) -> String? {
+        for key in keys {
+            if let value = try? container.decode(String.self, forKey: key) {
+                return value
+            }
+        }
+        return nil
+    }
+
+    private static func optionKeyOrder(_ lhs: String, _ rhs: String) -> Bool {
+        func rank(_ key: String) -> Int {
+            let normalized = key.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            if normalized.count == 1, let scalar = normalized.unicodeScalars.first,
+               ("A"..."Z").contains(String(scalar)) {
+                return Int(scalar.value - UnicodeScalar("A").value)
+            }
+            if let number = Int(normalized) { return number }
+            return Int.max
+        }
+        let leftRank = rank(lhs)
+        let rightRank = rank(rhs)
+        return leftRank == rightRank ? lhs.localizedStandardCompare(rhs) == .orderedAscending : leftRank < rightRank
     }
 }
 
@@ -81,7 +157,7 @@ struct StudyFlashcard: Identifiable, Codable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
         front = try container.decode(String.self, forKey: .front)
         back = try container.decode(String.self, forKey: .back)
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
@@ -105,11 +181,20 @@ struct QBankImportDocument: Decodable {
             return
         }
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        questions = try container.decode([QBankQuestion].self, forKey: .questions)
+        for key in [CodingKeys.questions, .items, .data, .results] {
+            if let value = try? container.decode([QBankQuestion].self, forKey: key) {
+                questions = value
+                return
+            }
+        }
+        throw DecodingError.keyNotFound(
+            CodingKeys.questions,
+            DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Expected a question array or an object containing questions/items/data/results.")
+        )
     }
 
     private enum CodingKeys: String, CodingKey {
-        case questions
+        case questions, items, data, results
     }
 }
 
