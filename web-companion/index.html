@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10151f">
+  <meta name="description" content="Offline-first Rovex study companion proof of concept">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Rovex Study Companion</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark" aria-hidden="true">R</div>
+    <div><p class="eyebrow">OFFLINE-FIRST PROOF OF CONCEPT</p><h1>Rovex Companion</h1></div>
+    <span id="connection-status" class="status">Checking…</span>
+  </header>
+  <main>
+    <section class="intro panel">
+      <p class="eyebrow">YOUR STUDY SPACE</p>
+      <h2>Study across screens.<br><span>Your data stays yours.</span></h2>
+      <p>This isolated prototype runs in your browser. It does not connect to or modify the installed Android app.</p>
+      <div class="actions">
+        <button id="load-demo" class="primary">Load sample questions</button>
+        <label class="button secondary" for="import-file">Import study bundle<input id="import-file" type="file" accept=".json,application/json" hidden></label>
+        <button id="export-data" class="secondary">Export local data</button>
+      </div>
+      <p class="hint">Import merges by stable ID. Existing records are not overwritten. Export a backup before experimenting.</p>
+    </section>
+    <section class="stats" aria-label="Study data summary">
+      <div class="stat panel"><span>Questions</span><strong id="question-count">0</strong></div>
+      <div class="stat panel"><span>Reviewed</span><strong id="reviewed-count">0</strong></div>
+      <div class="stat panel"><span>Subjects</span><strong id="subject-count">0</strong></div>
+    </section>
+    <section class="study-layout">
+      <aside class="panel filters">
+        <label for="subject-filter">Subject</label>
+        <select id="subject-filter"><option value="">All subjects</option></select>
+        <label for="search-input">Search questions</label>
+        <input id="search-input" type="search" placeholder="Search stems and options">
+        <p class="hint">This POC searches the locally imported question set. No server or account is used.</p>
+        <div id="import-status" class="message" role="status" aria-live="polite">No study bundle imported.</div>
+      </aside>
+      <section class="questions">
+        <div class="section-heading"><div><p class="eyebrow">QUESTION BANK</p><h2>Continue studying</h2></div><span id="result-count" class="muted">0 results</span></div>
+        <div id="question-list" class="question-list"><div class="empty panel">Load the sample set or import a Rovex study bundle to begin.</div></div>
+      </section>
+    </section>
+    <footer><p>Prototype only · Local browser storage · No cloud sync · Not connected to production Rovex</p></footer>
+  </main>
+  <script src="./app.js" defer></script>
+</body>
+</html>
