@@ -8,6 +8,8 @@ This directory starts a **separate native SwiftUI iOS app** for Rovex. It does n
 - Six theme palettes: AMOLED, Light, Pastel, Mint, Sunset, and Lavender.
 - Local QBank JSON import, question navigation, answer selection, answer reveal, and explanation display.
 - Locally persisted flashcards with create, flip, navigate, and delete actions.
+- Versioned study-data archive import/export covering both questions and flashcards, with duplicate filtering and fresh local IDs.
+- One atomic archive file for the current question/flashcard snapshot; first-run migration from the initial two-file iOS layout.
 - Atomic JSON writes in the app's Application Support directory.
 - Import validation and duplicate question-stem filtering.
 - A transparent Ben status screen: the Android Ben engine, model runtime, retrieval index, and neural inference are **not** ported in this foundation.
@@ -25,7 +27,7 @@ The GitHub Actions workflow `.github/workflows/ios-ci.yml` runs both Debug and R
 
 ## QBank JSON format
 
-Import a UTF-8 JSON file using either a top-level array or an object with a `questions` array. Each item uses a zero-based `correctAnswerIndex`.
+Import a UTF-8 JSON file using either a top-level question array, an object with a `questions` array, or a Rovex study archive exported from Settings. Each question uses a zero-based `correctAnswerIndex`. Export/import from Settings transfers questions and flashcards together.
 
 ```json
 {
@@ -41,6 +43,8 @@ Import a UTF-8 JSON file using either a top-level array or an object with a `que
 ```
 
 The `id` and `explanation` fields are optional. The question stem, at least two options, and a valid correct-answer index are required. Import is local; duplicates by normalized question stem are skipped.
+
+The portable Rovex archive uses `schemaVersion: 1` and contains `exportedAt`, `questions`, and `flashcards`. The importer merges records instead of replacing existing data. Flashcards are deduplicated by normalized front/back content. Imported IDs are regenerated to avoid identifier collisions. Unsupported future archive versions are rejected rather than silently misread.
 
 ## Data and parity boundaries
 
