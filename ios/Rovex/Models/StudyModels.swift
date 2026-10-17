@@ -54,6 +54,10 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
             correctAnswerIndex = index
         } else if let index = try? container.decode(Int.self, forKey: .answerIndex) {
             correctAnswerIndex = index
+        } else if let numericAlias = [CodingKeys.correctAnswer, .correctOption, .answer]
+            .compactMap({ try? container.decode(Int.self, forKey: $0) }).first {
+            // Numeric aliases use the same zero-based convention as correctAnswerIndex.
+            correctAnswerIndex = numericAlias
         } else {
             let answerText = Self.decodeFirstString(
                 container,
@@ -61,7 +65,7 @@ struct QBankQuestion: Identifiable, Codable, Hashable {
             )?.trimmingCharacters(in: .whitespacesAndNewlines)
 
             if let answerText, let index = Int(answerText) {
-                // Integer values follow the documented zero-based JSON contract.
+                // Integer strings follow the documented zero-based JSON contract.
                 correctAnswerIndex = index
             } else if let answerText, answerText.count == 1,
                       let scalar = answerText.uppercased().unicodeScalars.first,
