@@ -350,8 +350,13 @@ struct FlashcardsView: View {
                         Button("Create flashcard") { showingAdd = true }.buttonStyle(.borderedProminent)
                     }
                 } else {
-                    Text("CARD \(min(activeIndex + 1, store.flashcards.count)) OF \(store.flashcards.count)")
-                        .font(.caption.bold()).tracking(1.3).foregroundStyle(p.secondaryText)
+                    VStack(spacing: 5) {
+                        Text("CARD \(min(activeIndex + 1, store.flashcards.count)) OF \(store.flashcards.count)")
+                            .font(.caption.bold()).tracking(1.3).foregroundStyle(p.secondaryText)
+                        Text("\(store.dueFlashcardCount) due for review")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(store.dueFlashcardCount > 0 ? p.accent : p.secondaryText)
+                    }
                     Button { showingBack.toggle() } label: {
                         VStack(spacing: 18) {
                             Image(systemName: showingBack ? "arrow.uturn.backward" : "hand.tap")
@@ -367,6 +372,23 @@ struct FlashcardsView: View {
                     HStack(spacing: 14) {
                         Button("Previous") { move(-1) }.buttonStyle(.bordered).disabled(activeIndex == 0)
                         Button("Next") { move(1) }.buttonStyle(.borderedProminent).tint(p.accent).disabled(activeIndex >= store.flashcards.count - 1)
+                    }
+                    if showingBack, store.flashcards.indices.contains(activeIndex) {
+                        VStack(spacing: 8) {
+                            Text("How well did you recall it?")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(p.secondaryText)
+                            HStack(spacing: 7) {
+                                ForEach(FlashcardRating.allCases) { rating in
+                                    Button(rating.rawValue) { rateCurrentCard(rating) }
+                                        .font(.caption.weight(.semibold))
+                                        .buttonStyle(.bordered)
+                                        .tint(rating == .again ? .red : (rating == .easy ? .green : p.accent))
+                                        .frame(maxWidth: .infinity)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
                     }
                     List {
                         ForEach(store.flashcards) { card in
@@ -413,6 +435,21 @@ struct FlashcardsView: View {
     private func move(_ delta: Int) {
         activeIndex = min(max(0, activeIndex + delta), max(0, store.flashcards.count - 1))
         showingBack = false
+    }
+
+    private func rateCurrentCard(_ rating: FlashcardRating) {
+        guard store.flashcards.indices.contains(activeIndex) else { return }
+        let currentID = store.flashcards[activeIndex].id
+        do {
+            try store.reviewFlashcard(id: currentID, rating: rating)
+            // The deck remains in stable order; moving on prevents accidental double-rating.
+            if activeIndex < store.flashcards.count - 1 {
+                activeIndex += 1
+            }
+            showingBack = false
+        } catch {
+            actionError = error.localizedDescription
+        }
     }
 
     private func deleteCards(at offsets: IndexSet) {
