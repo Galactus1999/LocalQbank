@@ -1,4 +1,5 @@
 import Foundation
+import SQLite3
 
 @main
 struct ImportCompatibilitySmoke {
@@ -78,7 +79,51 @@ struct ImportCompatibilitySmoke {
         let roundTrip = try decoder.decode(StudyDataArchive.self, from: JSONEncoder().encode(archive))
         try require(roundTrip.questions.count == 1 && roundTrip.flashcards.count == 1, "archive encode/decode round trip")
 
-        print("PASS: canonical JSON, wrapper aliases, option-object ordering, optionA-D fields, answer mapping, invalid-answer rejection, and archive round-trip")
+        let databaseURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rovex-sqlite-import-\\(UUID().uuidString).db")
+        defer { try? FileManager.default.removeItem(at: databaseURL) }
+        var database: OpaquePointer?
+        try require(sqlite3_open(databaseURL.path, &database) == SQLITE_OK, "create SQLite fixture")
+        guard let database else { throw SmokeTestError.failed("SQLite fixture handle") }
+        defer { sqlite3_close(database) }
+        let sql = """
+        CREATE TABLE question_bank (
+            id INTEGER PRIMARY KEY,
+            question_text TEXT NOT NULL,
+            options_json TEXT NOT NULL,
+            correct_answer TEXT NOT NULL,
+            explanation TEXT
+        );
+        INSERT INTO question_bank(question_text, options_json, correct_answer, explanation)
+        VALUES
+          ('SQLite question one', '["First","Second","Third","Fourth"]', 'B', 'SQLite explanation'),
+          ('SQLite question two', '["Alpha","Beta"]', '1', '');
+        """
+        try require(sqlite3_exec(database, sql, nil, nil, nil) == SQLITE_OK, "populate SQLite fixture")
+        sqlite3_close(database)
+        database = nil
+        let sqliteQuestions = try SQLiteQBankImporter.importQuestions(from: databaseURL)
+        try require(sqliteQuestions.count == 2, "SQLite question count")
+        try require(sqliteQuestions[0].correctAnswerIndex == 1, "SQLite letter answer mapping")
+        try require(sqliteQuestions[0].explanation == "SQLite explanation", "SQLite explanation")
+        try require(sqliteQuestions[1].correctAnswerIndex == 1, "SQLite numeric answer mapping")
+
+        let unsupportedURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rovex-sqlite-unsupported-\\(UUID().uuidString).db")
+        defer { try? FileManager.default.removeItem(at: unsupportedURL) }
+        var unsupportedDatabase: OpaquePointer?
+        try require(sqlite3_open(unsupportedURL.path, &unsupportedDatabase) == SQLITE_OK, "create unsupported SQLite fixture")
+        guard let unsupportedDatabase else { throw SmokeTestError.failed("unsupported SQLite fixture handle") }
+        try require(sqlite3_exec(unsupportedDatabase, "CREATE TABLE metadata(key TEXT, value TEXT);", nil, nil, nil) == SQLITE_OK, "populate unsupported SQLite fixture")
+        sqlite3_close(unsupportedDatabase)
+        do {
+            _ = try SQLiteQBankImporter.importQuestions(from: unsupportedURL)
+            throw SmokeTestError.failed("unsupported SQLite schema must be rejected")
+        } catch SQLiteQBankImportError.unsupportedSchema {
+            // Expected: no recognizable question/options/answer schema.
+        }
+
+        print("PASS: JSON compatibility and archive tests; read-only SQLite import, answer mapping, explanation, and unsupported-schema rejection")
     }
 
     private static func require(_ condition: Bool, _ name: String) throws {
