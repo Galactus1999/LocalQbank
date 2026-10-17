@@ -1,0 +1,60 @@
+name: iOS Build
+
+on:
+  pull_request:
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-ci.yml"
+  push:
+    branches:
+      - main
+      - "ios/**"
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Rovex for iOS Simulator
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          xcodebuild -version
+          xcodebuild -list -project ios/Rovex.xcodeproj
+
+      - name: Build Debug
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/Rovex.xcodeproj \
+            -scheme Rovex \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/RovexDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Build Release
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/Rovex.xcodeproj \
+            -scheme Rovex \
+            -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/RovexReleaseDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
