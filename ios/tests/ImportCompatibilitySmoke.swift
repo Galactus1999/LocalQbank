@@ -117,8 +117,8 @@ struct ImportCompatibilitySmoke {
         let standardQuestion = sqliteQuestions.first { $0.question == "SQLite question one" }
         try require(standardQuestion?.correctAnswerIndex == 1, "SQLite letter answer mapping")
         try require(standardQuestion?.explanation == "SQLite explanation", "SQLite explanation")
-        let numericQuestion = sqliteQuestions.first { $0.question == "SQLite question two" }
-        try require(numericQuestion?.correctAnswerIndex == 1, "SQLite numeric answer mapping")
+        let sqliteNumericQuestion = sqliteQuestions.first { $0.question == "SQLite question two" }
+        try require(sqliteNumericQuestion?.correctAnswerIndex == 1, "SQLite numeric answer mapping")
         let keyedQuestion = sqliteQuestions.first { $0.question == "SQLite keyed options" }
         try require(keyedQuestion?.options == ["First", "Second", "Third", "Fourth"], "SQLite keyed options order")
         try require(keyedQuestion?.correctAnswerIndex == 2, "SQLite keyed options answer mapping")
