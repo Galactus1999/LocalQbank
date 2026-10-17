@@ -5,7 +5,7 @@ import ZIPFoundation
 /// Imports the text side of an Anki .apkg archive into Rovex flashcards.
 /// Media is not copied into the app yet; references are retained as readable placeholders.
 enum APKGImporter {
-    private static let maximumDatabaseBytes: UInt64 = 512 * 1024 * 1024
+    private static let maximumDatabaseBytes: Int64 = 512 * 1024 * 1024
     private static let maximumNotes = 50_000
     private static let maximumFieldBytes = 2 * 1024 * 1024
 
