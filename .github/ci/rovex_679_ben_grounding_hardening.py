@@ -35,6 +35,7 @@ if test_path.exists():
 test_path.write_text(r'''package com.localqbank.library
 
 import com.localqbank.library.ai.context.EvidencePack
+import com.localqbank.library.ai.context.toEvidencePack
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
