@@ -37,8 +37,8 @@ final class LocalStudyStore: ObservableObject {
                 flashcards = archive.flashcards
             } else {
                 // One-time migration from the first iOS foundation's two-file layout.
-                questions = try readLegacy([QBankQuestion].self, from: "questions.json")
-                flashcards = try readLegacy([StudyFlashcard].self, from: "flashcards.json")
+                questions = try readLegacy([QBankQuestion].self, defaultValue: [], from: "questions.json")
+                flashcards = try readLegacy([StudyFlashcard].self, defaultValue: [], from: "flashcards.json")
                 try persistState(questions: questions, flashcards: flashcards)
             }
             storageError = nil
@@ -91,6 +91,9 @@ final class LocalStudyStore: ObservableObject {
     }
 
     private func merge(questions incomingQuestions: [QBankQuestion], flashcards incomingFlashcards: [StudyFlashcard]) throws -> (questionsAdded: Int, flashcardsAdded: Int) {
+        guard !incomingQuestions.isEmpty || !incomingFlashcards.isEmpty else {
+            throw StudyStoreError.emptyImport
+        }
         guard incomingQuestions.allSatisfy({
             !$0.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && $0.options.count >= 2
@@ -149,13 +152,9 @@ final class LocalStudyStore: ObservableObject {
             .joined(separator: " ")
     }
 
-    private func readLegacy<T: Decodable>(_ type: T.Type, from name: String) throws -> T {
+    private func readLegacy<T: Decodable>(_ type: T.Type, defaultValue: T, from name: String) throws -> T {
         let url = directoryURL.appendingPathComponent(name)
-        guard fileManager.fileExists(atPath: url.path) else {
-            if type == [QBankQuestion].self { return [] as! T }
-            if type == [StudyFlashcard].self { return [] as! T }
-            throw StudyStoreError.unsupportedLegacyStore
-        }
+        guard fileManager.fileExists(atPath: url.path) else { return defaultValue }
         return try decoder.decode(type, from: Data(contentsOf: url))
     }
 
@@ -174,7 +173,6 @@ enum StudyStoreError: LocalizedError {
     case emptyFlashcard
     case invalidFlashcard
     case unsupportedArchiveVersion(Int)
-    case unsupportedLegacyStore
 
     var errorDescription: String? {
         switch self {
@@ -188,8 +186,6 @@ enum StudyStoreError: LocalizedError {
             return "Each imported flashcard needs both a front and a back."
         case .unsupportedArchiveVersion(let version):
             return "Study archive version \(version) is not supported by this app version."
-        case .unsupportedLegacyStore:
-            return "This legacy local data format is not supported."
         }
     }
 }
