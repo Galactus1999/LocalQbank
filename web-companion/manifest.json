@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "Rovex Study Companion",
+  "short_name": "Rovex",
+  "description": "Offline-first study companion proof of concept",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#10151f",
+  "orientation": "any",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
