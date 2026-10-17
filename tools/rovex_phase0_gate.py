@@ -220,8 +220,10 @@ def db_construction_diff(current: Path, baseline: Path):
 
     cur = {}
     for p in current.rglob("*.kt"):
-        rel = str(p.relative_to(current))
-        if "/src/main/" not in rel or rel.endswith("/QBankDb.kt"):
+        # Normalize paths to the Gradle project root, not the ZIP extraction root.
+        # Archives may wrap the project in a directory (for example, rovex_old_source/).
+        rel = str(p.relative_to(find_project(current)))
+        if "/src/main/" not in f"/{rel}" or rel.endswith("/QBankDb.kt"):
             continue
         count = len(pattern.findall(read_text(p)))
         if count:
