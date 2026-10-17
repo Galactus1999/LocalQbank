@@ -62,7 +62,7 @@
       isa = PBXGroup;
       path = Services;
       sourceTree = "<group>";
-      children = (B10000000000000000000003 /* LocalStudyStore.swift */, );
+      children = (B10000000000000000000003 /* LocalStudyStore.swift */, B10000000000000000000006 /* SQLiteQBankImporter.swift */, );
     };
     D10000000000000000000006 /* Views */ = {
       isa = PBXGroup;
