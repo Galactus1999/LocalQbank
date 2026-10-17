@@ -84,8 +84,8 @@ struct ImportCompatibilitySmoke {
         defer { try? FileManager.default.removeItem(at: databaseURL) }
         var database: OpaquePointer?
         try require(sqlite3_open(databaseURL.path, &database) == SQLITE_OK, "create SQLite fixture")
-        guard let database else { throw SmokeTestError.failed("SQLite fixture handle") }
-        defer { sqlite3_close(database) }
+        guard let openedDatabase = database else { throw SmokeTestError.failed("SQLite fixture handle") }
+        defer { if let database { sqlite3_close(database) } }
         let sql = """
         CREATE TABLE question_bank (
             id INTEGER PRIMARY KEY,
@@ -99,8 +99,8 @@ struct ImportCompatibilitySmoke {
           ('SQLite question one', '["First","Second","Third","Fourth"]', 'B', 'SQLite explanation'),
           ('SQLite question two', '["Alpha","Beta"]', '1', '');
         """
-        try require(sqlite3_exec(database, sql, nil, nil, nil) == SQLITE_OK, "populate SQLite fixture")
-        sqlite3_close(database)
+        try require(sqlite3_exec(openedDatabase, sql, nil, nil, nil) == SQLITE_OK, "populate SQLite fixture")
+        sqlite3_close(openedDatabase)
         database = nil
         let sqliteQuestions = try SQLiteQBankImporter.importQuestions(from: databaseURL)
         try require(sqliteQuestions.count == 2, "SQLite question count")
@@ -113,9 +113,11 @@ struct ImportCompatibilitySmoke {
         defer { try? FileManager.default.removeItem(at: unsupportedURL) }
         var unsupportedDatabase: OpaquePointer?
         try require(sqlite3_open(unsupportedURL.path, &unsupportedDatabase) == SQLITE_OK, "create unsupported SQLite fixture")
-        guard let unsupportedDatabase else { throw SmokeTestError.failed("unsupported SQLite fixture handle") }
-        try require(sqlite3_exec(unsupportedDatabase, "CREATE TABLE metadata(key TEXT, value TEXT);", nil, nil, nil) == SQLITE_OK, "populate unsupported SQLite fixture")
-        sqlite3_close(unsupportedDatabase)
+        guard let openedUnsupportedDatabase = unsupportedDatabase else { throw SmokeTestError.failed("unsupported SQLite fixture handle") }
+        defer { if let unsupportedDatabase { sqlite3_close(unsupportedDatabase) } }
+        try require(sqlite3_exec(openedUnsupportedDatabase, "CREATE TABLE metadata(key TEXT, value TEXT);", nil, nil, nil) == SQLITE_OK, "populate unsupported SQLite fixture")
+        sqlite3_close(openedUnsupportedDatabase)
+        unsupportedDatabase = nil
         do {
             _ = try SQLiteQBankImporter.importQuestions(from: unsupportedURL)
             throw SmokeTestError.failed("unsupported SQLite schema must be rejected")
