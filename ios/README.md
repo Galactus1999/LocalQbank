@@ -7,7 +7,7 @@ This directory starts a **separate native SwiftUI iOS app** for Rovex. It does n
 - Native SwiftUI tab navigation and responsive layouts for iPhone and iPad.
 - Six theme palettes: AMOLED, Light, Pastel, Mint, Sunset, and Lavender.
 - Local QBank JSON import, question navigation, answer selection, answer reveal, and explanation display.
-- Locally persisted flashcards with create, flip, navigate, and delete actions.
+- Locally persisted flashcards with create, flip, navigate, delete, due counts, and Again/Hard/Good/Easy review ratings using an offline interval scheduler.
 - Versioned study-data archive import/export covering both questions and flashcards, with duplicate filtering and fresh local IDs.
 - One atomic archive file for the current question/flashcard snapshot; first-run migration from the initial two-file iOS layout.
 - Atomic JSON writes in the app's Application Support directory.
@@ -49,6 +49,6 @@ The portable Rovex archive uses `schemaVersion: 1` and contains `exportedAt`, `q
 ## Data and parity boundaries
 
 - iOS data currently stays inside the iOS app sandbox. It does **not** automatically synchronize with the Android app.
-- Existing Android SQLite databases, HTML question rendering, images/attachments, APKG import, SRS scheduling, backups, online services, and the Ben AI architecture are not yet migrated.
+- Existing Android SQLite databases, HTML question rendering, images/attachments, APKG import, Android SRS settings and limits, backups, online services, and the Ben AI architecture are not yet migrated. The iOS flashcard scheduler is an initial independent implementation; it is not yet behaviorally equivalent to Android SRS.
 - The Android implementation remains authoritative for the existing Android release. iOS work is isolated under `ios/` plus its dedicated CI workflow.
 - Keep feature parity work incremental: build/test each subsystem, define a cross-platform data format and migration/import/export path, and do not claim iOS parity until the corresponding behavior is implemented and tested on simulator and physical devices.
