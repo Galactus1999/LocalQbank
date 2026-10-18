@@ -1,0 +1,29 @@
+name: Export v8.3.299 Known-Good Importer
+on:
+  push:
+    paths:
+      - ".github/workflows/export-v8299-importer.yml"
+permissions:
+  contents: read
+jobs:
+  export-known-good-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch exact v8.3.299 source archive from its original repository commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-all-errors \
+            "https://raw.githubusercontent.com/Galactus1999/LocalQbank/eb5144f90b8c33066488ee2828ba017083d6da57/Rovex_v8.3.299_Offline_ModernUI_Phase_Source.zip" \
+            -o /tmp/Rovex_v8.3.299_Offline_ModernUI_Phase_Source.zip
+          unzip -t /tmp/Rovex_v8.3.299_Offline_ModernUI_Phase_Source.zip
+          mkdir -p /tmp/v8299-export
+          cp /tmp/Rovex_v8.3.299_Offline_ModernUI_Phase_Source.zip /tmp/v8299-export/
+          sha256sum /tmp/Rovex_v8.3.299_Offline_ModernUI_Phase_Source.zip > /tmp/v8299-export/SHA256SUMS.txt
+      - name: Publish exact baseline archive for source-level comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rovex-v8.3.299-known-good-source
+          path: /tmp/v8299-export/*
+          if-no-files-found: error
+          retention-days: 3
