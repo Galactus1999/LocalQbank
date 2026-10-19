@@ -416,7 +416,7 @@ class HtmlImportSecurityInstrumentedTest {
                         assertFalse("File-origin cross-access must be disabled", web.settings.allowFileAccessFromFileURLs)
                         assertFalse("Universal file-origin access must be disabled", web.settings.allowUniversalAccessFromFileURLs)
                         assertEquals(android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW, web.settings.mixedContentMode)
-                        assertFalse("Cookies must not be accepted for imported content", android.webkit.CookieManager.getInstance().acceptCookie)
+                        assertFalse("Cookies must not be accepted for imported content", android.webkit.CookieManager.getInstance().acceptCookie())
                         assertNotNull("Imported HTML must use renderer-loss containment", web.webViewClient as? RovexSafeWebViewClient)
 
                         val request = Proxy.newProxyInstance(
