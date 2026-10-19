@@ -407,7 +407,7 @@ class HtmlImportSecurityInstrumentedTest {
         }
         try {
             ActivityScenario.launch<HtmlImportActivity>(intent).use { scenario ->
-                val failure = AtomicReference<Throwable?>()
+                val failure = AtomicReference<Exception?>()
                 scenario.onActivity { activity ->
                     try {
                         val field = HtmlImportActivity::class.java.getDeclaredField("web").apply { isAccessible = true }
@@ -431,7 +431,7 @@ class HtmlImportSecurityInstrumentedTest {
                         } as WebResourceRequest
                         assertTrue("Top-level external navigation must be cancelled",
                             web.webViewClient.shouldOverrideUrlLoading(web, request))
-                    } catch (t: Throwable) {
+                    } catch (t: Exception) {
                         failure.set(t)
                     }
                 }
@@ -445,7 +445,7 @@ class HtmlImportSecurityInstrumentedTest {
     @Test
     fun rendererLossCallbackDetachesAndDestroysDeadWebViewWithoutPropagatingCrash() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val result = AtomicReference<Throwable?>()
+        val result = AtomicReference<Exception?>()
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             try {
                 val parent = FrameLayout(context)
@@ -459,7 +459,7 @@ class HtmlImportSecurityInstrumentedTest {
                 assertTrue("Renderer death must be handled by the app", handled)
                 assertEquals("Dead renderer WebView must be detached", null, web.parent)
                 assertTrue("Host container remains alive", parent is ViewGroup)
-            } catch (t: Throwable) {
+            } catch (t: Exception) {
                 result.set(t)
             }
         }
