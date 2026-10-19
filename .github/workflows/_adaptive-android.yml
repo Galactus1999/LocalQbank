@@ -227,6 +227,12 @@ jobs:
         run: |
           set -euo pipefail
           apk="$ADAPTIVE_RELEASE_APK"
+          unzip -Z1 "$apk" > "$RUNNER_TEMP/apk-list.txt"
+          if ! grep -Fxq 'lib/arm64-v8a/libzstd-jni-1.5.7-16.so' "$RUNNER_TEMP/apk-list.txt"; then
+            echo "FAIL: required arm64 zstd-jni 1.5.7-16 native library is missing from release APK."
+            exit 1
+          fi
+          echo "PASS: required zstd-jni 1.5.7-16 arm64 native library is packaged."
           if unzip -l "$apk" | grep -Eq 'lib/arm64-v8a/lib(Qnn|LiteRt.*Qualcomm)[^ ]*\.so'; then
             unzip -l "$apk" > "$RUNNER_TEMP/apk-list.txt"
             grep -Eq 'lib/arm64-v8a/libQnnHtp[^ ]*\.so' "$RUNNER_TEMP/apk-list.txt"
