@@ -503,3 +503,20 @@ if old_event_test not in rules_test:
     raise SystemExit("Expected stale study-event fixture was not found; refusing broad text replacement")
 rules_test_path.write_text(rules_test.replace(old_event_test, new_event_test, 1))
 print("Updated valid study-event fixture to satisfy the current UUID/operationId rules contract.")
+
+
+# Enforce type-to-source binding in the server processor, not only in Firestore Rules.
+functions_index = root / "functions/index.js"
+index_text = functions_index.read_text()
+source_set = 'const VALID_SOURCES = new Set(["quiz", "flashcards"]);'
+if source_set not in index_text:
+    raise SystemExit("Could not locate authoritative study-event source validation")
+if "const VALID_SOURCE_BY_TYPE" not in index_text:
+    index_text = index_text.replace(source_set, source_set + '\nconst VALID_SOURCE_BY_TYPE = Object.freeze({ quiz_completed: "quiz", flashcard_reviewed: "flashcards" });', 1)
+validation = '!VALID_SOURCES.has(data.source) ||'
+if validation not in index_text:
+    raise SystemExit("Could not locate study-event source validation condition")
+if 'data.source !== VALID_SOURCE_BY_TYPE[type]' not in index_text:
+    index_text = index_text.replace(validation, validation + ' data.source !== VALID_SOURCE_BY_TYPE[type] ||', 1)
+functions_index.write_text(index_text)
+print("Bound XP event source to event type in server validation.")
