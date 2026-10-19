@@ -48,7 +48,7 @@ jobs:
       STORE_PASSWORD: "${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}"
       KEY_ALIAS: "${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}"
       KEY_PASSWORD: "${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}"
-      EXPECTED_SIGNING_CERT_SHA256: "${{ secrets.ROVEX_SIGNING_CERT_SHA256 || vars.ROVEX_SIGNING_CERT_SHA256 }}"
+      EXPECTED_SIGNING_CERT_SHA256: "${{ secrets.ROVEX_SIGNING_CERT_SHA256 || vars.ROVEX_SIGNING_CERT_SHA256 || '8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153' }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
