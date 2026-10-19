@@ -605,9 +605,10 @@ new_contract = """    @Test fun releaseOptimizationIsEnabledWithNarrowReflection
         assertTrue("Reflectively resolved MainActivity name must remain stable", rules.contains("-keepnames class com.localqbank.library.MainActivity"))
         assertFalse("Do not use a blanket application-package keep rule", rules.contains("-keep class com.localqbank.library.** { *; }"))
     }"""
-if (!contract_text.includes(old_contract)) throw new Error("exact stale R8 assertion not found in overlay source baseline");
-contract_text = contract_text.replace(old_contract, new_contract);
-contract_test.write_text(contract_text);
+if old_contract not in contract_text:
+    raise SystemExit("exact stale R8 assertion not found in overlay source baseline")
+contract_text = contract_text.replace(old_contract, new_contract, 1)
+contract_test.write_text(contract_text)
 print("Aligned R8 contract test with targeted keep-rule release configuration.");
 
 print("Enabled R8 release optimization with targeted reflection keep rules and added executable Zstd JNI coverage.")
