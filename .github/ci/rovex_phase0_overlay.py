@@ -170,7 +170,7 @@ Base: v8.3.711 source archive (versionCode 797).
 - Both archives are integrity-tested and checked for unsafe paths before extraction. No archive-supplied helper script is executed.
 - Default builds do not fetch the ~2.35 GB QAIRT SDK. Qualcomm DISPATCH_OP models remain unavailable/fail-closed without matching runtime; deterministic Ben/Ren/QBank paths remain authoritative. Portable CPU/GPU inference applies only to compatible non-Qualcomm graphs.
 - R8 minification and resource shrinking are enabled in the release variant with narrowly scoped keep-name rules for the seven StartupHealthChecker reflection targets. CI must pass the release startup smoke; WebView/renderer and JNI behavior have instrumented coverage. Any R8 failure blocks release.
-- Existing WebView source contracts remain: no JavaScript bridge, navigation blocked, file-origin cross-access disabled, universal file-origin access disabled, mixed content blocked, cookies disabled, Safe Browsing enabled on supported Android versions.
+- WebView: no JavaScript bridge; top-level navigation blocked; network loads blocked for imported HTML; file-origin cross-access disabled; universal file-origin access disabled; mixed content blocked; cookies disabled; Safe Browsing enabled on supported Android versions.
 
 This file is not a PASS. Firebase emulator tests, Android CI, APK signature/native payload checks, and hostile-WebView runtime tests must execute and pass before Phase 0 can close.
 """)
