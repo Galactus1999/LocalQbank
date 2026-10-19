@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           cd "$ROVEX_PROJECT_DIR"
           npx --yes firebase-tools@15.28.2 --config "$ROVEX_PROJECT_DIR/firebase.json" \
-            emulators:exec --project rovex-rules-regression --only firestore,functions \
+            emulators:exec --project demo-rovex --only firestore,functions \
             "npm --prefix '$ROVEX_PROJECT_DIR/firestore-tests' test && npm --prefix '$ROVEX_PROJECT_DIR/functions' run test:emulator"
       - name: Upload emulator debug logs
         if: always()
