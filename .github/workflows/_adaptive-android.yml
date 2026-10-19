@@ -287,7 +287,7 @@ jobs:
               echo "FAIL: fatal crash detected during release APK startup."
               exit 1
             fi
-            if [[ "${ADAPTIVE_HAS_TEST_APK:-false}" == "true" && -s "${ADAPTIVE_RELEASE_TEST_APK:-}" ]]; then
+            if [ "${ADAPTIVE_HAS_TEST_APK:-false}" = "true" ] && [ -s "${ADAPTIVE_RELEASE_TEST_APK:-}" ]; then
               adb install -r "$ADAPTIVE_RELEASE_TEST_APK"
               if ! adb shell am instrument -w -e class com.localqbank.library.HtmlImportSecurityInstrumentedTest,com.localqbank.library.ZstdNativePayloadInstrumentedTest com.localqbank.library.test/androidx.test.runner.AndroidJUnitRunner > "$RUNNER_TEMP/rovex-r8-runtime-tests.txt" 2>&1; then
                 cat "$RUNNER_TEMP/rovex-r8-runtime-tests.txt"
