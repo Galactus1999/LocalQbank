@@ -187,6 +187,10 @@ pkg["devDependencies"] = {
     "mocha": "11.7.2"
 }
 functions_pkg.write_text(json.dumps(pkg, indent=2) + "\n")
+rules_pkg_path = root / "firestore-tests/package.json"
+rules_pkg = json.loads(rules_pkg_path.read_text())
+rules_pkg["devDependencies"]["@firebase/rules-unit-testing"] = "5.0.2"
+rules_pkg_path.write_text(json.dumps(rules_pkg, indent=2) + "\n")
 test_dir = root / "functions/test"
 test_dir.mkdir(parents=True, exist_ok=True)
 test_code = r'''const fs = require('node:fs');
