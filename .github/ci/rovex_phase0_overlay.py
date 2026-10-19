@@ -65,6 +65,62 @@ s, n = pat.subn(rep, s, count=1)
 if n != 1: raise SystemExit("Could not replace Qualcomm Gradle task exactly once")
 gradle.write_text(s)
 
+# Pin the custom Gradle bootstrap archive to Gradle's independently published checksum.
+# Verify cached and newly downloaded archives before extraction/execution.
+gradlew = root / "gradlew"
+launcher = r'''#!/bin/sh
+# Rovex Phase-0: checksum-verified Gradle bootstrap.
+set -eu
+GRADLE_VERSION=9.3.1
+GRADLE_SHA256="b266d5ff6b90eada6dc3b20cb090e3731302e553a27c5d3e4df1f0d76beaff06"
+GRADLE_HOME="${GRADLE_USER_HOME:-$HOME/.gradle}/wrapper/dists/gradle-$GRADLE_VERSION-bin/localqbank"
+GRADLE_ZIP="$GRADLE_HOME/gradle-$GRADLE_VERSION-bin.zip"
+GRADLE_DIR="$GRADLE_HOME/gradle-$GRADLE_VERSION"
+mkdir -p "$GRADLE_HOME"
+if [ ! -s "$GRADLE_ZIP" ]; then
+  URL="https://downloads.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip"
+  TMP="$GRADLE_ZIP.download"
+  rm -f "$TMP"
+  echo "Downloading Gradle $GRADLE_VERSION..."
+  if command -v curl >/dev/null 2>&1; then
+    curl -fL --connect-timeout 15 --max-time 300 --retry 3 --retry-delay 2 "$URL" -o "$TMP"
+  elif command -v wget >/dev/null 2>&1; then
+    wget --timeout=15 --tries=3 -O "$TMP" "$URL"
+  else
+    echo "ERROR: curl or wget is required to bootstrap Gradle $GRADLE_VERSION" >&2
+    exit 1
+  fi
+  test -s "$TMP"
+  mv -f "$TMP" "$GRADLE_ZIP"
+fi
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL_GRADLE_SHA256="$(sha256sum "$GRADLE_ZIP" | awk '{print $1}')"
+elif command -v shasum >/dev/null 2>&1; then
+  ACTUAL_GRADLE_SHA256="$(shasum -a 256 "$GRADLE_ZIP" | awk '{print $1}')"
+else
+  echo "ERROR: sha256sum or shasum is required to verify Gradle distribution" >&2
+  exit 1
+fi
+if [ "$ACTUAL_GRADLE_SHA256" != "$GRADLE_SHA256" ]; then
+  echo "ERROR: SHA-256 mismatch for Gradle distribution $GRADLE_VERSION; refusing extraction." >&2
+  rm -f "$GRADLE_ZIP"
+  exit 1
+fi
+echo "Verified Gradle $GRADLE_VERSION distribution SHA-256: $ACTUAL_GRADLE_SHA256"
+if [ ! -x "$GRADLE_DIR/bin/gradle" ]; then
+  unzip -tq "$GRADLE_ZIP" >/dev/null
+  rm -rf "$GRADLE_DIR" "$GRADLE_HOME/.extracting"
+  mkdir -p "$GRADLE_HOME/.extracting"
+  unzip -q "$GRADLE_ZIP" -d "$GRADLE_HOME/.extracting"
+  mv "$GRADLE_HOME/.extracting/gradle-$GRADLE_VERSION" "$GRADLE_DIR"
+  rm -rf "$GRADLE_HOME/.extracting"
+fi
+exec "$GRADLE_DIR/bin/gradle" "$@"
+'''
+gradlew.write_text(launcher)
+if "b266d5ff6b90eada6dc3b20cb090e3731302e553a27c5d3e4df1f0d76beaff06" not in launcher or "SHA-256 mismatch for Gradle distribution" not in launcher:
+    raise SystemExit("Gradle distribution checksum patch failed validation")
+
 # The extraction JavaScript is an internal parser, not a network client. Block all
 # network-backed subresources to prevent imported HTML from exfiltrating local data.
 html_activity = root / "app/src/main/java/com/localqbank/library/HtmlImportActivity.kt"
