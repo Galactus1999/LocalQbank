@@ -8,6 +8,32 @@ s = gradle.read_text()
 if 'versionCode = 797' not in s or 'versionName = "8.3.711"' not in s:
     raise SystemExit("Refusing unexpected source baseline; expected v8.3.711/code 797")
 s = s.replace('versionCode = 797', 'versionCode = 799').replace('versionName = "8.3.711"', 'versionName = "8.3.713"')
+# R8 release compatibility: enable optimization only with narrowly scoped keep rules
+# for names explicitly resolved through Class.forName by StartupHealthChecker.
+release = gradle.read_text()
+release = release.replace('isMinifyEnabled = false', 'isMinifyEnabled = true', 1)
+release = release.replace('isShrinkResources = false', 'isShrinkResources = true', 1)
+release = release.replace('''// Keep optimization explicitly disabled until the reflection/JNI and native-inference
+            // release matrix is exercised on the canonical signed APK.''',
+                          '''// Phase 0: R8 release compatibility is exercised by CI release startup smoke
+            // plus WebView/JNI instrumentation contracts. Keep rules below are narrowly scoped.''', 1)
+gradle.write_text(release)
+proguard = root / "app/proguard-rules.pro"
+rules = proguard.read_text() if proguard.exists() else ""
+keep_names = [
+    "-keepnames class com.localqbank.library.MainActivity",
+    "-keepnames class com.localqbank.library.QuizActivity",
+    "-keepnames class com.localqbank.library.SettingsActivity",
+    "-keepnames class com.localqbank.library.RenActivity",
+    "-keepnames class com.localqbank.library.FlashcardActivity",
+    "-keepnames class com.localqbank.library.StudyToolsActivity",
+    "-keepnames class com.localqbank.library.SearchActivity",
+]
+for rule in keep_names:
+    if rule not in rules:
+        rules += ("\n" if rules and not rules.endswith("\n") else "") + rule + "\n"
+proguard.write_text(rules)
+
 pat = re.compile(r'val prepareQualcommRuntime = tasks\.register<Exec>\("prepareQualcommRuntime"\) \{.*?^\}\.configureEach \{\n.*?^\}\n', re.M | re.S)
 rep = '''val qualcommRuntimeEnabled = providers.environmentVariable("ROVEX_ENABLE_QUALCOMM_RUNTIME")
     .map { it.equals("true", ignoreCase = true) }.orElse(false)
@@ -126,7 +152,7 @@ Base: v8.3.711 source archive (versionCode 797).
 - The separate Qualcomm QAIRT archive requires an independently trusted 64-hex SHA-256 supplied through ROVEX_QAIRT_ARCHIVE_SHA256. No hash is invented or trusted from the same download response.
 - Both archives are integrity-tested and checked for unsafe paths before extraction. No archive-supplied helper script is executed.
 - Default builds do not fetch the ~2.35 GB QAIRT SDK. Qualcomm DISPATCH_OP models remain unavailable/fail-closed without matching runtime; deterministic Ben/Ren/QBank paths remain authoritative. Portable CPU/GPU inference applies only to compatible non-Qualcomm graphs.
-- R8 minification/resource shrinking remain disabled pending the release runtime matrix.
+- R8 minification and resource shrinking are enabled in the release variant with narrowly scoped keep-name rules for the seven StartupHealthChecker reflection targets. CI must pass the release startup smoke; WebView/renderer and JNI behavior have instrumented coverage. Any R8 failure blocks release.
 - Existing WebView source contracts remain: no JavaScript bridge, navigation blocked, file-origin cross-access disabled, universal file-origin access disabled, mixed content blocked, cookies disabled, Safe Browsing enabled on supported Android versions.
 
 This file is not a PASS. Firebase emulator tests, Android CI, APK signature/native payload checks, and hostile-WebView runtime tests must execute and pass before Phase 0 can close.
@@ -549,3 +575,29 @@ if 'data.source !== VALID_SOURCE_BY_TYPE[type]' not in index_text:
     index_text = index_text.replace(validation, validation + ' data.source !== VALID_SOURCE_BY_TYPE[type] ||', 1)
 functions_index.write_text(index_text)
 print("Bound XP event source to event type in server validation.")
+
+
+# Verify that the required Zstandard JNI library can actually execute, not merely exist in the APK.
+zstd_test = root / "app/src/androidTest/java/com/localqbank/library/ZstdNativePayloadInstrumentedTest.kt"
+zstd_test.write_text(r'''package com.localqbank.library
+
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.luben.zstd.Zstd
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class ZstdNativePayloadInstrumentedTest {
+    @Test
+    fun bundledZstdJniLoadsAndRoundTripsPayload() {
+        val input = "Rovex Phase 0 native payload validation".toByteArray(Charsets.UTF_8)
+        val compressed = Zstd.compress(input)
+        assertTrue("Zstandard compression must return a non-empty payload", compressed.isNotEmpty())
+        assertArrayEquals(input, Zstd.decompress(compressed, input.size.toLong().toInt()))
+    }
+}
+''')
+print("Enabled R8 release optimization with targeted reflection keep rules and added executable Zstd JNI coverage.")
+
