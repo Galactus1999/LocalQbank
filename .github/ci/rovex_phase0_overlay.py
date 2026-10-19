@@ -108,7 +108,11 @@ if grep -Fq './fetch_qualcomm_library.sh' tools/prepare_litert_qualcomm_v75_jit.
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 ROVEX_ENABLE_QUALCOMM_RUNTIME=false bash tools/prepare_litert_qualcomm_v75_jit.sh >"$tmp/out"
 grep -Fq 'SKIP: Qualcomm runtime acquisition is opt-in' "$tmp/out"
-echo 'PASS: optional Qualcomm acquisition, pinned LiteRT digest, explicit QAIRT digest, no archive helper execution.'
+if env -u ROVEX_QAIRT_ARCHIVE_SHA256 ROVEX_ENABLE_QUALCOMM_RUNTIME=true bash "$script" >"$tmp/opt-in" 2>&1; then
+  echo 'FAIL: runtime acquisition proceeded without an independently trusted QAIRT digest'; exit 1
+fi
+grep -Fq 'set independently trusted ROVEX_QAIRT_ARCHIVE_SHA256' "$tmp/opt-in"
+echo 'PASS: optional Qualcomm acquisition, pinned LiteRT digest, explicit QAIRT digest, no archive helper execution, and fail-closed missing-digest path.'
 '''
 (root / "tools/tests").mkdir(parents=True, exist_ok=True)
 (root / "tools/tests/qualcomm_runtime_supply_chain_test.sh").write_text(test)
@@ -326,6 +330,29 @@ describe('Phase 0 server-authoritative XP emulator tests', () => {
     await new Promise(resolve => setTimeout(resolve, 500));
     const afterReplay = (await adminDb.doc('users/' + uid).get()).data();
     if (afterReplay.xp !== 10 || afterReplay.questionsSolved !== 1) throw new Error('duplicate create changed aggregate: ' + JSON.stringify(afterReplay));
+  });
+
+  it('allows only one of two concurrent duplicate submissions to award XP', async () => {
+    const uid = 'phase0-duplicate-race-user';
+    const id = '88888888-8888-4888-8888-888888888888';
+    const dbA = env.authenticatedContext(uid).firestore();
+    const dbB = env.authenticatedContext(uid).firestore();
+    const pathName = 'studyEvents/' + uid + '/events/' + id;
+    const outcomes = await Promise.allSettled([
+      setDoc(doc(dbA, 'studyEvents', uid, 'events', id), eventData(uid, id)),
+      setDoc(doc(dbB, 'studyEvents', uid, 'events', id), eventData(uid, id))
+    ]);
+    const successes = outcomes.filter(x => x.status === 'fulfilled').length;
+    const failures = outcomes.filter(x => x.status === 'rejected');
+    if (successes !== 1 || failures.length !== 1) throw new Error('duplicate race was not single-winner: ' + JSON.stringify(outcomes.map(x => x.status)));
+    if (!failures[0].reason || failures[0].reason.code !== 'permission-denied') {
+      throw new Error('losing duplicate write was not denied by rules: ' + String(failures[0].reason));
+    }
+    const terminal = await waitForProcessed(pathName);
+    if (terminal.accepted !== true) throw new Error('winning duplicate submission was rejected: ' + JSON.stringify(terminal));
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const profile = (await adminDb.doc('users/' + uid).get()).data();
+    if (profile.xp !== 10 || profile.questionsSolved !== 1) throw new Error('concurrent duplicate submission awarded more than once: ' + JSON.stringify(profile));
   });
 
   it('rejects malformed/forged events inserted through an administrative bypass', async () => {
