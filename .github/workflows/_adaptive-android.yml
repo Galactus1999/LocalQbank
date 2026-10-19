@@ -248,7 +248,7 @@ jobs:
             echo "PASS: release APK signed with the configured persistent Rovex certificate."
           fi
 
-      - name: Smoke test signed release APK on Android emulator
+      - name: Smoke test release build on Android emulator
         if: steps.discover.outputs.is_application == 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -272,7 +272,7 @@ jobs:
               echo "FAIL: fatal crash detected during release APK startup."
               exit 1
             fi
-            echo "PASS: signed release APK installed, launcher Activity started, process remained alive, and no fatal crash was logged."
+            echo "PASS: release build smoke copy installed, launcher Activity started, process remained alive, and no fatal crash was logged; production signing is checked separately."
 
       - name: Verify Qualcomm runtime when present
         shell: bash
@@ -302,12 +302,13 @@ jobs:
           set -euo pipefail
           source_dir="$GITHUB_WORKSPACE/.adaptive-source"
           test -s "$source_dir/app/build.gradle.kts"
+          test -s "$source_dir/gradlew"
           source_zip="$GITHUB_WORKSPACE/rovex-phase0-source-candidate.zip"
           rm -f "$source_zip"
           (cd "$source_dir" && zip -9 -qr "$source_zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp' '.ci-test-apks/*')
           size="$(stat -c%s "$source_zip")"
           test "$size" -lt 25000000
-          sha256sum "$source_zip" | tee "$GITHUB_WORKSPACE/rovex-phase0-source-candidate.sha256"
+          (cd "$GITHUB_WORKSPACE" && sha256sum rovex-phase0-source-candidate.zip > rovex-phase0-source-candidate.sha256 && sha256sum -c rovex-phase0-source-candidate.sha256)
           unzip -t "$source_zip" >/dev/null
           echo "PASS: source candidate ZIP valid; bytes=$size; below 25 MB."
       - name: Upload Phase 0 source candidate
