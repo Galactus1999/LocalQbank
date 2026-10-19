@@ -364,3 +364,116 @@ describe('Phase 0 server-authoritative XP emulator tests', () => {
 '''
 (test_dir / "study-events.emulator.test.js").write_text(test_code)
 print("Added executable Firestore/Functions emulator tests.")
+
+
+# Add runtime WebView policy and renderer-loss instrumentation coverage.
+android_test = root / "app/src/androidTest/java/com/localqbank/library/HtmlImportSecurityInstrumentedTest.kt"
+android_test.write_text(r'''package com.localqbank.library
+
+import android.content.Intent
+import android.net.Uri
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.File
+import java.lang.reflect.Proxy
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+
+@RunWith(AndroidJUnit4::class)
+class HtmlImportSecurityInstrumentedTest {
+    @Test
+    fun importedHtmlWebViewUsesConstrainedFileOriginAndBlocksNavigation() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fixture = File(context.cacheDir, "phase0-hostile-import.html")
+        fixture.writeText("<!doctype html><html><head><title>fixture</title></head><body>" +
+            "<script>window.__hostileFixtureRan = true; try { window.open('https://example.com'); } catch(e) {}</script>" +
+            "<p>untrusted import fixture</p></body></html>")
+        val intent = Intent(context, HtmlImportActivity::class.java).apply {
+            setDataAndType(Uri.fromFile(fixture), "text/html")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            ActivityScenario.launch<HtmlImportActivity>(intent).use { scenario ->
+                val failure = AtomicReference<Throwable?>()
+                scenario.onActivity { activity ->
+                    try {
+                        val field = HtmlImportActivity::class.java.getDeclaredField("web").apply { isAccessible = true }
+                        val web = field.get(activity) as WebView
+                        assertTrue("JavaScript is intentionally enabled for legacy QBank parsing", web.settings.javaScriptEnabled)
+                        assertFalse("File-origin cross-access must be disabled", web.settings.allowFileAccessFromFileURLs)
+                        assertFalse("Universal file-origin access must be disabled", web.settings.allowUniversalAccessFromFileURLs)
+                        assertEquals(android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW, web.settings.mixedContentMode)
+                        assertFalse("Cookies must not be accepted for imported content", android.webkit.CookieManager.getInstance().acceptCookie)
+                        assertNotNull("Imported HTML must use renderer-loss containment", web.webViewClient as? RovexSafeWebViewClient)
+
+                        val request = Proxy.newProxyInstance(
+                            WebResourceRequest::class.java.classLoader,
+                            arrayOf(WebResourceRequest::class.java)
+                        ) { _, method, _ ->
+                            when (method.returnType) {
+                                java.lang.Boolean.TYPE -> false
+                                java.lang.Integer.TYPE -> 0
+                                else -> null
+                            }
+                        } as WebResourceRequest
+                        assertTrue("Top-level external navigation must be cancelled",
+                            web.webViewClient.shouldOverrideUrlLoading(web, request))
+                    } catch (t: Throwable) {
+                        failure.set(t)
+                    }
+                }
+                failure.get()?.let { throw AssertionError("WebView security policy assertion failed", it) }
+            }
+        } finally {
+            fixture.delete()
+        }
+    }
+
+    @Test
+    fun rendererLossCallbackDetachesAndDestroysDeadWebViewWithoutPropagatingCrash() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val result = AtomicReference<Throwable?>()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            try {
+                val parent = FrameLayout(context)
+                val web = WebView(context)
+                parent.addView(web, FrameLayout.LayoutParams(1, 1))
+                val detail = object : RenderProcessGoneDetail() {
+                    override fun didCrash(): Boolean = true
+                    override fun rendererPriorityAtExit(): Int = 0
+                }
+                val handled = RovexSafeWebViewClient().onRenderProcessGone(web, detail)
+                assertTrue("Renderer death must be handled by the app", handled)
+                assertEquals("Dead renderer WebView must be detached", null, web.parent)
+                assertTrue("Host container remains alive", parent is ViewGroup)
+            } catch (t: Throwable) {
+                result.set(t)
+            }
+        }
+        result.get()?.let { throw AssertionError("Renderer-loss containment failed", it) }
+    }
+
+    @Test
+    fun remoteAndExecutableUriSchemesAreNotAcceptedAsImportSources() {
+        assertTrue(ImportSecurityPolicy.acceptsImportUri("content://provider/document/1"))
+        assertTrue(ImportSecurityPolicy.acceptsImportUri("file:///data/local/tmp/import.html"))
+        assertFalse(ImportSecurityPolicy.acceptsImportUri("https://example.com/payload.html"))
+        assertFalse(ImportSecurityPolicy.acceptsImportUri("javascript:alert(1)"))
+        assertFalse(ImportSecurityPolicy.acceptsImportUri("intent://example"))
+    }
+}
+''')
+print("Added WebView security/renderer-loss instrumentation tests.")
