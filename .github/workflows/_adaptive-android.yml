@@ -247,7 +247,7 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 300
           script: |
-            set -euo pipefail
+            set -eu
             adb install -r "$ADAPTIVE_RELEASE_APK"
             adb shell am start -W -n com.localqbank.library/.RovexSplashActivity
             sleep 8
