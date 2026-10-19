@@ -72,6 +72,10 @@ if [[ -n "$candidate" && "$candidate" == *.zip ]]; then
     python3 "$ROOT/.github/ci/rovex_616_clinical_day_background_overlay.py" "$project"
   fi
 
+  if [[ "$(basename "$candidate")" == "Rovex_v8.3.711_Phase1_SearchIndexReadinessCostFix_Source.zip" ]]; then
+    python3 "$ROOT/.github/ci/rovex_phase0_overlay.py" "$project"
+  fi
+
 fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
