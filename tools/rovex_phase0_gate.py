@@ -324,6 +324,24 @@ def main():
         if test_result.returncode != 0:
             die("Qualcomm runtime supply-chain regression test failed: " + test_result.stdout + test_result.stderr)
         print(test_result.stdout.strip())
+
+        # Phase-0 A3/A4 contracts must be present in the exact transformed source.
+        gradle_text = read_text(project / "app/build.gradle.kts")
+        if not re.search(r"isMinifyEnabled\s*=\s*true", gradle_text) or not re.search(r"isShrinkResources\s*=\s*true", gradle_text):
+            die("R8 release minification/resource shrinking are not enabled in the Phase-0 candidate.")
+        html_activity = read_text(project / "app/src/main/java/com/localqbank/library/HtmlImportActivity.kt")
+        if "web.settings.blockNetworkLoads = true" not in html_activity:
+            die("Untrusted HTML WebView does not block network-backed resource requests.")
+        web_test = project / "app/src/androidTest/java/com/localqbank/library/HtmlImportSecurityInstrumentedTest.kt"
+        if not web_test.is_file():
+            die("Missing WebView hostile-input/renderer-loss instrumented tests.")
+        web_test_text = read_text(web_test)
+        for contract in ["phase0-hostile-import.html", "shouldOverrideUrlLoading", "onRenderProcessGone", "allowUniversalAccessFromFileURLs"]:
+            if contract not in web_test_text:
+                die("WebView runtime test is missing required contract: " + contract)
+        zstd_test = project / "app/src/androidTest/java/com/localqbank/library/ZstdNativePayloadInstrumentedTest.kt"
+        if not zstd_test.is_file() or "Zstd.compress" not in read_text(zstd_test) or "Zstd.decompress" not in read_text(zstd_test):
+            die("Missing executable Zstandard JNI round-trip instrumentation test.")
         throwable_audit(current, baseline)
         db_construction_diff(current, baseline)
         test_presence_audit(project)
