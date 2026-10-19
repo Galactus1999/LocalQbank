@@ -10,14 +10,12 @@ if 'versionCode = 797' not in s or 'versionName = "8.3.711"' not in s:
 s = s.replace('versionCode = 797', 'versionCode = 799').replace('versionName = "8.3.711"', 'versionName = "8.3.713"')
 # R8 release compatibility: enable optimization only with narrowly scoped keep rules
 # for names explicitly resolved through Class.forName by StartupHealthChecker.
-release = gradle.read_text()
-release = release.replace('isMinifyEnabled = false', 'isMinifyEnabled = true', 1)
-release = release.replace('isShrinkResources = false', 'isShrinkResources = true', 1)
-release = release.replace('''// Keep optimization explicitly disabled until the reflection/JNI and native-inference
+s = s.replace('isMinifyEnabled = false', 'isMinifyEnabled = true', 1)
+s = s.replace('isShrinkResources = false', 'isShrinkResources = true', 1)
+s = s.replace('''// Keep optimization explicitly disabled until the reflection/JNI and native-inference
             // release matrix is exercised on the canonical signed APK.''',
-                          '''// Phase 0: R8 release compatibility is exercised by CI release startup smoke
+              '''// Phase 0: R8 release compatibility is exercised by CI release startup smoke
             // plus WebView/JNI instrumentation contracts. Keep rules below are narrowly scoped.''', 1)
-gradle.write_text(release)
 proguard = root / "app/proguard-rules.pro"
 rules = proguard.read_text() if proguard.exists() else ""
 keep_names = [
@@ -595,7 +593,7 @@ class ZstdNativePayloadInstrumentedTest {
         val input = "Rovex Phase 0 native payload validation".toByteArray(Charsets.UTF_8)
         val compressed = Zstd.compress(input)
         assertTrue("Zstandard compression must return a non-empty payload", compressed.isNotEmpty())
-        assertArrayEquals(input, Zstd.decompress(compressed, input.size.toLong().toInt()))
+        assertArrayEquals(input, Zstd.decompress(compressed, input.size))
     }
 }
 ''')
