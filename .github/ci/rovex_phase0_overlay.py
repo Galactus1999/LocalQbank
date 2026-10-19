@@ -26,6 +26,7 @@ keep_names = [
     "-keepnames class com.localqbank.library.FlashcardActivity",
     "-keepnames class com.localqbank.library.StudyToolsActivity",
     "-keepnames class com.localqbank.library.SearchActivity",
+    "-keepclassmembers class com.localqbank.library.HtmlImportActivity { android.webkit.WebView web; }",
 ]
 for rule in keep_names:
     if rule not in rules:
