@@ -120,6 +120,7 @@ jobs:
           cp -f "$debug_apk" "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug.apk"
           if [[ -n "$test_apk" ]]; then
             cp -f "$test_apk" "$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug-androidTest.apk"
+            echo "ADAPTIVE_ANDROID_TEST_APK=$GITHUB_WORKSPACE/.adaptive-source/.ci-test-apks/app-debug-androidTest.apk" >> "$GITHUB_ENV"
             echo 'ADAPTIVE_HAS_TEST_APK=true' >> "$GITHUB_ENV"
           else
             echo 'ADAPTIVE_HAS_TEST_APK=false' >> "$GITHUB_ENV"
@@ -220,6 +221,13 @@ jobs:
               "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$smoke_ks" --ks-pass "pass:smoke-only-password" --ks-key-alias "rovex-smoke-only" --key-pass "pass:smoke-only-password" "$smoke_apk"
               "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$smoke_apk"
               echo "ADAPTIVE_RELEASE_SMOKE_APK=$smoke_apk" >> "$GITHUB_ENV"
+              if [[ "${ADAPTIVE_HAS_TEST_APK:-false}" == "true" && -s "${ADAPTIVE_ANDROID_TEST_APK:-}" ]]; then
+                test_smoke_apk="$RUNNER_TEMP/rovex-release-r8-androidTest.apk"
+                cp -f "$ADAPTIVE_ANDROID_TEST_APK" "$test_smoke_apk"
+                "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$smoke_ks" --ks-pass "pass:smoke-only-password" --ks-key-alias "rovex-smoke-only" --key-pass "pass:smoke-only-password" "$test_smoke_apk"
+                "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$test_smoke_apk"
+                echo "ADAPTIVE_RELEASE_TEST_APK=$test_smoke_apk" >> "$GITHUB_ENV"
+              fi
               echo "BLOCKED: no persistent signing key; a separate test-only signature is used solely for runtime smoke, never for artifact publication."
               exit 0
             fi
@@ -247,6 +255,13 @@ jobs:
             [[ "$actual" == "$expected" ]] || { echo "FAIL: Rovex persistent signing certificate mismatch."; exit 1; }
             echo "PASS: release APK signed with the configured persistent Rovex certificate."
           fi
+          if [[ "${ADAPTIVE_HAS_TEST_APK:-false}" == "true" && -s "${ADAPTIVE_ANDROID_TEST_APK:-}" ]]; then
+            test_smoke_apk="$RUNNER_TEMP/rovex-release-r8-androidTest.apk"
+            cp -f "$ADAPTIVE_ANDROID_TEST_APK" "$test_smoke_apk"
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$test_smoke_apk"
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$test_smoke_apk"
+            echo "ADAPTIVE_RELEASE_TEST_APK=$test_smoke_apk" >> "$GITHUB_ENV"
+          fi
 
       - name: Smoke test release build on Android emulator
         if: steps.discover.outputs.is_application == 'true'
@@ -272,7 +287,20 @@ jobs:
               echo "FAIL: fatal crash detected during release APK startup."
               exit 1
             fi
-            echo "PASS: release build smoke copy installed, launcher Activity started, process remained alive, and no fatal crash was logged; production signing is checked separately."
+            if [[ "${ADAPTIVE_HAS_TEST_APK:-false}" == "true" && -s "${ADAPTIVE_RELEASE_TEST_APK:-}" ]]; then
+              adb install -r "$ADAPTIVE_RELEASE_TEST_APK"
+              if ! adb shell am instrument -w -e class com.localqbank.library.HtmlImportSecurityInstrumentedTest,com.localqbank.library.ZstdNativePayloadInstrumentedTest com.localqbank.library.test/androidx.test.runner.AndroidJUnitRunner > "$RUNNER_TEMP/rovex-r8-runtime-tests.txt" 2>&1; then
+                cat "$RUNNER_TEMP/rovex-r8-runtime-tests.txt"
+                echo "FAIL: R8 release WebView/JNI instrumentation command failed."
+                exit 1
+              fi
+              cat "$RUNNER_TEMP/rovex-r8-runtime-tests.txt"
+              grep -Eq 'OK \([0-9]+ tests?\)' "$RUNNER_TEMP/rovex-r8-runtime-tests.txt" || { echo "FAIL: R8 release WebView/JNI instrumentation did not report a passing test summary."; exit 1; }
+            else
+              echo "FAIL: no instrumentation APK available for R8 release WebView/JNI runtime checks."
+              exit 1
+            fi
+            echo "PASS: R8 release smoke and selected WebView/JNI instrumentation checks completed; production signing is checked separately."
 
       - name: Verify Qualcomm runtime when present
         shell: bash
