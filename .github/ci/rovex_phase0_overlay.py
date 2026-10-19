@@ -584,5 +584,31 @@ class ZstdNativePayloadInstrumentedTest {
     }
 }
 ''')
+
+# Align the release source contract test with the intentional R8 enablement above.
+# Require the targeted reflection/JNI rules and reject a blanket package keep.
+contract_test = root / "app/src/test/java/com/localqbank/library/Phase0SecurityBuildContractSourceTest.kt"
+contract_text = contract_test.read_text()
+old_contract = """    @Test fun releaseOptimizationStaysExplicitlyDisabledUntilRuntimeMatrixPasses() {
+        val s = source("app/build.gradle.kts")
+        val release = s.substringAfter("release {").substringBefore("\\n        }")
+        assertTrue("R8 minification must not be enabled without release validation", release.contains("isMinifyEnabled = false"))
+        assertTrue("Resource shrinking must not be enabled without release validation", release.contains("isShrinkResources = false"))
+    }"""
+new_contract = """    @Test fun releaseOptimizationIsEnabledWithNarrowReflectionAndNativeKeepRules() {
+        val s = source("app/build.gradle.kts")
+        val release = s.substringAfter("release {").substringBefore("\\n        }")
+        assertTrue("Release R8 minification must be enabled for the exercised release matrix", release.contains("isMinifyEnabled = true"))
+        assertTrue("Release resource shrinking must be enabled for the exercised release matrix", release.contains("isShrinkResources = true"))
+        val rules = source("app/proguard-rules.pro")
+        assertTrue("Zstd JNI entry points must survive optimization", rules.contains("-keep class com.github.luben.zstd.Zstd { *; }"))
+        assertTrue("Reflectively resolved MainActivity name must remain stable", rules.contains("-keepnames class com.localqbank.library.MainActivity"))
+        assertFalse("Do not use a blanket application-package keep rule", rules.contains("-keep class com.localqbank.library.** { *; }"))
+    }"""
+if (!contract_text.includes(old_contract)) throw new Error("exact stale R8 assertion not found in overlay source baseline");
+contract_text = contract_text.replace(old_contract, new_contract);
+contract_test.write_text(contract_text);
+print("Aligned R8 contract test with targeted keep-rule release configuration.");
+
 print("Enabled R8 release optimization with targeted reflection keep rules and added executable Zstd JNI coverage.")
 
