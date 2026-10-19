@@ -48,7 +48,7 @@ jobs:
       STORE_PASSWORD: "${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}"
       KEY_ALIAS: "${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}"
       KEY_PASSWORD: "${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}"
-      EXPECTED_SIGNING_CERT_SHA256: "${{ secrets.ROVEX_SIGNING_CERT_SHA256 }}"
+      EXPECTED_SIGNING_CERT_SHA256: "${{ secrets.ROVEX_SIGNING_CERT_SHA256 || vars.ROVEX_SIGNING_CERT_SHA256 }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -239,10 +239,6 @@ jobs:
             echo "ADAPTIVE_RELEASE_SMOKE_APK=$apk" >> "$GITHUB_ENV"
             exit 0
           fi
-          if [[ "$ADAPTIVE_IS_ROVEX" == "true" && ! "$EXPECTED_SIGNING_CERT_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
-            echo "FAIL: ROVEX_SIGNING_CERT_SHA256 must contain the independently recorded persistent certificate SHA-256 (64 hex characters)."
-            exit 1
-          fi
           echo "ADAPTIVE_RELEASE_SMOKE_APK=$apk" >> "$GITHUB_ENV"
           ks="$RUNNER_TEMP/adaptive-release.jks"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
@@ -250,9 +246,14 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$apk" | tee "$RUNNER_TEMP/signing.txt"
           if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then
-            expected="$(printf '%s' "$EXPECTED_SIGNING_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
             actual="$(awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}' "$RUNNER_TEMP/signing.txt" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-            [[ "$actual" == "$expected" ]] || { echo "FAIL: Rovex persistent signing certificate mismatch."; exit 1; }
+            if [[ ! "$EXPECTED_SIGNING_CERT_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+              echo "FAIL: ROVEX_SIGNING_CERT_SHA256 is missing. The signing key's observed SHA-256 is: $actual"
+              echo "Set the independently verified value as repository variable ROVEX_SIGNING_CERT_SHA256 or secret of the same name; do not auto-enroll this value without verifying it against the existing production certificate."
+              exit 1
+            fi
+            expected="$(printf '%s' "$EXPECTED_SIGNING_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+            [[ "$actual" == "$expected" ]] || { echo "FAIL: Rovex persistent signing certificate mismatch: expected=$expected actual=$actual"; exit 1; }
             echo "PASS: release APK signed with the configured persistent Rovex certificate."
           fi
           if [[ "${ADAPTIVE_HAS_TEST_APK:-false}" == "true" && -s "${ADAPTIVE_ANDROID_TEST_APK:-}" ]]; then
