@@ -294,6 +294,32 @@ jobs:
             if [[ "$STRICT_MODE" == "true" && "$ADAPTIVE_IS_ROVEX" == "true" ]]; then exit 1; fi
           fi
 
+      - name: Package and persist Phase 0 source candidate
+        if: steps.discover.outputs.is_application == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_dir="$GITHUB_WORKSPACE/.adaptive-source"
+          test -s "$source_dir/app/build.gradle.kts"
+          source_zip="$GITHUB_WORKSPACE/rovex-phase0-source-candidate.zip"
+          rm -f "$source_zip"
+          (cd "$source_dir" && zip -9 -qr "$source_zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp' '.ci-test-apks/*')
+          size="$(stat -c%s "$source_zip")"
+          test "$size" -lt 25000000
+          sha256sum "$source_zip" | tee "$GITHUB_WORKSPACE/rovex-phase0-source-candidate.sha256"
+          unzip -t "$source_zip" >/dev/null
+          echo "PASS: source candidate ZIP valid; bytes=$size; below 25 MB."
+      - name: Upload Phase 0 source candidate
+        if: always() && steps.discover.outputs.is_application == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rovex-phase0-source-candidate
+          path: |
+            rovex-phase0-source-candidate.zip
+            rovex-phase0-source-candidate.sha256
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Enforce persistent Rovex signing for release publication
         if: steps.discover.outputs.is_application == 'true'
         shell: bash
