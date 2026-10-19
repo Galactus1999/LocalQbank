@@ -158,7 +158,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { doc, setDoc, serverTimestamp } = require('firebase/firestore');
 const { after, before, beforeEach, describe, it } = require('mocha');
 
-const PROJECT_ID = 'demo-rovex';
+const PROJECT_ID = 'rovex-rules-regression';
 let env;
 let adminApp;
 let adminDb;
