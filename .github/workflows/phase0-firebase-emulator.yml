@@ -1,0 +1,67 @@
+name: Rovex Phase 0 Firebase Security Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firebase-emulator-security:
+    name: Firestore rules and XP integrity emulators
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Setup Java for Firebase emulators
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Extract exact pinned source and apply Phase 0 overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/rovex_phase0_gate.py
+          SOURCE_ZIP="$(head -n1 phase0-selected-source.txt)"
+          test -s "$SOURCE_ZIP"
+          mkdir -p "$RUNNER_TEMP/rovex-phase0"
+          unzip -q "$SOURCE_ZIP" -d "$RUNNER_TEMP/rovex-phase0"
+          PROJECT_DIR="$(find "$RUNNER_TEMP/rovex-phase0" -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit | xargs dirname)"
+          test -s "$PROJECT_DIR/app/build.gradle.kts"
+          python3 .github/ci/rovex_phase0_overlay.py "$PROJECT_DIR"
+          echo "ROVEX_PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          grep -E 'versionCode = 799|versionName = "8.3.713"' "$PROJECT_DIR/app/build.gradle.kts"
+      - name: Install pinned emulator test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix "$ROVEX_PROJECT_DIR/firestore-tests" install --no-audit --no-fund
+          npm --prefix "$ROVEX_PROJECT_DIR/functions" install --no-audit --no-fund
+      - name: Execute Firestore rules and Cloud Functions emulator tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$ROVEX_PROJECT_DIR"
+          npx --yes firebase-tools@15.28.2 --config "$ROVEX_PROJECT_DIR/firebase.json" \
+            emulators:exec --project rovex-rules-regression --only firestore,functions \
+            "npm --prefix '$ROVEX_PROJECT_DIR/firestore-tests' test && npm --prefix '$ROVEX_PROJECT_DIR/functions' run test:emulator"
+      - name: Upload emulator debug logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rovex-phase0-firebase-emulator-logs
+          path: |
+            $RUNNER_TEMP/firebase-debug.log
+            $ROVEX_PROJECT_DIR/ui-debug.log
+          if-no-files-found: ignore
+          retention-days: 14
