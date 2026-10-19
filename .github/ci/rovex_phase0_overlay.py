@@ -78,16 +78,30 @@ GRADLE_ZIP="$GRADLE_HOME/gradle-$GRADLE_VERSION-bin.zip"
 GRADLE_DIR="$GRADLE_HOME/gradle-$GRADLE_VERSION"
 mkdir -p "$GRADLE_HOME"
 if [ ! -s "$GRADLE_ZIP" ]; then
-  URL="https://downloads.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip"
   TMP="$GRADLE_ZIP.download"
-  rm -f "$TMP"
-  echo "Downloading Gradle $GRADLE_VERSION..."
-  if command -v curl >/dev/null 2>&1; then
-    curl -fL --connect-timeout 15 --max-time 300 --retry 3 --retry-delay 2 "$URL" -o "$TMP"
-  elif command -v wget >/dev/null 2>&1; then
-    wget --timeout=15 --tries=3 -O "$TMP" "$URL"
-  else
-    echo "ERROR: curl or wget is required to bootstrap Gradle $GRADLE_VERSION" >&2
+  downloaded=false
+  for URL in "https://downloads.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip"; do
+    rm -f "$TMP"
+    echo "Downloading Gradle $GRADLE_VERSION from $URL..."
+    if command -v curl >/dev/null 2>&1; then
+      if curl -fL --connect-timeout 15 --max-time 120 --retry 1 --retry-delay 2 "$URL" -o "$TMP"; then
+        downloaded=true
+        break
+      fi
+    elif command -v wget >/dev/null 2>&1; then
+      if wget --timeout=15 --tries=2 -O "$TMP" "$URL"; then
+        downloaded=true
+        break
+      fi
+    else
+      echo "ERROR: curl or wget is required to bootstrap Gradle $GRADLE_VERSION" >&2
+      exit 1
+    fi
+    echo "WARNING: download failed from $URL; trying the next official Gradle endpoint." >&2
+  done
+  if [ "$downloaded" != "true" ]; then
+    echo "ERROR: unable to download Gradle $GRADLE_VERSION from official endpoints." >&2
+    rm -f "$TMP"
     exit 1
   fi
   test -s "$TMP"
