@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Apply Phase-0 security corrections to the pinned v8.3.711 source archive."""
-import re, sys
+import json, re, sys
 from pathlib import Path
 root = Path(sys.argv[1]).resolve()
 gradle = root / "app/build.gradle.kts"
