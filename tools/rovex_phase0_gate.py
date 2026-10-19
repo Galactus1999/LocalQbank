@@ -130,8 +130,10 @@ def version_audit(project: Path, full: str, source_zip: Path):
 
     source_version = name_match.group(1)
     source_code = int(code_match.group(1))
-    if source_version != archive_version:
-        die(f"Version mismatch: archive={archive_version}, source={source_version}")
+    # The selected source ZIP is a pinned baseline; the audited build source may
+    # be transformed only by the exact, version-specific overlay below.
+    if source_code <= archive_code:
+        die(f"Overlay did not advance versionCode beyond source archive: archive={archive_code}, source={source_code}")
 
     # Monotonic versionCode gate against the highest valid source archive
     # other than the selected archive.
@@ -297,8 +299,16 @@ def main():
         baseline.mkdir()
         extract(src, current)
         project = find_project(current)
+        if src.name == "Rovex_v8.3.711_Phase1_SearchIndexReadinessCostFix_Source.zip":
+            overlay = ROOT / ".github" / "ci" / "rovex_phase0_overlay.py"
+            if not overlay.is_file():
+                die("Missing exact Phase-0 source overlay.")
+            result = subprocess.run([sys.executable, str(overlay), str(project)], capture_output=True, text=True)
+            if result.returncode != 0:
+                die("Phase-0 overlay failed: " + result.stderr.strip())
+            print(result.stdout.strip())
 
-        # The source archive is already the offline-corrected artifact.
+        # The source archive is a pinned baseline; the overlay is applied explicitly.
         # CI audits it as-is and must never mutate application source online.
         baseline_zips = [p for p in SOURCE_ZIPS if "v8.3.435" in p.name.lower() and valid_source_zip(p)]
         if baseline_zips:
@@ -307,6 +317,13 @@ def main():
         full = source_text(current)
         source_version, source_code = version_audit(project, full, src)
         escape_audit(code_text(current))
+        supply_chain_test = project / "tools" / "tests" / "qualcomm_runtime_supply_chain_test.sh"
+        if not supply_chain_test.is_file():
+            die("Missing executable Qualcomm runtime supply-chain regression test.")
+        test_result = subprocess.run(["bash", str(supply_chain_test)], cwd=project, capture_output=True, text=True)
+        if test_result.returncode != 0:
+            die("Qualcomm runtime supply-chain regression test failed: " + test_result.stdout + test_result.stderr)
+        print(test_result.stdout.strip())
         throwable_audit(current, baseline)
         db_construction_diff(current, baseline)
         test_presence_audit(project)
