@@ -295,7 +295,8 @@ jobs:
           fi
 
       - name: Package and persist Phase 0 source candidate
-        if: steps.discover.outputs.is_application == 'true'
+        id: phase0source
+        if: always() && steps.discover.outputs.is_application == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -310,7 +311,7 @@ jobs:
           unzip -t "$source_zip" >/dev/null
           echo "PASS: source candidate ZIP valid; bytes=$size; below 25 MB."
       - name: Upload Phase 0 source candidate
-        if: always() && steps.discover.outputs.is_application == 'true'
+        if: always() && steps.discover.outputs.is_application == 'true' && steps.phase0source.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: rovex-phase0-source-candidate
