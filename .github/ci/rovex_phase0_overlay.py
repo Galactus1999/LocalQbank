@@ -201,7 +201,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { doc, setDoc, serverTimestamp } = require('firebase/firestore');
 const { after, before, beforeEach, describe, it } = require('mocha');
 
-const PROJECT_ID = 'rovex-rules-regression';
+const PROJECT_ID = 'demo-rovex-functions-test';
 let env;
 let adminApp;
 let adminDb;
@@ -456,6 +456,7 @@ if old_event_test not in rules_test:
     raise SystemExit("Expected stale study-event fixture was not found; refusing broad text replacement")
 if "const PROJECT_ID = 'rovex-rules-regression';" not in rules_test:
     raise SystemExit("Expected Firestore Rules test project ID was not found")
+rules_test = rules_test.replace("const PROJECT_ID = 'rovex-rules-regression';", "const PROJECT_ID = 'demo-rovex-rules-regression';", 1)
 rules_test_path.write_text(rules_test.replace(old_event_test, new_event_test, 1))
 print("Updated valid study-event fixture to satisfy the current UUID/operationId rules contract.")
 
