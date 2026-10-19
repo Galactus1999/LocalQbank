@@ -62,6 +62,17 @@ s, n = pat.subn(rep, s, count=1)
 if n != 1: raise SystemExit("Could not replace Qualcomm Gradle task exactly once")
 gradle.write_text(s)
 
+# The extraction JavaScript is an internal parser, not a network client. Block all
+# network-backed subresources to prevent imported HTML from exfiltrating local data.
+html_activity = root / "app/src/main/java/com/localqbank/library/HtmlImportActivity.kt"
+html_text = html_activity.read_text()
+web_settings = "web.settings.domStorageEnabled = true\n        web.settings.allowFileAccess = true"
+secure_web_settings = "web.settings.domStorageEnabled = true\n        web.settings.blockNetworkLoads = true\n        web.settings.allowFileAccess = true"
+if secure_web_settings not in html_text:
+    if html_text.count(web_settings) != 1:
+        raise SystemExit("Could not locate the exact HtmlImportActivity WebView settings block")
+    html_activity.write_text(html_text.replace(web_settings, secure_web_settings, 1))
+
 script = r'''#!/usr/bin/env bash
 set -euo pipefail
 # LiteRT v2.2.0 JIT asset SHA-256 published by the official GitHub release API:
@@ -78,7 +89,7 @@ VERSION="$(printenv LITERT_VERSION || echo 2.2.0)"
 LITERT_SHA="d6d160104f110e690f1c9b0c54ab3855af1a12e405dcc6e644dd7e3e1955aac4"
 QAIRT_SHA="$(printenv ROVEX_QAIRT_ARCHIVE_SHA256 || true)"
 [[ "$QAIRT_SHA" =~ ^[0-9a-fA-F]{64}$ ]] || { echo "ERROR: set independently trusted ROVEX_QAIRT_ARCHIVE_SHA256" >&2; exit 1; }
-WORK="$ROOT/build/litert_npu_runtime"; mkdir -p "$WORK"
+WORK="${ROVEX_LITERT_WORK_DIR:-$ROOT/build/litert_npu_runtime}"; mkdir -p "$WORK"
 LITERT="$WORK/litert_npu_runtime_libraries_jit.zip"; QAIRT="$WORK/qairt_sdk.zip"
 download() { local tmp="$2.download"; rm -f "$tmp"; curl --fail --location --retry 3 --retry-delay 2 --output "$tmp" "$1"; test -s "$tmp"; mv -f "$tmp" "$2"; }
 verify() {
@@ -128,6 +139,7 @@ grep -Fq 'd6d160104f110e690f1c9b0c54ab3855af1a12e405dcc6e644dd7e3e1955aac4' tool
 grep -Fq 'ROVEX_QAIRT_ARCHIVE_SHA256' tools/prepare_litert_qualcomm_v75_jit.sh
 grep -Fq 'safe_zip' tools/prepare_litert_qualcomm_v75_jit.sh
 grep -Fq 'ROVEX_ENABLE_QUALCOMM_RUNTIME' app/build.gradle.kts
+grep -Fq 'web.settings.blockNetworkLoads = true' app/src/main/java/com/localqbank/library/HtmlImportActivity.kt
 if grep -Fq './fetch_qualcomm_library.sh' tools/prepare_litert_qualcomm_v75_jit.sh; then echo 'FAIL: archive helper execution'; exit 1; fi
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 ROVEX_ENABLE_QUALCOMM_RUNTIME=false bash tools/prepare_litert_qualcomm_v75_jit.sh >"$tmp/out"
@@ -136,7 +148,14 @@ if env -u ROVEX_QAIRT_ARCHIVE_SHA256 ROVEX_ENABLE_QUALCOMM_RUNTIME=true bash too
   echo 'FAIL: runtime acquisition proceeded without an independently trusted QAIRT digest'; exit 1
 fi
 grep -Fq 'set independently trusted ROVEX_QAIRT_ARCHIVE_SHA256' "$tmp/opt-in"
-echo 'PASS: optional Qualcomm acquisition, pinned LiteRT digest, explicit QAIRT digest, no archive helper execution, and fail-closed missing-digest path.'
+# A corrupt cached LiteRT asset must fail on the pinned digest before any extraction or helper execution.
+mkdir -p "$tmp/work"
+printf 'not-a-real-liteRT-archive' > "$tmp/work/litert_npu_runtime_libraries_jit.zip"
+if env ROVEX_ENABLE_QUALCOMM_RUNTIME=true ROVEX_QAIRT_ARCHIVE_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ROVEX_LITERT_WORK_DIR="$tmp/work" bash tools/prepare_litert_qualcomm_v75_jit.sh >"$tmp/corrupt" 2>&1; then
+  echo 'FAIL: corrupt cached LiteRT archive passed digest verification'; exit 1
+fi
+grep -Fq 'SHA-256 mismatch for official LiteRT v2.2.0 JIT asset' "$tmp/corrupt"
+echo 'PASS: optional acquisition, official pinned LiteRT digest, explicit QAIRT digest, corrupt-cache rejection, no archive helper execution, and fail-closed missing-digest path.'
 '''
 (root / "tools/tests").mkdir(parents=True, exist_ok=True)
 (root / "tools/tests/qualcomm_runtime_supply_chain_test.sh").write_text(test)
@@ -348,6 +367,7 @@ class HtmlImportSecurityInstrumentedTest {
                         assertTrue("JavaScript is intentionally enabled for legacy QBank parsing", web.settings.javaScriptEnabled)
                         assertFalse("File-origin cross-access must be disabled", web.settings.allowFileAccessFromFileURLs)
                         assertFalse("Universal file-origin access must be disabled", web.settings.allowUniversalAccessFromFileURLs)
+                        assertTrue("Untrusted imported HTML must not make network requests", web.settings.blockNetworkLoads)
                         assertEquals(android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW, web.settings.mixedContentMode)
                         assertFalse("Cookies must not be accepted for imported content", android.webkit.CookieManager.getInstance().acceptCookie())
                         assertNotNull("Imported HTML must use renderer-loss containment", web.webViewClient as? RovexSafeWebViewClient)
