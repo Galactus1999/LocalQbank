@@ -52,9 +52,14 @@ jobs:
         run: |
           set -euo pipefail
           cd "$ROVEX_PROJECT_DIR"
+          # Rules tests run without Functions triggers; clearing fixtures must not race trigger handlers.
           npx --yes firebase-tools@15.28.2 --config "$ROVEX_PROJECT_DIR/firebase.json" \
-            emulators:exec --project rovex-rules-regression --only firestore,functions \
-            "npm --prefix '$ROVEX_PROJECT_DIR/firestore-tests' test && npm --prefix '$ROVEX_PROJECT_DIR/functions' run test:emulator"
+            emulators:exec --project demo-rovex-rules-regression --only firestore \
+            "npm --prefix '$ROVEX_PROJECT_DIR/firestore-tests' test"
+          # Run Cloud Function tests in a separate demo project to isolate event lifecycles.
+          npx --yes firebase-tools@15.28.2 --config "$ROVEX_PROJECT_DIR/firebase.json" \
+            emulators:exec --project demo-rovex-functions-test --only firestore,functions \
+            "npm --prefix '$ROVEX_PROJECT_DIR/functions' run test:emulator"
       - name: Upload emulator debug logs
         if: always()
         uses: actions/upload-artifact@v4
