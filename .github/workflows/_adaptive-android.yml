@@ -24,6 +24,9 @@ on:
         required: false
       ROVEX_SIGNING_KEY_PASSWORD:
         required: false
+      ROVEX_SIGNING_CERT_SHA256:
+        description: "Expected persistent Rovex release certificate SHA-256, lowercase hex without colons."
+        required: false
 
 permissions:
   contents: read
@@ -45,6 +48,7 @@ jobs:
       STORE_PASSWORD: "${{ secrets.ROVEX_SIGNING_STORE_PASSWORD }}"
       KEY_ALIAS: "${{ secrets.ROVEX_SIGNING_KEY_ALIAS }}"
       KEY_PASSWORD: "${{ secrets.ROVEX_SIGNING_KEY_PASSWORD }}"
+      EXPECTED_SIGNING_CERT_SHA256: "${{ secrets.ROVEX_SIGNING_CERT_SHA256 }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -207,9 +211,16 @@ jobs:
           apk="$ADAPTIVE_RELEASE_APK"
           if [[ -z "$KEYSTORE_B64" ]]; then KEYSTORE_B64="$KEYSTORE_B64_LEGACY"; fi
           if [[ -z "$KEYSTORE_B64" || -z "$STORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
-            echo "CAPABILITY SKIPPED: signing secrets are not configured."
-            if [[ "$STRICT_MODE" == "true" ]]; then exit 1; fi
+            if [[ "$ADAPTIVE_IS_ROVEX" == "true" || "$STRICT_MODE" == "true" ]]; then
+              echo "FAIL: persistent signing secrets are required for a Rovex release; unsigned/debug-signed release APKs are not accepted."
+              exit 1
+            fi
+            echo "CAPABILITY SKIPPED: signing secrets are not configured for this non-Rovex build."
             exit 0
+          fi
+          if [[ "$ADAPTIVE_IS_ROVEX" == "true" && ! "$EXPECTED_SIGNING_CERT_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "FAIL: ROVEX_SIGNING_CERT_SHA256 must contain the independently recorded persistent certificate SHA-256 (64 hex characters)."
+            exit 1
           fi
           ks="$RUNNER_TEMP/adaptive-release.jks"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
@@ -217,9 +228,10 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$apk" | tee "$RUNNER_TEMP/signing.txt"
           if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then
-            expected="8decbeac906a40546b332f35629313ef6ba6860d1006aad07b761538228c0153"
+            expected="$(printf '%s' "$EXPECTED_SIGNING_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
             actual="$(awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}' "$RUNNER_TEMP/signing.txt" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-            [[ "$actual" == "$expected" ]] || { echo "Rovex signing certificate mismatch."; exit 1; }
+            [[ "$actual" == "$expected" ]] || { echo "FAIL: Rovex persistent signing certificate mismatch."; exit 1; }
+            echo "PASS: release APK signed with the configured persistent Rovex certificate."
           fi
 
       - name: Smoke test signed release APK on Android emulator
