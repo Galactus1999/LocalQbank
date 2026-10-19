@@ -246,3 +246,121 @@ describe('Phase 0 server-authoritative XP emulator tests', () => {
 '''
 (test_dir / "study-events.emulator.test.js").write_text(test_code)
 print("Added server-owned XP emulator regression tests.")
+
+
+# Add real Firestore/Functions emulator tests for server-owned XP integrity.
+functions_pkg = root / "functions/package.json"
+pkg = json.loads(functions_pkg.read_text())
+pkg["scripts"]["test:emulator"] = "mocha --timeout 30000 test/study-events.emulator.test.js"
+pkg["devDependencies"] = {
+    "@firebase/rules-unit-testing": "4.0.1",
+    "firebase": "12.3.0",
+    "mocha": "11.7.2"
+}
+functions_pkg.write_text(json.dumps(pkg, indent=2) + "\n")
+test_dir = root / "functions/test"
+test_dir.mkdir(parents=True, exist_ok=True)
+test_code = r'''const fs = require('node:fs');
+const path = require('node:path');
+const { initializeTestEnvironment, assertSucceeds, assertFails } = require('@firebase/rules-unit-testing');
+const { initializeApp: initializeAdminApp, deleteApp } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { doc, setDoc, serverTimestamp } = require('firebase/firestore');
+const { after, before, beforeEach, describe, it } = require('mocha');
+
+const PROJECT_ID = 'rovex-rules-regression';
+let env;
+let adminApp;
+let adminDb;
+
+before(async () => {
+  const rules = fs.readFileSync(path.join(__dirname, '..', '..', 'firestore.rules'), 'utf8');
+  env = await initializeTestEnvironment({ projectId: PROJECT_ID, firestore: { rules } });
+  adminApp = initializeAdminApp({ projectId: PROJECT_ID }, 'phase0-functions-admin');
+  adminDb = getFirestore(adminApp);
+});
+after(async () => {
+  if (env) await env.cleanup();
+  if (adminApp) await deleteApp(adminApp);
+});
+beforeEach(async () => { await env.clearFirestore(); });
+
+function eventData(uid, id, extra = {}) {
+  return {
+    uid, operationId: id, type: 'quiz_completed', source: 'quiz',
+    clientTimestamp: Date.now(), createdAt: serverTimestamp(), correct: true, ...extra
+  };
+}
+async function waitForProcessed(pathName) {
+  const deadline = Date.now() + 25000;
+  while (Date.now() < deadline) {
+    const snap = await adminDb.doc(pathName).get();
+    if (snap.exists && snap.get('processedAt')) return snap.data();
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  throw new Error('Timed out waiting for Cloud Function terminal state: ' + pathName);
+}
+async function writeClientEvent(uid, id, extra = {}) {
+  const db = env.authenticatedContext(uid).firestore();
+  const ref = doc(db, 'studyEvents', uid, 'events', id);
+  await assertSucceeds(setDoc(ref, eventData(uid, id, extra)));
+  return 'studyEvents/' + uid + '/events/' + id;
+}
+
+describe('Phase 0 server-authoritative XP emulator tests', () => {
+  it('awards fixed quiz XP and ignores client correctness', async () => {
+    const uid = 'phase0-valid-user';
+    const p = await writeClientEvent(uid, '11111111-1111-4111-8111-111111111111');
+    const terminal = await waitForProcessed(p);
+    if (terminal.accepted !== true) throw new Error('valid event rejected: ' + JSON.stringify(terminal));
+    const profile = (await adminDb.doc('users/' + uid).get()).data();
+    if (profile.xp !== 10 || profile.questionsSolved !== 1 || profile.correct !== 0 || profile.accuracyPercent !== 0) {
+      throw new Error('client-controlled correctness or XP invariant violated: ' + JSON.stringify(profile));
+    }
+    const db = env.authenticatedContext(uid).firestore();
+    await assertFails(setDoc(doc(db, p), eventData(uid, '11111111-1111-4111-8111-111111111111')));
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const afterReplay = (await adminDb.doc('users/' + uid).get()).data();
+    if (afterReplay.xp !== 10 || afterReplay.questionsSolved !== 1) throw new Error('duplicate create changed aggregate: ' + JSON.stringify(afterReplay));
+  });
+
+  it('rejects malformed/forged events inserted through an administrative bypass', async () => {
+    const uid = 'phase0-forged-user';
+    const id = '33333333-3333-4333-8333-333333333333';
+    const ref = adminDb.doc('studyEvents/' + uid + '/events/' + id);
+    await ref.set({
+      uid, operationId: id, type: 'quiz_completed', source: 'flashcards',
+      clientTimestamp: Date.now(), createdAt: FieldValue.serverTimestamp()
+    });
+    const terminal = await waitForProcessed(ref.path);
+    if (terminal.accepted === true) throw new Error('forged type/source event accepted: ' + JSON.stringify(terminal));
+    const profile = await adminDb.doc('users/' + uid).get();
+    if (profile.exists && Number(profile.get('xp') || 0) !== 0) throw new Error('forged event awarded XP');
+  });
+
+  it('processes concurrent distinct events without lost/doubled increments', async () => {
+    const uid = 'phase0-concurrent-user';
+    const paths = await Promise.all([
+      writeClientEvent(uid, '44444444-4444-4444-8444-444444444444'),
+      writeClientEvent(uid, '55555555-5555-4555-8555-555555555555')
+    ]);
+    const terminals = await Promise.all(paths.map(waitForProcessed));
+    if (terminals.some(x => x.accepted !== true)) throw new Error('concurrent valid event rejected');
+    const profile = (await adminDb.doc('users/' + uid).get()).data();
+    if (profile.xp !== 20 || profile.questionsSolved !== 2) throw new Error('concurrent transaction invariant violated: ' + JSON.stringify(profile));
+  });
+
+  it('enforces the server UTC-day quota against event flooding', async () => {
+    const uid = 'phase0-rate-user';
+    const day = new Date().toISOString().slice(0, 10);
+    await adminDb.doc('studyEventQuotas/' + uid + '/days/' + day).set({ quiz_completed: 300 });
+    const p = await writeClientEvent(uid, '66666666-6666-4666-8666-666666666666');
+    const terminal = await waitForProcessed(p);
+    if (terminal.accepted !== false || terminal.rejection !== 'DAILY_LIMIT') throw new Error('daily quota not enforced: ' + JSON.stringify(terminal));
+    const profile = await adminDb.doc('users/' + uid).get();
+    if (profile.exists && Number(profile.get('xp') || 0) !== 0) throw new Error('rate-limited event awarded XP');
+  });
+});
+'''
+(test_dir / "study-events.emulator.test.js").write_text(test_code)
+print("Added executable Firestore/Functions emulator tests.")
