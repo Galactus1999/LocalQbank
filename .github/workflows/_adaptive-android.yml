@@ -303,7 +303,7 @@ jobs:
           test -s "$source_dir/app/build.gradle.kts"
           source_zip="$GITHUB_WORKSPACE/rovex-phase0-source-candidate.zip"
           rm -f "$source_zip"
-          (cd "$source_dir" && zip -9 -qr "$source_zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp' '.ci-test-apks/*')
+          (cd "$source_dir" && zip -9 -qr "$source_zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp' '.ci-test-apks/*')
           size="$(stat -c%s "$source_zip")"
           test "$size" -lt 25000000
           sha256sum "$source_zip" | tee "$GITHUB_WORKSPACE/rovex-phase0-source-candidate.sha256"
@@ -336,7 +336,7 @@ jobs:
           set -euo pipefail
           cd "$ADAPTIVE_PROJECT"
           source_zip="$GITHUB_WORKSPACE/adaptive-source.zip"
-          zip -9 -qr "$source_zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.jar' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
+          zip -9 -qr "$source_zip" . -x '.git/*' '.gradle/*' '*/.gradle/*' 'build/*' '*/build/*' 'app/build/*' '*/src/main/jniLibs/*' '*.apk' '*.aab' '*.zip' '*.class' '*.dex' '*.hprof' '*.log' '*.tmp'
           size="$(stat -c%s "$source_zip")"
           echo "Source archive size: $size bytes"
           if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then [[ "$size" -lt 25000000 ]]; fi
