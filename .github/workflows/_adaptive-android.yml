@@ -274,16 +274,6 @@ jobs:
             fi
             echo "PASS: signed release APK installed, launcher Activity started, process remained alive, and no fatal crash was logged."
 
-      - name: Enforce persistent Rovex signing for release publication
-        if: steps.discover.outputs.is_application == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "$ADAPTIVE_IS_ROVEX" == "true" && "${ROVEX_PRODUCTION_SIGNING_BLOCKED:-false}" == "true" ]]; then
-            echo "FAIL: release runtime smoke passed only with a temporary test signature. Configure ROVEX_SIGNING_KEYSTORE_BASE64, ROVEX_SIGNING_STORE_PASSWORD, ROVEX_SIGNING_KEY_ALIAS, ROVEX_SIGNING_KEY_PASSWORD, and ROVEX_SIGNING_CERT_SHA256 to publish an update-safe release."
-            exit 1
-          fi
-
       - name: Verify Qualcomm runtime when present
         shell: bash
         run: |
@@ -302,6 +292,16 @@ jobs:
           else
             echo "CAPABILITY SKIPPED: no Qualcomm native runtime detected."
             if [[ "$STRICT_MODE" == "true" && "$ADAPTIVE_IS_ROVEX" == "true" ]]; then exit 1; fi
+          fi
+
+      - name: Enforce persistent Rovex signing for release publication
+        if: steps.discover.outputs.is_application == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$ADAPTIVE_IS_ROVEX" == "true" && "${ROVEX_PRODUCTION_SIGNING_BLOCKED:-false}" == "true" ]]; then
+            echo "FAIL: release runtime smoke passed only with a temporary test signature. Configure ROVEX_SIGNING_KEYSTORE_BASE64, ROVEX_SIGNING_STORE_PASSWORD, ROVEX_SIGNING_KEY_ALIAS, ROVEX_SIGNING_KEY_PASSWORD, and ROVEX_SIGNING_CERT_SHA256 to publish an update-safe release."
+            exit 1
           fi
 
       - name: Package source and release
