@@ -481,3 +481,25 @@ class HtmlImportSecurityInstrumentedTest {
 }
 ''')
 print("Added WebView security/renderer-loss instrumentation tests.")
+
+
+# Repair a stale Firestore rules fixture: the valid event must satisfy the current UUID/operationId contract.
+rules_test_path = root / "firestore-tests/firestore.rules.test.js"
+rules_test = rules_test_path.read_text()
+old_event_test = """    const eventRef = doc(db, 'studyEvents', 'user-f', 'events', 'event-1');
+    await assertSucceeds(setDoc(eventRef, {
+      uid: 'user-f', type: 'quiz_completed', source: 'quiz', clientTimestamp: Date.now(),
+      createdAt: serverTimestamp(), correct: true
+    }));
+"""
+new_event_test = """    const eventId = '77777777-7777-4777-8777-777777777777';
+    const eventRef = doc(db, 'studyEvents', 'user-f', 'events', eventId);
+    await assertSucceeds(setDoc(eventRef, {
+      uid: 'user-f', operationId: eventId, type: 'quiz_completed', source: 'quiz', clientTimestamp: Date.now(),
+      createdAt: serverTimestamp(), correct: true
+    }));
+"""
+if old_event_test not in rules_test:
+    raise SystemExit("Expected stale study-event fixture was not found; refusing broad text replacement")
+rules_test_path.write_text(rules_test.replace(old_event_test, new_event_test, 1))
+print("Updated valid study-event fixture to satisfy the current UUID/operationId rules contract.")
