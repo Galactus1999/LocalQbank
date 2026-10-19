@@ -211,17 +211,31 @@ jobs:
           apk="$ADAPTIVE_RELEASE_APK"
           if [[ -z "$KEYSTORE_B64" ]]; then KEYSTORE_B64="$KEYSTORE_B64_LEGACY"; fi
           if [[ -z "$KEYSTORE_B64" || -z "$STORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
-            if [[ "$ADAPTIVE_IS_ROVEX" == "true" || "$STRICT_MODE" == "true" ]]; then
-              echo "FAIL: persistent signing secrets are required for a Rovex release; unsigned/debug-signed release APKs are not accepted."
+            if [[ "$ADAPTIVE_IS_ROVEX" == "true" ]]; then
+              echo "ROVEX_PRODUCTION_SIGNING_BLOCKED=true" >> "$GITHUB_ENV"
+              smoke_apk="$GITHUB_WORKSPACE/adaptive-release-smoke-only.apk"
+              cp -f "$apk" "$smoke_apk"
+              smoke_ks="$RUNNER_TEMP/rovex-smoke-only.jks"
+              keytool -genkeypair -noprompt -keystore "$smoke_ks" -storepass "smoke-only-password" -keypass "smoke-only-password" -alias "rovex-smoke-only" -dname "CN=Rovex CI Smoke Only" -keyalg RSA -keysize 2048 -validity 1 >/dev/null 2>&1
+              "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$smoke_ks" --ks-pass "pass:smoke-only-password" --ks-key-alias "rovex-smoke-only" --key-pass "pass:smoke-only-password" "$smoke_apk"
+              "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$smoke_apk"
+              echo "ADAPTIVE_RELEASE_SMOKE_APK=$smoke_apk" >> "$GITHUB_ENV"
+              echo "BLOCKED: no persistent signing key; a separate test-only signature is used solely for runtime smoke, never for artifact publication."
+              exit 0
+            fi
+            if [[ "$STRICT_MODE" == "true" ]]; then
+              echo "FAIL: signing secrets are required in strict mode."
               exit 1
             fi
             echo "CAPABILITY SKIPPED: signing secrets are not configured for this non-Rovex build."
+            echo "ADAPTIVE_RELEASE_SMOKE_APK=$apk" >> "$GITHUB_ENV"
             exit 0
           fi
           if [[ "$ADAPTIVE_IS_ROVEX" == "true" && ! "$EXPECTED_SIGNING_CERT_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
             echo "FAIL: ROVEX_SIGNING_CERT_SHA256 must contain the independently recorded persistent certificate SHA-256 (64 hex characters)."
             exit 1
           fi
+          echo "ADAPTIVE_RELEASE_SMOKE_APK=$apk" >> "$GITHUB_ENV"
           ks="$RUNNER_TEMP/adaptive-release.jks"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$ks"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$ks" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" "$apk"
@@ -248,7 +262,7 @@ jobs:
           emulator-boot-timeout: 300
           script: |
             set -eu
-            adb install -r "$ADAPTIVE_RELEASE_APK"
+            adb install -r "$ADAPTIVE_RELEASE_SMOKE_APK"
             adb shell am start -W -n com.localqbank.library/.RovexSplashActivity
             sleep 8
             pid="$(adb shell pidof com.localqbank.library | tr -d '\r' || true)"
@@ -259,6 +273,16 @@ jobs:
               exit 1
             fi
             echo "PASS: signed release APK installed, launcher Activity started, process remained alive, and no fatal crash was logged."
+
+      - name: Enforce persistent Rovex signing for release publication
+        if: steps.discover.outputs.is_application == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$ADAPTIVE_IS_ROVEX" == "true" && "${ROVEX_PRODUCTION_SIGNING_BLOCKED:-false}" == "true" ]]; then
+            echo "FAIL: release runtime smoke passed only with a temporary test signature. Configure ROVEX_SIGNING_KEYSTORE_BASE64, ROVEX_SIGNING_STORE_PASSWORD, ROVEX_SIGNING_KEY_ALIAS, ROVEX_SIGNING_KEY_PASSWORD, and ROVEX_SIGNING_CERT_SHA256 to publish an update-safe release."
+            exit 1
+          fi
 
       - name: Verify Qualcomm runtime when present
         shell: bash
