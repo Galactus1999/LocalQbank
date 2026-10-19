@@ -8,7 +8,7 @@ s = gradle.read_text()
 if 'versionCode = 797' not in s or 'versionName = "8.3.711"' not in s:
     raise SystemExit("Refusing unexpected source baseline; expected v8.3.711/code 797")
 s = s.replace('versionCode = 797', 'versionCode = 799').replace('versionName = "8.3.711"', 'versionName = "8.3.713"')
-pat = re.compile(r'val prepareQualcommRuntime = tasks\.register<Exec>\("prepareQualcommRuntime"\) \{.*?^\}\.configureEach\n', re.M | re.S)
+pat = re.compile(r'val prepareQualcommRuntime = tasks\.register<Exec>\("prepareQualcommRuntime"\) \{.*?^\}\.configureEach \{\n.*?^\}\n', re.M | re.S)
 rep = '''val qualcommRuntimeEnabled = providers.environmentVariable("ROVEX_ENABLE_QUALCOMM_RUNTIME")
     .map { it.equals("true", ignoreCase = true) }.orElse(false)
 val prepareQualcommRuntime = tasks.register<Exec>("prepareQualcommRuntime") {
