@@ -214,7 +214,17 @@ if env ROVEX_ENABLE_QUALCOMM_RUNTIME=true ROVEX_QAIRT_ARCHIVE_SHA256=aaaaaaaaaaa
   echo 'FAIL: corrupt cached LiteRT archive passed digest verification'; exit 1
 fi
 grep -Fq 'SHA-256 mismatch for official LiteRT v2.2.0 JIT asset' "$tmp/corrupt"
-echo 'PASS: optional acquisition, official pinned LiteRT digest, explicit QAIRT digest, corrupt-cache rejection, no archive helper execution, and fail-closed missing-digest path.'
+# The custom Gradle bootstrap must reject a corrupt cached distribution before extraction.
+gradle_home="$tmp/gradle-home"
+gradle_cache="$gradle_home/wrapper/dists/gradle-9.3.1-bin/localqbank"
+mkdir -p "$gradle_cache"
+printf 'not-a-real-gradle-distribution' > "$gradle_cache/gradle-9.3.1-bin.zip"
+if env HOME="$tmp/home" GRADLE_USER_HOME="$gradle_home" sh ./gradlew --version >"$tmp/gradle-corrupt" 2>&1; then
+  echo 'FAIL: corrupt cached Gradle distribution passed digest verification'; exit 1
+fi
+grep -Fq 'SHA-256 mismatch for Gradle distribution 9.3.1' "$tmp/gradle-corrupt"
+test ! -e "$gradle_cache/gradle-9.3.1/bin/gradle"
+echo 'PASS: optional Qualcomm acquisition, pinned Gradle and LiteRT digests, corrupt-cache rejection, explicit QAIRT digest, no archive helper execution, and fail-closed missing-digest path.'
 '''
 (root / "tools/tests").mkdir(parents=True, exist_ok=True)
 (root / "tools/tests/qualcomm_runtime_supply_chain_test.sh").write_text(test)
@@ -224,6 +234,7 @@ echo 'PASS: optional acquisition, official pinned LiteRT digest, explicit QAIRT 
 Base: v8.3.711 source archive (versionCode 797).
 
 - Qualcomm runtime acquisition is opt-in via ROVEX_ENABLE_QUALCOMM_RUNTIME=true.
+- Gradle 9.3.1 bootstrap ZIP SHA-256 is pinned to the checksum published by Gradle and verified before extraction/execution; downloads have explicit connection and total-time limits.
 - LiteRT v2.2.0 JIT asset SHA-256 is pinned to the digest published in the official GitHub release API: d6d160104f110e690f1c9b0c54ab3855af1a12e405dcc6e644dd7e3e1955aac4.
 - The separate Qualcomm QAIRT archive requires an independently trusted 64-hex SHA-256 supplied through ROVEX_QAIRT_ARCHIVE_SHA256. No hash is invented or trusted from the same download response.
 - Both archives are integrity-tested and checked for unsafe paths before extraction. No archive-supplied helper script is executed.
