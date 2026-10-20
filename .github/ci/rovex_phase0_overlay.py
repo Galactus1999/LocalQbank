@@ -11,7 +11,7 @@ s = s.replace('versionCode = 797', 'versionCode = 800').replace('versionName = "
 # Roadmap Phase 0 explicitly keeps R8 disabled until the complete reflection/JNI/
 # serialization/WebView/native-inference compatibility matrix has passed. The
 # release startup smoke alone is not sufficient evidence to enable optimization.
-if not re.search(r'isMinifyEnabled\\s*=\\s*false', s) or not re.search(r'isShrinkResources\\s*=\\s*false', s):
+if not re.search(r'isMinifyEnabled\s*=\s*false', s) or not re.search(r'isShrinkResources\s*=\s*false', s):
     raise SystemExit("Pinned baseline unexpectedly enables R8; inspect before applying Phase-0 overlay")
 s = s.replace('''// Keep optimization explicitly disabled until the reflection/JNI and native-inference
             // release matrix is exercised on the canonical signed APK.''',
