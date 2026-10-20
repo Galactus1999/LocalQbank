@@ -40,7 +40,7 @@ jobs:
           test -s "$PROJECT_DIR/app/build.gradle.kts"
           python3 .github/ci/rovex_phase0_overlay.py "$PROJECT_DIR"
           echo "ROVEX_PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          grep -E 'versionCode = 799|versionName = "8.3.713"' "$PROJECT_DIR/app/build.gradle.kts"
+          grep -E 'versionCode = 800|versionName = "8.3.714"' "$PROJECT_DIR/app/build.gradle.kts"
       - name: Install pinned emulator test dependencies
         shell: bash
         run: |
