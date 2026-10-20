@@ -7,15 +7,16 @@ gradle = root / "app/build.gradle.kts"
 s = gradle.read_text()
 if 'versionCode = 797' not in s or 'versionName = "8.3.711"' not in s:
     raise SystemExit("Refusing unexpected source baseline; expected v8.3.711/code 797")
-s = s.replace('versionCode = 797', 'versionCode = 799').replace('versionName = "8.3.711"', 'versionName = "8.3.713"')
-# R8 release compatibility: enable optimization only with narrowly scoped keep rules
-# for names explicitly resolved through Class.forName by StartupHealthChecker.
-s = s.replace('isMinifyEnabled = false', 'isMinifyEnabled = true', 1)
-s = s.replace('isShrinkResources = false', 'isShrinkResources = true', 1)
+s = s.replace('versionCode = 797', 'versionCode = 800').replace('versionName = "8.3.711"', 'versionName = "8.3.714"')
+# Roadmap Phase 0 explicitly keeps R8 disabled until the complete reflection/JNI/
+# serialization/WebView/native-inference compatibility matrix has passed. The
+# release startup smoke alone is not sufficient evidence to enable optimization.
+if not re.search(r'isMinifyEnabled\\s*=\\s*false', s) or not re.search(r'isShrinkResources\\s*=\\s*false', s):
+    raise SystemExit("Pinned baseline unexpectedly enables R8; inspect before applying Phase-0 overlay")
 s = s.replace('''// Keep optimization explicitly disabled until the reflection/JNI and native-inference
             // release matrix is exercised on the canonical signed APK.''',
-              '''// Phase 0: R8 release compatibility is exercised by CI release startup smoke
-            // plus WebView/JNI instrumentation contracts. Keep rules below are narrowly scoped.''', 1)
+              '''// Roadmap Phase 0: keep R8/resource shrinking disabled until the complete
+            // reflection/JNI/serialization/WebView/native-inference release matrix passes.''', 1)
 proguard = root / "app/proguard-rules.pro"
 rules = proguard.read_text() if proguard.exists() else ""
 keep_names = [
@@ -243,7 +244,7 @@ echo 'PASS: optional Qualcomm acquisition, pinned Gradle and LiteRT digests, cor
 (root / "tools/tests").mkdir(parents=True, exist_ok=True)
 (root / "tools/tests/qualcomm_runtime_supply_chain_test.sh").write_text(test)
 (root / "tools/tests/qualcomm_runtime_supply_chain_test.sh").chmod(0o755)
-(root / "PHASE0_SECURITY_AUDIT_v8.3.713.md").write_text("""# Phase 0 security overlay — v8.3.713 (versionCode 799)
+(root / "PHASE0_SECURITY_AUDIT_v8.3.713.md").write_text("""# Phase 0 security overlay — v8.3.714 (versionCode 800)
 
 Base: v8.3.711 source archive (versionCode 797).
 
@@ -253,12 +254,12 @@ Base: v8.3.711 source archive (versionCode 797).
 - The separate Qualcomm QAIRT archive requires an independently trusted 64-hex SHA-256 supplied through ROVEX_QAIRT_ARCHIVE_SHA256. No hash is invented or trusted from the same download response.
 - Both archives are integrity-tested and checked for unsafe paths before extraction. No archive-supplied helper script is executed.
 - Default builds do not fetch the ~2.35 GB QAIRT SDK. Qualcomm DISPATCH_OP models remain unavailable/fail-closed without matching runtime; deterministic Ben/Ren/QBank paths remain authoritative. Portable CPU/GPU inference applies only to compatible non-Qualcomm graphs.
-- R8 minification and resource shrinking are enabled in the release variant with narrowly scoped keep-name rules for the seven StartupHealthChecker reflection targets. CI must pass the release startup smoke; WebView/renderer and JNI behavior have instrumented coverage. Any R8 failure blocks release.
+- R8 minification and resource shrinking remain disabled, as required by the roadmap, until the full reflection/JNI/serialization/WebView/native-inference compatibility matrix passes. The latest release smoke failure is consistent with enabling R8 before that matrix; the workflow did not capture logcat before its process-alive assertion, so the precise runtime exception was not retained. This repair restores the safe release configuration rather than claiming an unobserved R8 stack trace.
 - WebView: no JavaScript bridge; top-level navigation blocked; network loads blocked for imported HTML; file-origin cross-access disabled; universal file-origin access disabled; mixed content blocked; cookies disabled; Safe Browsing enabled on supported Android versions.
 
 This file is not a PASS. Firebase emulator tests, Android CI, APK signature/native payload checks, and hostile-WebView runtime tests must execute and pass before Phase 0 can close.
 """)
-print("Applied Phase 0 overlay: v8.3.713 / versionCode 799")
+print("Applied Phase 0 overlay: v8.3.714 / versionCode 800")
 
 
 # Add real Firestore/Functions emulator tests for server-owned XP integrity.
