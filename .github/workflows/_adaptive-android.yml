@@ -279,12 +279,23 @@ jobs:
           script: |
             set -eu
             adb install -r "$ADAPTIVE_RELEASE_SMOKE_APK"
+            adb logcat -c
             adb shell am start -W -n com.localqbank.library/.RovexSplashActivity
             sleep 8
+            # Capture device-wide logcat before checking pidof. The previous check
+            # exited before preserving logs, hiding the actual startup failure.
+            adb logcat -d -v threadtime > "$GITHUB_WORKSPACE/release-smoke-logcat.txt" || true
+            adb shell dumpsys activity activities > "$GITHUB_WORKSPACE/release-smoke-activities.txt" 2>&1 || true
+            adb shell dumpsys activity exit-info com.localqbank.library > "$GITHUB_WORKSPACE/release-smoke-exit-info.txt" 2>&1 || true
             pid="$(adb shell pidof com.localqbank.library | tr -d '\r' || true)"
-            test -n "$pid" || { echo "FAIL: release APK process did not remain alive after launch."; exit 1; }
-            adb logcat -d -v brief --pid="$pid" > "$RUNNER_TEMP/release-smoke-logcat.txt"
-            if grep -E 'FATAL EXCEPTION|Fatal signal' "$RUNNER_TEMP/release-smoke-logcat.txt"; then
+            if [ -z "$pid" ]; then
+              echo "FAIL: release APK process exited after launch; crash and activity diagnostics follow."
+              grep -E 'FATAL EXCEPTION|Fatal signal|AndroidRuntime|has died|Force finishing activity|am_crash|am_anr' "$GITHUB_WORKSPACE/release-smoke-logcat.txt" | tail -n 160 || true
+              cat "$GITHUB_WORKSPACE/release-smoke-activities.txt" || true
+              cat "$GITHUB_WORKSPACE/release-smoke-exit-info.txt" || true
+              exit 1
+            fi
+            if grep -E 'FATAL EXCEPTION|Fatal signal' "$GITHUB_WORKSPACE/release-smoke-logcat.txt"; then
               echo "FAIL: fatal crash detected during release APK startup."
               exit 1
             fi
@@ -302,6 +313,18 @@ jobs:
               exit 1
             fi
             echo "PASS: R8 release smoke and selected WebView/JNI instrumentation checks completed; production signing is checked separately."
+
+      - name: Upload release smoke crash diagnostics
+        if: always() && steps.discover.outputs.is_application == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rovex-release-smoke-diagnostics
+          path: |
+            release-smoke-logcat.txt
+            release-smoke-activities.txt
+            release-smoke-exit-info.txt
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Verify Qualcomm runtime when present
         shell: bash
