@@ -330,8 +330,8 @@ def main():
         if "b266d5ff6b90eada6dc3b20cb090e3731302e553a27c5d3e4df1f0d76beaff06" not in launcher_text or "SHA-256 mismatch for Gradle distribution" not in launcher_text:
             die("Gradle bootstrap distribution is not pinned and verified before execution.")
         gradle_text = read_text(project / "app/build.gradle.kts")
-        if not re.search(r"isMinifyEnabled\s*=\s*true", gradle_text) or not re.search(r"isShrinkResources\s*=\s*true", gradle_text):
-            die("R8 release minification/resource shrinking are not enabled in the Phase-0 candidate.")
+        if not re.search(r"isMinifyEnabled\s*=\s*false", gradle_text) or not re.search(r"isShrinkResources\s*=\s*false", gradle_text):
+            die("Roadmap Phase 0 requires R8 minification/resource shrinking to remain disabled until the full release compatibility matrix passes.")
         html_activity = read_text(project / "app/src/main/java/com/localqbank/library/HtmlImportActivity.kt")
         if "web.settings.blockNetworkLoads = true" not in html_activity:
             die("Untrusted HTML WebView does not block network-backed resource requests.")
