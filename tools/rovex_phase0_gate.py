@@ -123,6 +123,11 @@ def version_audit(project: Path, full: str, source_zip: Path):
     if not gradle_files:
         die("No app/build.gradle(.kts) found for authoritative version extraction.")
     gradle_text = read_text(gradle_files[0])
+    application_id_match = re.search(r'applicationId\s*=\s*["']([^"']+)["']', gradle_text)
+    if not application_id_match or application_id_match.group(1) != EXPECTED_PACKAGE:
+        actual = application_id_match.group(1) if application_id_match else "missing"
+        die(f"Application identity mismatch: expected {EXPECTED_PACKAGE}, found {actual}")
+
     name_match = re.search(r'versionName\s*=\s*["\']([^"\']+)["\']', gradle_text)
     code_match = re.search(r'versionCode\s*=\s*(\d+)\b', gradle_text)
     if not name_match or not code_match:
