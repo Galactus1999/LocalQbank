@@ -1,0 +1,34 @@
+name: Rovex Web Companion POC
+on:
+  push:
+    branches: [poc/rovex-web-companion]
+    paths:
+      - "web-companion/**"
+      - ".github/workflows/rovex-web-companion-poc.yml"
+  pull_request:
+    paths:
+      - "web-companion/**"
+      - ".github/workflows/rovex-web-companion-poc.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate JavaScript syntax
+        run: node --check web-companion/app.js && node --check web-companion/sw.js
+      - name: Validate manifest and static shell
+        run: |
+          node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync("web-companion/manifest.json","utf8")); if(m.name!=="Rovex Study Companion" || m.display!=="standalone" || !m.start_url) process.exit(1); for(const f of ["index.html","styles.css","app.js","sw.js","icon.svg","README.md"]) if(!fs.statSync("web-companion/"+f).size) throw Error("empty: "+f); console.log("PWA shell and manifest validation PASS")'
+      - name: Verify isolation and import safety markers
+        run: |
+          grep -q 'MAX_IMPORT_BYTES = 25 \* 1024 \* 1024' web-companion/app.js
+          grep -q 'store.add(record)' web-companion/app.js
+          grep -q 'Existing records are never overwritten' web-companion/README.md
+          ! grep -R -E 'com\.localqbank\.library|AndroidManifest|app/src/main' web-companion
+          echo "Isolation and import safety static checks PASS"
