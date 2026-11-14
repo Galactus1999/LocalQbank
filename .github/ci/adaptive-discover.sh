@@ -80,10 +80,21 @@ fi
 [[ -d "$project" ]] || fail "Resolved project directory does not exist: $project"
 [[ -f "$project/gradlew" ]] || fail "Gradle wrapper not found: $project/gradlew"
 [[ -f "$project/settings.gradle" || -f "$project/settings.gradle.kts" ]] || fail "Gradle settings not found: $project"
+# A plugin declaration with "apply false" only makes the plugin available to
+# subprojects; it does not make the root project an Android application/library.
+# Match actual plugin-application lines and ignore comments and apply-false lines.
+has_applied_android_plugin() {
+  local file="$1" plugin_regex="$2"
+  awk -v pattern="$plugin_regex" '
+    /^[[:space:]]*(\/\/|#)/ { next }
+    $0 ~ pattern && $0 !~ /apply[[:space:]]+false([[:space:]]|$)/ { found=1 }
+    END { exit !found }
+  ' "$file"
+}
 app_module=""; library_module=""
 while IFS= read -r f; do
-  if grep -Eq 'com\.android\.application|com\.android\.application\.kotlin' "$f"; then app_module="$(dirname "$f")"; break; fi
-  if [[ -z "$library_module" ]] && grep -Eq 'com\.android\.library|com\.android\.library\.kotlin' "$f"; then library_module="$(dirname "$f")"; fi
+  if has_applied_android_plugin "$f" 'com\.android\.application|com\.android\.application\.kotlin'; then app_module="$(dirname "$f")"; break; fi
+  if [[ -z "$library_module" ]] && has_applied_android_plugin "$f" 'com\.android\.library|com\.android\.library\.kotlin'; then library_module="$(dirname "$f")"; fi
 done < <(find "$project" -type f \( -name build.gradle -o -name build.gradle.kts \) ! -path '*/build/*' -print)
 module="$app_module"; [[ -n "$module" ]] || module="$library_module"; [[ -n "$module" ]] || fail "No Android Gradle application/library module discovered"
 if [[ "$module" == "$project" ]]; then module_path=":"; else rel="$(realpath --relative-to="$project" "$module")"; module_path=":$(printf '%s' "$rel" | tr '/' ':')"; fi
