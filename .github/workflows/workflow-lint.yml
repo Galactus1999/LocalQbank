@@ -2,6 +2,7 @@ name: Workflow Lint
 # Adaptive CI validator: workflow and shell contracts only.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
     branches: [main]
   workflow_dispatch:
 permissions:
