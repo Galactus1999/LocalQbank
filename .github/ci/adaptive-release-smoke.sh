@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "\${ADAPTIVE_RELEASE_SMOKE_APK:?ADAPTIVE_RELEASE_SMOKE_APK is required}"
-: "\${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
+: "${ADAPTIVE_RELEASE_SMOKE_APK:?ADAPTIVE_RELEASE_SMOKE_APK is required}"
+: "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
 
-launch_log="\${RUNNER_TEMP:-/tmp}/rovex-release-launch.txt"
-instrumentation_log="\${RUNNER_TEMP:-/tmp}/rovex-r8-runtime-tests.txt"
+launch_log="${RUNNER_TEMP:-/tmp}/rovex-release-launch.txt"
+instrumentation_log="${RUNNER_TEMP:-/tmp}/rovex-r8-runtime-tests.txt"
 logcat_file="$GITHUB_WORKSPACE/release-smoke-logcat.txt"
 activities_file="$GITHUB_WORKSPACE/release-smoke-activities.txt"
 exit_info_file="$GITHUB_WORKSPACE/release-smoke-exit-info.txt"
@@ -49,7 +49,7 @@ if grep -E 'FATAL EXCEPTION|Fatal signal|am_crash|am_anr|ANR in' "$logcat_file";
   exit 1
 fi
 
-if [[ "\${ADAPTIVE_HAS_TEST_APK:-false}" == "true" && -s "\${ADAPTIVE_RELEASE_TEST_APK:-}" ]]; then
+if [[ "${ADAPTIVE_HAS_TEST_APK:-false}" == "true" && -s "${ADAPTIVE_RELEASE_TEST_APK:-}" ]]; then
   adb install -r "$ADAPTIVE_RELEASE_TEST_APK"
   if ! adb shell am instrument -w \
     -e class com.localqbank.library.HtmlImportSecurityInstrumentedTest,com.localqbank.library.ZstdNativePayloadInstrumentedTest \
