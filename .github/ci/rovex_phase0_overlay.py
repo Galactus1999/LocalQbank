@@ -596,13 +596,13 @@ old_contract = """    @Test fun releaseOptimizationStaysExplicitlyDisabledUntilR
         assertTrue("R8 minification must not be enabled without release validation", release.contains("isMinifyEnabled = false"))
         assertTrue("Resource shrinking must not be enabled without release validation", release.contains("isShrinkResources = false"))
     }"""
-new_contract = """    @Test fun releaseOptimizationIsEnabledWithNarrowReflectionAndNativeKeepRules() {
+new_contract = """    @Test fun releaseOptimizationStaysDisabledWithNarrowReflectionAndNativeKeepRules() {
         val s = source("app/build.gradle.kts")
         val release = s.substringAfter("release {").substringBefore("\\n        }")
-        assertTrue("Release R8 minification must be enabled for the exercised release matrix", release.contains("isMinifyEnabled = true"))
-        assertTrue("Release resource shrinking must be enabled for the exercised release matrix", release.contains("isShrinkResources = true"))
+        assertTrue("R8 minification must remain disabled until the complete runtime compatibility matrix passes", release.contains("isMinifyEnabled = false"))
+        assertTrue("Resource shrinking must remain disabled until the complete runtime compatibility matrix passes", release.contains("isShrinkResources = false"))
         val rules = source("app/proguard-rules.pro")
-        assertTrue("Zstd JNI entry points must survive optimization", rules.contains("-keep class com.github.luben.zstd.Zstd { *; }"))
+        assertTrue("Zstd JNI entry points must retain their targeted keep rule", rules.contains("-keep class com.github.luben.zstd.Zstd { *; }"))
         assertTrue("Reflectively resolved MainActivity name must remain stable", rules.contains("-keepnames class com.localqbank.library.MainActivity"))
         assertFalse("Do not use a blanket application-package keep rule", rules.contains("-keep class com.localqbank.library.** { *; }"))
     }"""

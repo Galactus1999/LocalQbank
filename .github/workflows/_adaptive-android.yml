@@ -276,43 +276,7 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -gpu swiftshader_indirect
           disable-animations: true
           emulator-boot-timeout: 300
-          script: |
-            set -eu
-            adb install -r "$ADAPTIVE_RELEASE_SMOKE_APK"
-            adb logcat -c
-            adb shell am start -W -n com.localqbank.library/.RovexSplashActivity
-            sleep 8
-            # Capture device-wide logcat before checking pidof. The previous check
-            # exited before preserving logs, hiding the actual startup failure.
-            adb logcat -d -v threadtime > "$GITHUB_WORKSPACE/release-smoke-logcat.txt" || true
-            adb shell dumpsys activity activities > "$GITHUB_WORKSPACE/release-smoke-activities.txt" 2>&1 || true
-            adb shell dumpsys activity exit-info com.localqbank.library > "$GITHUB_WORKSPACE/release-smoke-exit-info.txt" 2>&1 || true
-            pid="$(adb shell pidof com.localqbank.library | tr -d '\r' || true)"
-            if [ -z "$pid" ]; then
-              echo "FAIL: release APK process exited after launch; crash and activity diagnostics follow."
-              grep -E 'FATAL EXCEPTION|Fatal signal|AndroidRuntime|has died|Force finishing activity|am_crash|am_anr' "$GITHUB_WORKSPACE/release-smoke-logcat.txt" | tail -n 160 || true
-              cat "$GITHUB_WORKSPACE/release-smoke-activities.txt" || true
-              cat "$GITHUB_WORKSPACE/release-smoke-exit-info.txt" || true
-              exit 1
-            fi
-            if grep -E 'FATAL EXCEPTION|Fatal signal' "$GITHUB_WORKSPACE/release-smoke-logcat.txt"; then
-              echo "FAIL: fatal crash detected during release APK startup."
-              exit 1
-            fi
-            if [ "${ADAPTIVE_HAS_TEST_APK:-false}" = "true" ] && [ -s "${ADAPTIVE_RELEASE_TEST_APK:-}" ]; then
-              adb install -r "$ADAPTIVE_RELEASE_TEST_APK"
-              if ! adb shell am instrument -w -e class com.localqbank.library.HtmlImportSecurityInstrumentedTest,com.localqbank.library.ZstdNativePayloadInstrumentedTest com.localqbank.library.test/androidx.test.runner.AndroidJUnitRunner > "$RUNNER_TEMP/rovex-r8-runtime-tests.txt" 2>&1; then
-                cat "$RUNNER_TEMP/rovex-r8-runtime-tests.txt"
-                echo "FAIL: R8 release WebView/JNI instrumentation command failed."
-                exit 1
-              fi
-              cat "$RUNNER_TEMP/rovex-r8-runtime-tests.txt"
-              grep -Eq 'OK \([0-9]+ tests?\)' "$RUNNER_TEMP/rovex-r8-runtime-tests.txt" || { echo "FAIL: R8 release WebView/JNI instrumentation did not report a passing test summary."; exit 1; }
-            else
-              echo "FAIL: no instrumentation APK available for R8 release WebView/JNI runtime checks."
-              exit 1
-            fi
-            echo "PASS: R8 release smoke and selected WebView/JNI instrumentation checks completed; production signing is checked separately."
+          script: bash "$GITHUB_WORKSPACE/.github/ci/adaptive-release-smoke.sh"
 
       - name: Upload release smoke crash diagnostics
         if: always() && steps.discover.outputs.is_application == 'true'

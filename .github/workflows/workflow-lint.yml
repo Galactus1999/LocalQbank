@@ -2,6 +2,7 @@ name: Workflow Lint
 # Adaptive CI validator: workflow and shell contracts only.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
     branches: [main]
   workflow_dispatch:
 permissions:
@@ -28,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in .github/ci/adaptive-discover.sh .github/ci/adaptive-gradle-tasks.sh .github/ci/adaptive-instrumentation.sh; do
+          for f in .github/ci/adaptive-discover.sh .github/ci/adaptive-gradle-tasks.sh .github/ci/adaptive-instrumentation.sh .github/ci/adaptive-release-smoke.sh; do
             bash -n "$f"
             shellcheck -x "$f"
           done
